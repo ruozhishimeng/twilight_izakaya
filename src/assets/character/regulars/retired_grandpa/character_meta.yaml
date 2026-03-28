@@ -1,0 +1,27 @@
+character_id: retired_grandpa
+base_info:
+  name: "庆祝退休的老爷爷"
+  age: 65
+  occupation: "退休公务员"
+  description: "一位精神矍铄的老人，西装革履，胸前别着一朵红花。眼神里有光，像是终于卸下了什么重担。"
+  type: "普通人"
+  personality: "豪爽、健谈、喜欢回忆往事"
+  short_story: |
+    他在政府部门工作了四十年，按部就班，从不出格。
+    今天是他退休的日子，四十年的工作终于结束了。
+    他终于可以换个活法了。
+
+arrival_pattern: "random"
+arrival_condition:
+  type: "always"
+  description: "工作日下午随机可能来访"
+
+drink_request:
+  type: "concrete"
+  description: "来一杯威士忌，加冰"
+  keywords: ["威士忌", "庆祝", "退休"]
+
+visits_possible: 1
+is_unlocked: true
+
+generated_at: "2026-03-21T00:00:00.000Z"

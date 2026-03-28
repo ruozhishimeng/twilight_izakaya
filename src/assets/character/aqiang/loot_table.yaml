@@ -1,0 +1,134 @@
+character_id: aqiang
+
+# 阶段完成标记
+phase_completion:
+  - phase: 1
+    unlock_condition:
+      event_id: "aqiang_phase1_most_loved_success"
+      description: "调对最爱的酒后进入第二阶段"
+    unlocks:
+      - "aqiang_phase_2_dialogue"
+      - "gallery_family_bond"
+
+  - phase: 2
+    unlock_condition:
+      event_id: "aqiang_phase2_most_loved_success"
+      description: "调对最爱的酒后进入第三阶段"
+    unlocks:
+      - "aqiang_phase_3_dialogue"
+      - "gallery_little_snow"
+
+  - phase: 3
+    unlock_condition:
+      event_id: "aqiang_phase3_redemption_end"
+      description: "完成救赎对话后"
+    unlocks:
+      - "gallery_true_story"
+      - "gallery_redemption_complete"
+
+  - released:
+    unlock_condition:
+      event_id: "aqiang_phase3_redemption_end"
+      description: "冰相获得救赎，前往彼岸"
+    unlocks:
+      - "gallery_full_story"
+
+# 打量解锁
+observation_unlocks:
+  - observation_id: "obs_temple_bruise"
+    name: "右太阳穴的青紫撞伤"
+    unlock_condition:
+      event_id: "aqiang_001_dialogue_main"
+      description: "首次来访时自动可见"
+    unlocks:
+      - "gallery_surface"
+
+  - observation_id: "obs_wet_uniform"
+    name: "湿透的速运制服"
+    unlock_condition:
+      event_id: "aqiang_001_dialogue_main"
+      description: "首次来访时自动可见"
+    unlocks:
+      - "gallery_surface"
+
+  - observation_id: "obs_chest_package"
+    name: "胸口微微鼓起"
+    unlock_condition:
+      event_id: "aqiang_002_dialogue_main"
+      description: "第二轮对话时"
+    unlocks:
+      - "gallery_music_box_chest"
+
+  - observation_id: "obs_pink_ribbon"
+    name: "粉色丝带"
+    unlock_condition:
+      event_id: "aqiang_003_dialogue_main"
+      description: "第三轮对话时"
+    unlocks:
+      - "gallery_music_box_revelation"
+
+  - observation_id: "obs_broken_clock"
+    name: "手机时间停在17:58"
+    unlock_condition:
+      event_id: "aqiang_phase_3_dialogue"
+      description: "第三阶段来访时"
+    unlocks:
+      - "gallery_the_accident"
+
+  - observation_id: "obs_music_box"
+    name: "音乐盒"
+    unlock_condition:
+      event_id: "aqiang_004_dialogue_main"
+      description: "第四对话节点"
+    unlocks:
+      - "gallery_music_box_revelation"
+
+# 隐藏剧情解锁
+hidden_unlocks:
+  - hidden_id: "hidden_blue_dye"
+    name: "蓝染的记忆"
+    unlock_condition:
+      event_id: "aqiang_005_dialogue_main"
+      description: "第五对话节点时可能触发"
+    requires_phase: 2
+    unlocks:
+      - "gallery_family_bond"
+
+  - hidden_id: "hidden_brother_last_words"
+    name: "哥哥最后的话"
+    unlock_condition:
+      event_id: "aqiang_phase3_redemption"
+      description: "进入救赎对话后"
+    requires_phase: 3
+    unlocks:
+      - "gallery_final_message"
+
+# 救赎总结
+redemption:
+  true_story: |
+    晴山冰相，17岁那年父亲去世，母亲精神崩溃。他撕掉国立大学有希望的成绩单，继承染坊。
+
+    敌不过机械化印染的洪流，染坊一年后倒闭。他卖了所有器械，带着妹妹搬进祖母的老破小。
+
+    为让有钢琴天赋的妹妹继续学琴，他什么都做：工地搬砖、便利店夜班、餐厅洗碗。最后选择了速运员——多跑一单，雪的电子琴就近一寸。
+
+    父亲曾是墨田区最好的蓝染匠人。他说要把最好的蓝色染给世界看。冰相没能继承父亲的蓝色，但继承了父亲的执拗——和妹妹相依为命的那一种。
+
+    18岁生日的前两个月，他终于攒够尾款，在一家手工音乐盒店买下了定制音乐盒。录有德彪西《月光》的旋律。粉色丝带是他在百元店挑了二十分钟才选定的。
+
+    他算过：从付定金到结清尾款，一共跑了一百六十七单。凌晨四点的闹钟，便利店最便宜的饭团，雨夜里湿透的制服，右肘磨穿的三层补丁。
+
+    那天暴雨。单价翻三倍。他想多跑几单。下午四点十七分，交叉路口。他低头看了一眼手机导航——就一眼。
+
+    侧方驶来的卡车在湿滑路面上刹车失控。他做了一个动作：不是转向，不是刹车。而是弓起身体，左手死死护住胸口那个位置。
+
+    那里有音乐盒。那里有他一百六十七单换来的东西。撞击的瞬间，他只感觉到肋骨被什么东西重重撞了一下。
+
+    "还好，"他想，"没有碎。"
+
+    他不知道自己已经死了。他只知道雪还在等。他得把音乐盒送到雪手里。
+
+  lesson: |
+    有些爱，即使付出生命也要送达；有些遗憾，是活着的人必须背负的重量。
+    但那些爱，从来不会消失——它们会变成夜空中的光，照亮下一个迷路的人。
+    晴山家的蓝色，终究没能染到世界。但雪的手中，已经有了月光。

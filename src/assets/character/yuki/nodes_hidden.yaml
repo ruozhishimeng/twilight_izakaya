@@ -1,0 +1,116 @@
+character_id: yuki
+nodes:
+  # ========================================
+  # 隐藏剧情节点
+  # ========================================
+
+  - id: hidden_truth
+    event_id: "yuki_hidden_truth"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "灯光微微闪烁。"
+      - "她的身影变得有些透明。"
+    speaker: null
+    content: []
+    player_options: []
+    next_node: null
+    unlock_gallery: "the_truth"
+
+  - id: hidden_blue_rain
+    event_id: "yuki_hidden_blue_rain"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "雨声似乎变小了。"
+      - "变成了另一种声音。"
+    speaker: null
+    content:
+      - "「......你听到了吗？」"
+      - "「那是蓝染布滴水的声音。」"
+      - "「小时候，家里穷......」"
+      - "「但哥哥总说，那是最好听的音乐。」"
+    player_options: []
+    next_node: null
+
+  - id: hidden_red_dye
+    event_id: "yuki_hidden_red_dye"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "她的手指无意识地转动着右腕的红绳。"
+    speaker: null
+    content:
+      - "「......妈妈把红色都倒进河里了。」"
+      - "「说是灾厄的颜色。」"
+      - "「但哥哥说，红色是好的。」"
+      - "「是太阳落山前最后一秒的颜色。」"
+      - "「......他把最后一段藏起来，给我系上了。」"
+    player_options: []
+    next_node: null
+    unlock_gallery: "red_yarn"
+
+  - id: hidden_sato_piano
+    event_id: "yuki_hidden_sato_piano"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "她的手指在空气中弹奏起旋律。"
+      - "不是《月光》，是别的曲子。"
+    speaker: null
+    content:
+      - "「......这是佐藤奶奶教我的第一首曲子。」"
+      - "「她说，会弹琴的孩子，不会变坏。」"
+      - "「......但奶奶后来也不在了。」"
+      - "「钢琴店也关了。」"
+      - "「现在那里变成了一家居酒屋。」"
+    player_options: []
+    next_node: null
+    unlock_gallery: "sato_piano"
+
+  - id: hidden_brother_last_words
+    event_id: "yuki_hidden_brother_last_words"
+    trigger_condition:
+      need_event: ["yuki_phase3_redemption"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "她的眼神变得遥远。"
+      - "像是在看着某个不在这里的人。"
+    speaker: null
+    content:
+      - "「......哥哥最后说的是。」"
+      - "「'小雪，对不起，哥食言了'。」"
+      - "「......但他不欠我的。」"
+      - "「是我......一直欠着他。」"
+    player_options: []
+    next_node: null
+    unlock_gallery: "brother"
+
+  - id: hidden_cat_return
+    event_id: "yuki_hidden_cat_return"
+    trigger_condition:
+      need_event: ["yuki_phase3_redemption"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "雨声似乎停了。"
+      - "不，不是停了......是在回应什么。"
+    speaker: null
+    content:
+      - "「......小墨。」"
+      - "「它一直都在。」"
+      - "「在事故现场附近徘徊。」"
+      - "「后来被一个好心的老板娘收养了。」"
+      - "「......也许它也在等什么人。」"
+    player_options: []
+    next_node: null
+    unlock_gallery: "black_cat"

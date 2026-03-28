@@ -1,0 +1,1209 @@
+{
+  "meta": {
+    "name": "黄昏居酒屋 · 酒谱总览",
+    "version": "3.3",
+    "generated_at": "2026-03-21T00:00:00.000Z"
+  },
+  "ingredients": {
+    "bases": {
+      "japanese": [
+        {
+          "id": "bj01",
+          "name": "纯米清酒",
+          "category": "日式基底酒",
+          "tag1": "日式",
+          "tag2": "米香",
+          "emotion_tag": "怀旧",
+          "gallery_description": "最日常的日本清酒，米香清淡，微微甘甜，像是邻居家的晚饭香气。",
+          "unlocked": true
+        },
+        {
+          "id": "bj02",
+          "name": "甘酒",
+          "category": "日式基底酒",
+          "tag1": "日式",
+          "tag2": "甘甜",
+          "emotion_tag": "留恋",
+          "gallery_description": "米曲发酵的甘酒，甜而不腻，像是小时候偷喝的醪糟。",
+          "unlocked": true
+        },
+        {
+          "id": "bj03",
+          "name": "日本威士忌",
+          "category": "日式基底酒",
+          "tag1": "日式",
+          "tag2": "烟熏",
+          "emotion_tag": "孤独",
+          "gallery_description": "山崎蒸馏厂的杰作，烟熏味中带着东方特有的细腻。",
+          "unlocked": false
+        },
+        {
+          "id": "bj04",
+          "name": "抹茶",
+          "category": "日式基底酒",
+          "tag1": "日式",
+          "tag2": "苦涩",
+          "emotion_tag": "迷茫",
+          "gallery_description": "茶道的苦涩，一期一会的禅意。",
+          "unlocked": false
+        },
+        {
+          "id": "bj05",
+          "name": "烧酌",
+          "category": "日式基底酒",
+          "tag1": "日式",
+          "tag2": "辛辣",
+          "emotion_tag": "执念",
+          "gallery_description": "九州的烈酒，芋头的辛辣，像是对着海风喝下的孤独。",
+          "unlocked": false
+        },
+        {
+          "id": "bj06",
+          "name": "梅酒",
+          "category": "日式基底酒",
+          "tag1": "日式",
+          "tag2": "酸甜",
+          "emotion_tag": "怀旧",
+          "gallery_description": "九州的梅子酒，酸甜中带着夏天的味道，像是外婆酿的那一罐。",
+          "unlocked": true
+        },
+        {
+          "id": "bj07",
+          "name": "泡盛",
+          "category": "日式基底酒",
+          "tag1": "日式",
+          "tag2": "米香",
+          "emotion_tag": "怀旧",
+          "gallery_description": "琉球群岛的特产，米香中带着海风的咸涩。",
+          "unlocked": false
+        }
+      ],
+      "classic": [
+        {
+          "id": "bc01",
+          "name": "威士忌",
+          "category": "经典基底酒",
+          "tag1": "西式",
+          "tag2": "烟熏",
+          "emotion_tag": "孤独",
+          "gallery_description": "苏格兰的泥煤烟熏，醇厚中带着时间的重量。",
+          "unlocked": true
+        },
+        {
+          "id": "bc02",
+          "name": "伦敦干金酒",
+          "category": "经典基底酒",
+          "tag1": "西式",
+          "tag2": "清冷",
+          "emotion_tag": "迷茫",
+          "gallery_description": "杜松子的清香，伦敦的雨，清醒而冷冽。",
+          "unlocked": true
+        },
+        {
+          "id": "bc03",
+          "name": "伏特加",
+          "category": "经典基底酒",
+          "tag1": "西式",
+          "tag2": "纯净",
+          "emotion_tag": "忘却",
+          "gallery_description": "俄罗斯的伏特加，透明如水，却能燃烧。",
+          "unlocked": true
+        },
+        {
+          "id": "bc04",
+          "name": "陈年朗姆酒",
+          "category": "经典基底酒",
+          "tag1": "西式",
+          "tag2": "甘甜",
+          "emotion_tag": "重逢",
+          "gallery_description": "加勒比的海风，陈年的甘蔗甜。",
+          "unlocked": true
+        },
+        {
+          "id": "bc05",
+          "name": "龙舌兰",
+          "category": "经典基底酒",
+          "tag1": "西式",
+          "tag2": "辛辣",
+          "emotion_tag": "执念",
+          "gallery_description": "墨西哥的烈阳，草本与矿物，像是大地的血液。",
+          "unlocked": false
+        },
+        {
+          "id": "bc06",
+          "name": "生命之水",
+          "category": "经典基底酒",
+          "tag1": "西式",
+          "tag2": "纯净",
+          "emotion_tag": "释然",
+          "gallery_description": "96度的纯粹，接近透明的重生之水。",
+          "unlocked": false
+        },
+        {
+          "id": "bc07",
+          "name": "君度橙酒",
+          "category": "经典基底酒",
+          "tag1": "西式",
+          "tag2": "甘甜",
+          "emotion_tag": "留恋",
+          "gallery_description": "法国的橙香甜酒，宫廷的优雅与甜蜜。",
+          "unlocked": false
+        }
+      ]
+    },
+    "mixers": [
+      {
+        "id": "m01",
+        "name": "苏打水",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "气泡",
+        "emotion_tag": "希望",
+        "gallery_description": "最清爽的气泡，像是把夏天的风装进杯子。",
+        "unlocked": true
+      },
+      {
+        "id": "m02",
+        "name": "浓缩咖啡",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "苦涩",
+        "emotion_tag": "迷茫",
+        "gallery_description": "深夜的清醒，苦涩中带着清醒的力量。",
+        "unlocked": false
+      },
+      {
+        "id": "m03",
+        "name": "厚奶cream",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "浓郁",
+        "emotion_tag": "慰藉",
+        "gallery_description": "丝滑的浓郁，像被厚毯包裹的温暖。",
+        "unlocked": false
+      },
+      {
+        "id": "m04",
+        "name": "苦艾酒",
+        "category": "配酒",
+        "tag1": "西式",
+        "tag2": "苦涩",
+        "emotion_tag": "孤独",
+        "gallery_description": "茴香的苦涩，法国的忧郁，诗人之酒。",
+        "unlocked": false
+      },
+      {
+        "id": "m05",
+        "name": "番茄汁",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "果香",
+        "emotion_tag": "离别",
+        "gallery_description": "鲜红的番茄汁，像是液态的生命。",
+        "unlocked": false
+      },
+      {
+        "id": "m06",
+        "name": "姜汁汽水",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "辛辣",
+        "emotion_tag": "执念",
+        "gallery_description": "姜的辛辣，气泡的刺激，像是冬日里的一把火。",
+        "unlocked": false
+      },
+      {
+        "id": "m07",
+        "name": "通宁水",
+        "category": "配酒",
+        "tag1": "西式",
+        "tag2": "苦涩",
+        "emotion_tag": "孤独",
+        "gallery_description": "奎宁的苦，像是英式花园里的冷雨。",
+        "unlocked": true
+      },
+      {
+        "id": "m08",
+        "name": "可尔必思",
+        "category": "配酒",
+        "tag1": "日式",
+        "tag2": "甘甜",
+        "emotion_tag": "怀旧",
+        "gallery_description": "日本特有的乳酸饮料，酸酸甜甜的童年味道。",
+        "unlocked": false
+      },
+      {
+        "id": "m09",
+        "name": "乌龙茶",
+        "category": "配酒",
+        "tag1": "日式",
+        "tag2": "苦涩",
+        "emotion_tag": "迷茫",
+        "gallery_description": "半发酵的乌龙，焙火香中带着时间的沉稳。",
+        "unlocked": true
+      },
+      {
+        "id": "m10",
+        "name": "柠檬汁",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "果香",
+        "emotion_tag": "希望",
+        "gallery_description": "鲜榨的柠檬汁，酸涩中带着阳光。",
+        "unlocked": true
+      },
+      {
+        "id": "m11",
+        "name": "橙汁",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "果香",
+        "emotion_tag": "重逢",
+        "gallery_description": "鲜榨的橙汁，像是早晨的第一缕阳光。",
+        "unlocked": false
+      },
+      {
+        "id": "m12",
+        "name": "可乐",
+        "category": "配酒",
+        "tag1": "西式",
+        "tag2": "甘甜",
+        "emotion_tag": "忘却",
+        "gallery_description": "焦糖的甜，气泡的刺激，美国的快乐水。",
+        "unlocked": true
+      },
+      {
+        "id": "m13",
+        "name": "椰浆",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "浓郁",
+        "emotion_tag": "慰藉",
+        "gallery_description": "东南亚的椰浆，浓郁奶香中的热带风情。",
+        "unlocked": false
+      },
+      {
+        "id": "m14",
+        "name": "杏仁酒",
+        "category": "配酒",
+        "tag1": "西式",
+        "tag2": "甘甜",
+        "emotion_tag": "宽恕",
+        "gallery_description": "杏仁的甜香中带着微微的苦，成熟的滋味。",
+        "unlocked": false
+      },
+      {
+        "id": "m15",
+        "name": "味美思",
+        "category": "配酒",
+        "tag1": "西式",
+        "tag2": "甘甜",
+        "emotion_tag": "怀旧",
+        "gallery_description": "法国的味美思，甜蜜中带着草药的香气，像是午后的慵懒时光。",
+        "unlocked": true
+      },
+      {
+        "id": "m16",
+        "name": "葡萄汁",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "果香",
+        "emotion_tag": "初恋",
+        "gallery_description": "新鲜的葡萄榨汁，甜中带着一丝酸涩，像是初恋的味道。",
+        "unlocked": true
+      }
+    ],
+    "flavors": [
+      {
+        "id": "f01",
+        "name": "方糖",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "甘甜",
+        "emotion_tag": "留恋",
+        "gallery_description": "最简单的甜味来源，像是童年时偷吃的那一块糖。",
+        "unlocked": true
+      },
+      {
+        "id": "f02",
+        "name": "海盐",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "咸味",
+        "emotion_tag": "离别",
+        "gallery_description": "海风的咸涩，像是离别的泪水。",
+        "unlocked": true
+      },
+      {
+        "id": "f03",
+        "name": "隔世砂糖",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "甘甜",
+        "emotion_tag": "重逢",
+        "gallery_description": "甘蔗提炼的古老甜味，像是跨越时光的问候。",
+        "unlocked": false
+      },
+      {
+        "id": "f04",
+        "name": "彼岸花瓣",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "花香",
+        "emotion_tag": "新生",
+        "gallery_description": "彼岸的花，带着生死交界的神秘气息。",
+        "unlocked": false
+      },
+      {
+        "id": "f05",
+        "name": "柠檬皮",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "果香",
+        "emotion_tag": "希望",
+        "gallery_description": "柠檬皮屑的清香，点亮整杯酒的灵魂。",
+        "unlocked": false
+      },
+      {
+        "id": "f06",
+        "name": "柠檬",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "果香",
+        "emotion_tag": "迷茫",
+        "gallery_description": "鲜柠檬的酸涩，是清醒的味道。",
+        "unlocked": true
+      },
+      {
+        "id": "f07",
+        "name": "樱桃利口酒",
+        "category": "风味剂",
+        "tag1": "西式",
+        "tag2": "甘甜",
+        "emotion_tag": "留恋",
+        "gallery_description": "樱桃的甜香，像是初恋的味道。",
+        "unlocked": false
+      },
+      {
+        "id": "f08",
+        "name": "薄荷",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "清凉",
+        "emotion_tag": "平静",
+        "gallery_description": "清凉的薄荷，像是夏夜的微风。",
+        "unlocked": true
+      },
+      {
+        "id": "f09",
+        "name": "黑胡椒",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "辛辣",
+        "emotion_tag": "执念",
+        "gallery_description": "辛辣的黑胡椒，是味蕾的觉醒。",
+        "unlocked": false
+      },
+      {
+        "id": "f10",
+        "name": "肉桂",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "温热",
+        "emotion_tag": "怀旧",
+        "gallery_description": "肉桂的温热，像是外婆厨房里的冬天。",
+        "unlocked": false
+      },
+      {
+        "id": "f11",
+        "name": "接骨木花露",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "花香",
+        "emotion_tag": "共鸣",
+        "gallery_description": "接骨木花的清香，像是祖母的守护。",
+        "unlocked": false
+      },
+      {
+        "id": "f12",
+        "name": "烧焦的松针",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "烟熏",
+        "emotion_tag": "忘却",
+        "gallery_description": "烧焦松木的烟熏，像是森林深处的安息。",
+        "unlocked": false
+      },
+      {
+        "id": "f13",
+        "name": "晨曦微光",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "温热",
+        "emotion_tag": "希望",
+        "gallery_description": "黎明时分的第一缕光，温柔而充满希望。",
+        "unlocked": false
+      },
+      {
+        "id": "f14",
+        "name": "苦精",
+        "category": "风味剂",
+        "tag1": "西式",
+        "tag2": "苦涩",
+        "emotion_tag": "孤独",
+        "gallery_description": "多种草药萃取的苦精，少量即可点亮整杯酒。",
+        "unlocked": false
+      },
+      {
+        "id": "f15",
+        "name": "盐",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "咸味",
+        "emotion_tag": "离别",
+        "gallery_description": "最简单的调味，却能平衡所有的甜与苦。",
+        "unlocked": true
+      },
+      {
+        "id": "f16",
+        "name": "蓝柑桂",
+        "category": "风味剂",
+        "tag1": "西式",
+        "tag2": "果香",
+        "emotion_tag": "遗忘",
+        "gallery_description": "蓝色的柑橘利口酒，像是加勒比的海。",
+        "unlocked": false
+      },
+      {
+        "id": "f17",
+        "name": "蜂蜜",
+        "category": "风味剂",
+        "tag1": "通用",
+        "tag2": "甘甜",
+        "emotion_tag": "慰藉",
+        "gallery_description": "天然蜂蜜的甜润，像是蜜蜂的亲吻。",
+        "unlocked": false
+      },
+      {
+        "id": "f18",
+        "name": "柚子酱",
+        "category": "风味剂",
+        "tag1": "日式",
+        "tag2": "果香",
+        "emotion_tag": "共鸣",
+        "gallery_description": "日本柚子的果香，清新中带着微微的苦。",
+        "unlocked": false
+      }
+    ]
+  },
+  "recipes": [
+    {
+      "id": "R001",
+      "name": "未竟的生诞",
+      "formula": [
+        "bc01",
+        "m04",
+        "f03"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "孤独",
+        "重逢"
+      ],
+      "gallery_description": "送给离去之人的酒。烟熏味深处藏着的一丝甜，像是生命最后的光。",
+      "target_npc": "NPC_01_DeliveryMan",
+      "series": "npc专属系列"
+    },
+    {
+      "id": "R002",
+      "name": "寻猫的午后",
+      "formula": [
+        "bj01",
+        "m03",
+        "f11"
+      ],
+      "tag1": "日式",
+      "tag2": "花香",
+      "emotion_tags": [
+        "怀旧",
+        "慰藉",
+        "共鸣"
+      ],
+      "gallery_description": "送给守望者的酒。奶香与花香的缠绕，是漫长的等待。",
+      "target_npc": "NPC_02_Sister",
+      "series": "npc专属系列"
+    },
+    {
+      "id": "R003",
+      "name": "血腥玛丽",
+      "formula": [
+        "bc03",
+        "m05",
+        "f14",
+        "f06",
+        "f09",
+        "f15"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "忘却",
+        "离别",
+        "孤独",
+        "迷茫",
+        "执念"
+      ],
+      "gallery_description": "红的像血，辣得像生活，每一口都是真实的清醒。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R004",
+      "name": "教父",
+      "formula": [
+        "bc01",
+        "m14"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "孤独",
+        "宽恕"
+      ],
+      "gallery_description": "威士忌与杏仁的邂逅。醇厚中带着一丝苦涩，像是成年人的沉默。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R005",
+      "name": "玛格丽特",
+      "formula": [
+        "bc05",
+        "bc07",
+        "m10",
+        "f15"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "执念",
+        "留恋",
+        "希望",
+        "离别"
+      ],
+      "gallery_description": "龙舌兰的烈、君度的甜、柠檬的酸——沙漠里的绿洲。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R006",
+      "name": "马丁尼",
+      "formula": [
+        "bc02",
+        "m04"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "迷茫",
+        "孤独"
+      ],
+      "gallery_description": "金酒与苦艾酒的相遇，简洁而深邃。鸡尾酒之王。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R007",
+      "name": "曼哈顿",
+      "formula": [
+        "bc01",
+        "m04",
+        "f07"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "孤独",
+        "留恋"
+      ],
+      "gallery_description": "威士忌与甜苦艾酒的经典组合，纽约的夜色。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R008",
+      "name": "古典",
+      "formula": [
+        "bc01",
+        "f01",
+        "f09"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "孤独",
+        "留恋",
+        "执念"
+      ],
+      "gallery_description": "威士忌、糖、苦精——回到最初的鸡尾酒，最简单的往往最经典。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R009",
+      "name": "螺丝刀",
+      "formula": [
+        "bc03",
+        "m11"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "忘却",
+        "重逢"
+      ],
+      "gallery_description": "伏特加与橙汁的邂逅，苏联工人的智慧，清晨的太阳。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R010",
+      "name": "伏特加汤力",
+      "formula": [
+        "bc03",
+        "m07"
+      ],
+      "tag1": "西式",
+      "tag2": "清冷",
+      "emotion_tags": [
+        "忘却",
+        "孤独"
+      ],
+      "gallery_description": "伏特加与通宁水的结合，简洁的刺激，透明的清醒。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R011",
+      "name": "金菲士",
+      "formula": [
+        "bc02",
+        "m10",
+        "f08"
+      ],
+      "tag1": "西式",
+      "tag2": "清凉",
+      "emotion_tags": [
+        "迷茫",
+        "希望",
+        "平静"
+      ],
+      "gallery_description": "金酒、柠檬、薄荷的清爽组合，气泡在舌尖跳舞。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R012",
+      "name": "莫吉托",
+      "formula": [
+        "bc04",
+        "m10",
+        "f08",
+        "f02"
+      ],
+      "tag1": "西式",
+      "tag2": "清凉",
+      "emotion_tags": [
+        "重逢",
+        "希望",
+        "平静",
+        "离别"
+      ],
+      "gallery_description": "朗姆酒与薄荷的清爽相遇，青柠的酸涩是海岸线的味道。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R013",
+      "name": "自由古巴",
+      "formula": [
+        "bc04",
+        "m12",
+        "m10"
+      ],
+      "tag1": "西式",
+      "tag2": "甘甜",
+      "emotion_tags": [
+        "重逢",
+        "忘却",
+        "希望"
+      ],
+      "gallery_description": "朗姆酒与可乐的碰撞，是雪茄与蔗糖的南国。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R014",
+      "name": "蓝色夏威夷",
+      "formula": [
+        "bc03",
+        "m11",
+        "m13",
+        "f16"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "忘却",
+        "重逢",
+        "慰藉",
+        "遗忘"
+      ],
+      "gallery_description": "伏特加、蓝柑桂、椰浆——度假的颜色，蓝天白云下的梦境。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R015",
+      "name": "新加坡司令",
+      "formula": [
+        "bc02",
+        "m11",
+        "m10",
+        "f07",
+        "f01"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "迷茫",
+        "重逢",
+        "希望",
+        "留恋"
+      ],
+      "gallery_description": "金酒与柠檬、樱桃的相遇，殖民地的记忆与东方的优雅。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R016",
+      "name": "僵尸",
+      "formula": [
+        "bc03",
+        "bc05",
+        "m11",
+        "m10",
+        "f07"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "忘却",
+        "执念",
+        "重逢",
+        "希望",
+        "留恋"
+      ],
+      "gallery_description": "三种酒的热带组合，危险的美丽，喝完你会知道为什么叫僵尸。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R017",
+      "name": "飞行",
+      "formula": [
+        "bc02",
+        "m10",
+        "f07",
+        "f11"
+      ],
+      "tag1": "西式",
+      "tag2": "花香",
+      "emotion_tags": [
+        "迷茫",
+        "希望",
+        "留恋",
+        "共鸣"
+      ],
+      "gallery_description": "金酒、柠檬、樱桃、接骨木——云端的滋味，起飞前最后一杯。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R018",
+      "name": "边车",
+      "formula": [
+        "bc05",
+        "m10",
+        "bc07"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "执念",
+        "希望",
+        "留恋"
+      ],
+      "gallery_description": "龙舌兰、君度、柠檬——摩托车旅行的味道，公路的浪漫。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R019",
+      "name": "净化之泪",
+      "formula": [
+        "bc06",
+        "m07",
+        "f02"
+      ],
+      "tag1": "西式",
+      "tag2": "清冷",
+      "emotion_tags": [
+        "释然",
+        "孤独",
+        "离别"
+      ],
+      "gallery_description": "生命之水与通宁水的结合，海盐带来远方的咸涩，泪水洗净铅华。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R020",
+      "name": "极光",
+      "formula": [
+        "bc06",
+        "bj04",
+        "f13"
+      ],
+      "tag1": "通用",
+      "tag2": "温热",
+      "emotion_tags": [
+        "释然",
+        "迷茫",
+        "希望"
+      ],
+      "gallery_description": "生命之水与抹茶的相遇，晨曦微光带来重生的温暖，黎明前的黑暗。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R021",
+      "name": "纯米嗨棒",
+      "formula": [
+        "bj01",
+        "m01"
+      ],
+      "tag1": "日式",
+      "tag2": "气泡",
+      "emotion_tags": [
+        "怀旧",
+        "希望"
+      ],
+      "gallery_description": "纯米清酒与苏打水的简单结合，日本人的日常。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R022",
+      "name": "甘酒嗨棒",
+      "formula": [
+        "bj02",
+        "m01"
+      ],
+      "tag1": "日式",
+      "tag2": "甘甜",
+      "emotion_tags": [
+        "留恋",
+        "希望"
+      ],
+      "gallery_description": "甘酒与苏打水的相遇，温暖的甜蜜，像小时候的味道。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R023",
+      "name": "抹茶椰林",
+      "formula": [
+        "bj04",
+        "m13",
+        "f17"
+      ],
+      "tag1": "日式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "迷茫",
+        "慰藉"
+      ],
+      "gallery_description": "抹茶与椰浆的相遇，蜂蜜的甜是南国的温柔，茶香与椰风的私语。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R024",
+      "name": "梅酒嗨棒",
+      "formula": [
+        "bj06",
+        "m01"
+      ],
+      "tag1": "日式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "怀旧",
+        "留恋",
+        "希望"
+      ],
+      "gallery_description": "清酒与梅酒的结合，日本的夏天，梅子的酸甜。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R025",
+      "name": "柚子蜂蜜",
+      "formula": [
+        "bj01",
+        "f18",
+        "f17"
+      ],
+      "tag1": "日式",
+      "tag2": "甘甜",
+      "emotion_tags": [
+        "怀旧",
+        "共鸣",
+        "慰藉"
+      ],
+      "gallery_description": "清酒与柚子酱、蜂蜜的温柔组合，柚子的清香，蜂蜜的温润。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R026",
+      "name": "蜜柚茶",
+      "formula": [
+        "bj01",
+        "m09",
+        "f17"
+      ],
+      "tag1": "日式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "怀旧",
+        "迷茫",
+        "慰藉"
+      ],
+      "gallery_description": "清酒与乌龙茶、蜂蜜的结合，是成熟果实的温柔，秋日的私语。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R027",
+      "name": "烧酌嗨棒",
+      "formula": [
+        "bj05",
+        "m01"
+      ],
+      "tag1": "日式",
+      "tag2": "辛辣",
+      "emotion_tags": [
+        "执念",
+        "希望"
+      ],
+      "gallery_description": "烧酌与苏打水的简单结合，九州的夜晚，芋香与气泡的邂逅。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R028",
+      "name": "芋感HIGHBALL",
+      "formula": [
+        "bj05",
+        "m06",
+        "m10"
+      ],
+      "tag1": "日式",
+      "tag2": "辛辣",
+      "emotion_tags": [
+        "执念",
+        "希望"
+      ],
+      "gallery_description": "烧酌与姜汁汽水、青柠的碰撞，汗水与笑声，辛辣中的清醒。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R029",
+      "name": "泡盛嗨棒",
+      "formula": [
+        "bj07",
+        "m01"
+      ],
+      "tag1": "日式",
+      "tag2": "米香",
+      "emotion_tags": [
+        "怀旧",
+        "希望"
+      ],
+      "gallery_description": "泡盛与苏打水的相遇，琉球的海风，南海的风带着稻香。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R030",
+      "name": "泡盛荔枝",
+      "formula": [
+        "bj07",
+        "m11",
+        "f07"
+      ],
+      "tag1": "日式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "怀旧",
+        "重逢",
+        "留恋"
+      ],
+      "gallery_description": "泡盛与橙汁、荔枝香的结合，是海岛的风情，热带的风土。",
+      "target_npc": "Generic",
+      "series": "日式经典系列"
+    },
+    {
+      "id": "R031",
+      "name": "大卫·马丁内斯",
+      "formula": [
+        "bc01",
+        "m02",
+        "f01"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "孤独",
+        "迷茫",
+        "留恋"
+      ],
+      "gallery_description": "威士忌与咖啡的结合，城市的深夜，苦涩的清醒，像是凌晨四点的灯火。",
+      "target_npc": "Generic",
+      "series": "隐藏菜单"
+    },
+    {
+      "id": "R032",
+      "name": "莫斯科骡子",
+      "formula": [
+        "bc03",
+        "m10",
+        "m06"
+      ],
+      "tag1": "西式",
+      "tag2": "辛辣",
+      "emotion_tags": [
+        "忘却",
+        "希望",
+        "执念"
+      ],
+      "gallery_description": "伏特加、姜汁、柠檬的组合，最重要的永远是那一块冰。",
+      "target_npc": "Generic",
+      "series": "隐藏菜单"
+    },
+    {
+      "id": "R033",
+      "name": "居酒屋的黄昏",
+      "formula": [
+        "bj01",
+        "bc01",
+        "bc02",
+        "bc03",
+        "f13"
+      ],
+      "tag1": "通用",
+      "tag2": "温热",
+      "emotion_tags": [
+        "怀旧",
+        "孤独",
+        "迷茫",
+        "忘却",
+        "希望"
+      ],
+      "gallery_description": "黄昏的终极之酒，所有故事的滋味汇聚于一杯。",
+      "target_npc": "Generic",
+      "series": "npc专属系列"
+    },
+    {
+      "id": "R034",
+      "name": "止痛药",
+      "formula": [
+        "bc04",
+        "m13",
+        "m11"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "孤独",
+        "离别",
+        "执念",
+        "慰藉"
+      ],
+      "gallery_description": "朗姆酒与椰浆、橙汁的温柔相遇，像是给伤心人的一剂良药。苦中带甜，治愈而非遗忘。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R035",
+      "name": "花花公子",
+      "formula": [
+        "bc01",
+        "m15",
+        "m11"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "怀念",
+        "重逢",
+        "岁月"
+      ],
+      "gallery_description": "威士忌与味美思的邂逅，橙汁的酸甜点缀其间。像是午后阳光下的一本闲书，慵懒而惬意。",
+      "target_npc": "Generic",
+      "series": "经典系列"
+    },
+    {
+      "id": "R036",
+      "name": "告白",
+      "formula": [
+        "bc03",
+        "m08",
+        "m16"
+      ],
+      "tag1": "日式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "勇气",
+        "心动",
+        "初恋"
+      ],
+      "gallery_description": "伏特加的烈、可尔必思的甜、葡萄汁的酸涩交织在一起。像是鼓起勇气说出口的那句话，心跳加速，却又甜蜜非常。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R037",
+      "name": "青玉案",
+      "formula": [
+        "bc04",
+        "bc02",
+        "m11",
+        "m09"
+      ],
+      "tag1": "日式",
+      "tag2": "茶香",
+      "emotion_tags": [
+        "沉淀",
+        "回甘",
+        "岁月"
+      ],
+      "gallery_description": "朗姆的醇厚、金酒的清冽、橙汁的酸甜、乌龙茶的苦涩。四者交织，像是人生百味，苦尽甘来。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    }
+  ]
+}

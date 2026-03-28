@@ -1,0 +1,519 @@
+character_id: yuki
+nodes:
+  # ========================================
+  # Phase 1 - 初见：湿透的少女
+  # ========================================
+
+  - event_id: yuki_001_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 木门被轻轻推开。
+          - 没有风铃声。
+          - 一个湿透的水手服少女站在门口，深蓝色的制服贴在身上。
+          - 她的眼睛空洞却又执着，像是在看着某个不在这里的人。
+      - type: npc
+        content:
+          - 「......」
+          - 「这里...有酒吗？」
+    player_options:
+      - option: 「欢迎光临，请进来坐吧。」
+        text: 「欢迎光临，请进来坐吧。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......不用。」
+        next_node: yuki_001b_dialogue_main
+        impact_log: 欢迎小雪
+      - option: 「你的衣服都湿了，要不要先擦一擦？」
+        text: 「你的衣服都湿了，要不要先擦一擦？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......马上就会干的。」
+        next_node: yuki_001c_dialogue_main
+        impact_log: 关心她的状态
+    next_node: null
+
+  - event_id: yuki_001b_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_001_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她没有动，只是站在门口。
+          - 手指微微动了动，像是在弹奏什么。
+      - type: npc
+        content:
+          - 「......不用。」
+          - 「我在等一个人。」
+    player_options: []
+    next_node: yuki_002_dialogue_main
+
+  - event_id: yuki_001c_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_001_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她低头看了看自己的衣服。
+          - 像是第一次发现自己是湿的。
+      - type: npc
+        content:
+          - 「......不用。」
+          - 「马上就会干的。」
+    player_options: []
+    next_node: yuki_002_dialogue_main
+
+  - event_id: yuki_002_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_001_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的目光扫过吧台，最后落在某个空荡的位置。
+          - 右腕的红绳在昏黄的灯光下微微发亮。
+      - type: npc
+        content:
+          - 「......」
+          - 「你在等人吗？」
+          - 「我也在等。」
+    player_options:
+      - option: 「你在等谁？」
+        text: 「你在等谁？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......哥哥。」
+        next_node: yuki_002b_dialogue_main
+        impact_log: 询问等待的人
+      - option: 「......」
+        text: 「......」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......」
+        next_node: yuki_003_drink_request
+        impact_log: 沉默
+    next_node: null
+
+  - event_id: yuki_002b_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_002_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的手指停在空气中，像是在按压无形的琴键。
+      - type: npc
+        content:
+          - 「......哥哥。」
+          - 「他说天黑前一定回来。」
+          - 「......雨太大了，但我知道他马上就到。」
+    player_options: []
+    next_node: yuki_003_drink_request
+
+  - event_id: yuki_003_drink_request
+    trigger_condition:
+      need_event: ["yuki_002_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的眼神有些迷离。
+          - 手指继续在空气中轻轻弹动。
+      - type: npc
+        content:
+          - 「......有那种，让人想起重要的人的酒吗？」
+    player_options: []
+    next_node: null
+    drink_request:
+      keywords: ["想起", "重要的人", "哥哥"]
+      hint: 她的手指在空气中弹动，像是在演奏一首无声的曲子。
+
+  # ========================================
+  # Phase 1 - 调酒结果
+  # ========================================
+
+  - event_id: yuki_phase1_most_loved_success
+    trigger_condition:
+      need_event: ["yuki_003_drink_request"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她接过酒杯，抿了一口。
+          - 手指停在半空，眼神有了一瞬的变化。
+      - type: npc
+        content:
+          - 「......这个味道。」
+          - 「像哥哥......」
+          - 「......不说了。我得走了。天快黑了。」
+    player_options: []
+    next_node: null
+    diary_note: "一个湿透的女孩在等哥哥，说天黑前他会回来。外面的雨那么大...她不知道，有些承诺永远无法兑现了。"
+    on_success:
+      next_phase: 2
+
+  - event_id: yuki_phase1_generally_liked_success
+    trigger_condition:
+      need_event: ["yuki_003_drink_request"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她一口喝了大半杯，若有所思。
+      - type: npc
+        content:
+          - 「......谢谢。」
+          - 「我得走了。」
+    player_options: []
+    next_node: null
+    diary_note: '小雪喝了酒，说"谢谢"。她走的时候，水手服还是湿的...雨什么时候能停呢？'
+    on_success:
+      next_phase: idle
+
+  - event_id: yuki_phase1_regular_success
+    trigger_condition:
+      need_event: ["yuki_003_drink_request"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她礼貌地点点头，把酒一饮而尽。
+      - type: npc
+        content:
+          - 「......谢了。」
+    player_options: []
+    next_node: null
+    diary_note: '小雪走了，只说了句"谢了"。她的眼神还是空洞的...像是在看着某个不在这里的人。'
+    on_success:
+      next_phase: null
+
+  # ========================================
+  # Phase 2 - 破冰：记忆的碎片
+  # ========================================
+
+  - event_id: yuki_004_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她再次出现在门口。
+          - 水手服依然湿透，但这次她的眼神有了一丝焦点。
+          - 肩上背着一个空荡的猫包。
+      - type: npc
+        content:
+          - 「......我又来了。」
+          - 「今天的雨......小一点了。」
+    player_options:
+      - option: 「你还在等哥哥吗？」
+        text: 「你还在等哥哥吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......嗯。」
+        next_node: yuki_004b_dialogue_main
+        impact_log: 询问哥哥
+      - option: 「今天没带猫出来吗？」
+        text: 「今天没带猫出来吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......小墨走丢了。」
+        next_node: yuki_004c_dialogue_main
+        impact_log: 询问猫
+    next_node: null
+
+  - event_id: yuki_004b_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_004_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的手指下意识地摸了摸右腕的红绳。
+      - type: npc
+        content:
+          - 「......嗯。」
+          - 「哥哥说天黑前一定回来。」
+          - 「他从来不骗我的。」
+    player_options: []
+    next_node: yuki_005_dialogue_main
+
+  - event_id: yuki_004c_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_004_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的手指停在猫包上，微微颤抖。
+      - type: npc
+        content:
+          - 「......小墨走丢了。」
+          - 「那天晚上，它一直跟在我后面......」
+          - 「但我回头的时候，它就不见了。」
+    player_options: []
+    next_node: yuki_005_dialogue_main
+
+  - event_id: yuki_005_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_004_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她从怀里掏出一个小布袋。
+          - 里面装着碎裂的玻璃和金属片。
+      - type: npc
+        content:
+          - 「......这是哥哥送我的。」
+          - 「生日礼物。」
+          - 「我一直在找......想把它拼好。」
+    player_options: []
+    next_node: yuki_006_drink_request
+
+  - event_id: yuki_006_drink_request
+    trigger_condition:
+      need_event: ["yuki_005_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的手指轻轻敲着吧台，像是在弹奏什么。
+      - type: npc
+        content:
+          - 「......你听过《月光》吗？」
+          - 「哥哥说，他要把这旋律录进音乐盒里......」
+    player_options: []
+    next_node: null
+    drink_request:
+      keywords: ["月光", "哥哥", "音乐盒"]
+      hint: 她的手指在空气中弹奏《月光》的旋律。
+
+  # ========================================
+  # Phase 2 - 调酒结果
+  # ========================================
+
+  - event_id: yuki_phase2_most_loved_success
+    trigger_condition:
+      need_event: ["yuki_006_drink_request"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她接过酒杯，手指微微颤抖。
+          - 眼眶有什么在闪动。
+      - type: npc
+        content:
+          - 「这味道......」
+          - 「是《月光》的味道......」
+          - 「哥哥......」
+          - 「......我好像听到了什么。」
+    player_options: []
+    next_node: null
+    diary_note: "小雪说这酒有《月光》的味道，是哥哥录音进音乐盒里的那首曲子。她的眼泪终于落下来了...却不知为何。"
+    on_success:
+      next_phase: 3
+
+  - event_id: yuki_phase2_generally_liked_success
+    trigger_condition:
+      need_event: ["yuki_006_drink_request"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她放下酒杯，若有所思地望着窗外。
+      - type: npc
+        content:
+          - 「......谢谢。」
+          - 「我得走了。雨停了就要天黑了。」
+    player_options: []
+    next_node: null
+    diary_note: "小雪说雨停了就要天黑了...可她不知道，对她来说，那天永远不会亮。"
+    on_success:
+      next_phase: idle
+
+  - event_id: yuki_phase2_regular_success
+    trigger_condition:
+      need_event: ["yuki_006_drink_request"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她沉默地喝着酒。
+      - type: npc
+        content:
+          - 「......」
+    player_options: []
+    next_node: null
+    diary_note: "她什么都没说，只是沉默地喝酒。有些悲伤，是说不出口的。"
+    on_success:
+      next_phase: null
+
+  # ========================================
+  # Phase 3 - 解脱：彼岸的重逢
+  # ========================================
+
+  - event_id: yuki_007_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她出现在门口。
+          - 这次，水手服似乎没有以前那么湿了。
+          - 她的眼神有了光。
+      - type: npc
+        content:
+          - 「......我听到了。」
+          - 「在梦里......哥哥的声音。」
+    player_options:
+      - option: 「你梦见了什么？」
+        text: 「你梦见了什么？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......他说，他做到了。」
+        next_node: yuki_007b_dialogue_main
+        impact_log: 询问梦境
+    next_node: null
+
+  - event_id: yuki_007b_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_007_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的手指轻轻颤抖着抬起。
+          - 开始在空气中弹奏。
+      - type: npc
+        content:
+          - 「他说......他做到了。」
+          - 「他一直都在。」
+          - 「但我......我得继续走下去。」
+    player_options: []
+    next_node: yuki_008_dialogue_main
+
+  - event_id: yuki_008_dialogue_main
+    trigger_condition:
+      need_event: ["yuki_007_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她把小布袋放在吧台上。
+          - 碎裂的音乐盒碎片在灯光下闪烁。
+      - type: npc
+        content:
+          - 「这个......我拼不好了。」
+          - 「但哥哥说......不用拼了。」
+          - 「他说音乐盒碎了，但旋律还在。」
+    player_options: []
+    next_node: yuki_009_redemption
+
+  - event_id: yuki_009_redemption
+    trigger_condition:
+      need_event: ["yuki_008_dialogue_main"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的手指在空气中弹奏起《月光》的旋律。
+          - 旋律回荡在居酒屋中，温柔而遥远。
+      - type: npc
+        content:
+          - 「......哥哥。」
+          - 「谢谢你。」
+          - 「我会继续走下去。」
+          - 「为了我自己。」
+    player_options: []
+    next_node: yuki_009_redemption_2
+
+  - event_id: yuki_009_redemption_2
+    trigger_condition:
+      need_event: ["yuki_009_redemption"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的眼泪终于落下来。
+          - 不是雨水，是真正的眼泪。
+      - type: npc
+        content:
+          - 「那场雨......终于停了。」
+    player_options: []
+    next_node: yuki_010_redemption_end
+
+  - event_id: yuki_010_redemption_end
+    trigger_condition:
+      need_event: ["yuki_009_redemption_2"]
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她的身影开始变得透明。
+          - 像雨后的晨雾，缓缓消散。
+      - type: npc
+        content:
+          - 「......再见了。」
+          - 「谢谢你这杯酒。」
+          - 「......保重。」
+    player_options: []
+    next_node: null
+    diary_note: '小雪走了，身影渐渐透明。她说"那场雨，终于停了"...我知道，她不是回家了，是终于解脱了。愿她找到她的哥哥。'
+    on_success:
+      next_phase: released
+      redemption_summary: |
+        小雪，晴山家的最后一个孩子。她的哥哥阿相在送她18岁生日礼物的路上遭遇车祸，再也没有回来。
+
+        从那天起，她就被困在那个雨夜。湿透的水手服再也没有干过。她每天都会出门，沿着电车轨道走，寻找哥哥和走丢的黑猫小墨。
+
+        但哥哥已经不在了。小墨也被附近的好心人收养了。只有她，还留在那个雨夜，等待一个永远不会到来的天黑。
+
+        直到今天，在这间黄昏的居酒屋，她终于听到了哥哥的声音。那首未完成的《月光》，终于有了结尾。
+
+        "小雪，哥做到了。但你要继续走下去。不是为了哥，是为了你自己。"
+
+        她终于哭了出来。那场雨，终于停了。

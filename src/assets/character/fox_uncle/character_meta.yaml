@@ -1,0 +1,72 @@
+character_id: fox_uncle
+base_info:
+  name: "狐面大叔"
+  real_name: "稻荷"
+  age: "未知"
+  identity: |
+    稻荷神，丰收与商业之神。居酒屋的第一任酒保，如今化作人形在黄昏时分来访，肩负教导新手调酒师的责任。袖口的稻穗刺绣透露着他的身份。
+  description: |
+    头戴狐狸面具的老者，拄着拐杖慢步走入。深蓝色的作务衣洗得发白，腰间挂着一个朱红色的大葫芦。脸上的面具歪歪的，像是随手一放。身上的气息...是陈年的酒香。
+  type: "鬼神"
+  personality: "慢节奏、慈祥、宽容、幕后老板"
+  short_story: |
+    他是这间店的第一任酒保，如今化作人形在黄昏时分来访。
+    袖口的稻穗刺绣透露着他的身份——稻荷神，丰收与商业之神。
+    上千年的岁月里，他见证了无数调酒师的成长。
+    「调酒不是炫技，是让人开口说话的艺术。」每一杯酒背后都有一个故事，而他愿意做那个倾听者。
+    千年守候，只为看着每一杯酒背后的故事。他曾是这间店的创始人，如今化作人形在黄昏时分来访。不为别的，只为将调酒的智慧与温柔传承下去。
+
+arrival_pattern: "fixed"
+fixed_schedule: "weekly_first"
+arrival_condition:
+  type: "always"
+  description: "第一周每隔一天来访一次；之后每周一只来访"
+  visits_schedule:
+    - week: 1
+      days: [1, 2, 3, 5, 7]  # 第一周：Day1, Day2, Day3, Day5, Day7
+    - week: 2
+      days: [8, 15]  # Day8复习，Day15自由练习
+    - week: 3+
+      days: [22]  # 之后每周一
+
+visits_planned: 7
+current_phase: 1
+
+teaching_domain:
+  - "调酒基础"
+  - "日式配料知识"
+  - "蜂蜜与甜味"
+  - "乌龙茶搭配"
+
+recipes_taught:
+  - id: "R021"
+    name: "纯米嗨棒"
+    taught_at: "visit_01"
+  - id: "R022"
+    name: "甘酒嗨棒"
+    taught_at: "visit_02"
+  - id: "R034"
+    name: "止痛药"
+    taught_at: "visit_03"
+  - id: "R026"
+    name: "蜜柚茶"
+    taught_at: "visit_05"
+
+rewards_given:
+  - id: "m08"
+    name: "可尔必思"
+    given_at: "visit_01"
+  - id: "bj04"
+    name: "抹茶"
+    given_at: "visit_02"
+  - id: "f17"
+    name: "蜂蜜"
+    given_at: "visit_03"
+  - id: "f18"
+    name: "柚子酱"
+    given_at: "visit_04"
+  - id: "m09"
+    name: "乌龙茶"
+    given_at: "visit_05"
+
+generated_at: "2026-03-21T00:00:00.000Z"

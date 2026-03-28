@@ -1,0 +1,65 @@
+character_id: fox_uncle
+observations:
+  - id: obs_head
+    area: 头部
+    group: phase_1
+    objective: 歪掉的狐狸面具
+    subjective: 戴得漫不经心，像是随手一放而非刻意佩戴。
+    hint: 这面具似乎不是他的束缚，而是某种习惯。
+    revealed_at: phase_1
+  - id: obs_waist
+    area: 腰间
+    group: phase_1
+    objective: 朱红色的大葫芦
+    subjective: 挂在那里像某种权威的象征，又像是一个古老的酒壶。
+    hint: 这葫芦里装的不是酒，是岁月的重量。
+    revealed_at: phase_1
+  - id: obs_expression
+    area: 神态
+    group: phase_1
+    objective: 慈祥的笑意
+    subjective: 皱纹里藏着故事，看你的眼神像看一个孩子。
+    hint: 年长许多的他，对待后辈有些严肃，但不带恶意。
+    revealed_at: phase_1
+  - id: obs_footsteps
+    area: 脚步
+    group: phase_2
+    objective: 沉稳的木屐声
+    subjective: 啪嗒、啪嗒，不疾不徐，节奏从未变过。
+    hint: 无论世事如何变迁，他的步伐从未慌乱。
+    revealed_at: phase_2
+  - id: obs_clothing
+    area: 衣着
+    group: phase_2
+    objective: 深蓝色作务衣
+    subjective: 洗得发白，布料却保养得很好，他似乎很钟爱这件衣服。
+    hint: 这是劳动者的衣服，也是手艺人的骄傲。
+    revealed_at: phase_2
+  - id: obs_sleeve
+    area: 袖口
+    group: phase_2
+    objective: 稻穗刺绣
+    subjective: 金色的稻穗绣在深蓝布料上，低调却醒目。
+    hint: 稻穗...丰收的象征，与他的神格有关。
+    revealed_at: phase_2
+  - id: obs_aura
+    area: 气息
+    group: phase_3
+    objective: 淡淡的陈年酒香
+    subjective: 不是香水或食物的味道，而是浸透衣物纤维的老酒香。
+    hint: 他与酒为伴太久，已融为一体。
+    revealed_at: phase_3
+  - id: obs_shadow
+    area: 影子
+    group: phase_3
+    objective: 九尾的狐狸轮廓
+    subjective: 在黄昏的光线下若隐若现，巨大而庄严。
+    hint: 仅在特殊光照下可见，那是他的本体。
+    revealed_at: phase_3
+  - id: obs_hands
+    area: 双手
+    group: phase_3
+    objective: 布满老茧的指节
+    subjective: 长年握持酒壶、调酒器皿留下的痕迹，抑或是其他痕迹，除了他自己应该没人说得清了。
+    hint: 这双手调过无数杯酒，也见证过无数故事。
+    revealed_at: phase_3

@@ -1,0 +1,112 @@
+character_id: yuki
+nodes:
+  # ========================================
+  # Phase 1 Idle
+  # ========================================
+
+  - id: idle_1
+    event_id: "yuki_idle_001"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "她站在窗边，望着外面的雨。"
+      - "手指在空气中轻轻弹动。"
+    speaker: null
+    content:
+      - "「......」"
+      - "「雨......什么时候停？」"
+    player_options: []
+    next_node: null
+
+  - id: idle_2
+    event_id: "yuki_idle_002"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "她低头看着自己的水手服。"
+      - "手指无意识地摸了摸右腕的红绳。"
+    speaker: null
+    content:
+      - "「......哥哥总说我太固执。」"
+      - "「但他不也一样吗......」"
+    player_options: []
+    next_node: null
+
+  - id: idle_3
+    event_id: "yuki_idle_003"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "她轻轻拍了拍猫包。"
+      - "里面空荡荡的。"
+    speaker: null
+    content:
+      - "「......小墨，你在哪里？」"
+      - "「......快点回来。」"
+    player_options: []
+    next_node: null
+
+  # ========================================
+  # Phase 2 Idle
+  # ========================================
+
+  - id: idle_4
+    event_id: "yuki_idle_004"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "她从口袋里掏出小布袋，放在吧台上。"
+      - "手指轻轻拨弄着里面的碎片。"
+    speaker: null
+    content:
+      - "「......」"
+      - "「佐藤奶奶以前常说，我的耳朵是老天爷给的。」"
+      - "「......但我连哥哥的最后一首曲子都没弹给他听过。」"
+    player_options: []
+    next_node: null
+
+  - id: idle_5
+    event_id: "yuki_idle_005"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "她的手指在吧台上轻轻弹动。"
+      - "像是在弹一首无声的曲子。"
+    speaker: null
+    content:
+      - "「......」"
+      - "「哥哥总是假装能听见。」"
+      - "「每次我'弹完'，他都会鼓掌。」"
+      - "「......明明什么都听不到。」"
+    player_options: []
+    next_node: null
+
+  # ========================================
+  # Phase 3 Idle
+  # ========================================
+
+  - id: idle_6
+    event_id: "yuki_idle_006"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "她站在门口，没有急着离开。"
+      - "这次，她的眼神有了一丝平静。"
+    speaker: null
+    content:
+      - "「......今天的雨......小了一点。」"
+      - "「......也许快停了。」"
+    player_options: []
+    next_node: null

@@ -1,0 +1,63 @@
+character_id: fox_uncle
+base_info:
+  name: "狐面大叔"
+  age: "未知"
+  description: 头戴狐狸面具的老者，拄着拐杖慢步走入。深蓝色的作务衣洗得发白，腰间挂着一个朱红色的大葫芦。脸上的面具歪歪的，像是随手一放。身上的气息...是陈年的酒香。
+  type: "鬼神"
+  short_story: |
+    他是这间店的第一任酒保，如今化作人形在黄昏时分来访。
+    袖口的稻穗刺绣透露着他的身份——稻荷神，丰收与商业之神。
+    上千年的岁月里，他见证了无数调酒师的成长。
+    「调酒不是炫技，是让人开口说话的艺术。」每一杯酒背后都有一个故事，而他愿意做那个倾听者。
+    千年守候，只为看着每一杯酒背后的故事。他曾是这间店的创始人，如今化作人形在黄昏时分来访。不为别的，只为将调酒的智慧与温柔传承下去。
+
+profile_sections:
+  - id: "appearance_basic"
+    title: "神秘的狐面老者"
+    content: |
+      头戴狐狸面具的老者，拄着拐杖慢步走入。
+      深蓝色的作务衣洗得发白，腰间挂着一个朱红色的大葫芦。
+      脸上的面具歪歪的，像是随手一放。
+      身上的气息...是陈年的酒香。
+    unlock_condition: "none"
+    depth_level: 1
+
+  - id: "identity_hint"
+    title: "袖口的秘密"
+    content: |
+      仔细观察发现他袖口有金色的稻穗刺绣。
+      金色的稻穗绣在深蓝布料上，低调却醒目。
+      稻穗...丰收的象征，与某种古老的神职有关。
+    unlock_condition: "obs_sleeve"
+    depth_level: 2
+
+  - id: "identity_reveal"
+    title: "居酒屋的前辈"
+    content: |
+      他是这间店的第一任酒保，如今化作人形来访。
+      袖口的稻穗刺绣透露着他的身份——稻荷神，丰收与商业之神。
+      上千年的岁月里，他见证了无数调酒师的兴衰。
+      这间店的历史，可能比他所谓的「前世」还要久远。
+    unlock_condition: "fox_uncle_phase_2_complete"
+    depth_level: 2
+
+  - id: "teaching_wisdom"
+    title: "守护者的传承"
+    content: |
+      他的教学不止于配方，更在于做人的道理。
+      「调酒不是炫技，是让人开口说话的艺术。」
+      每一杯酒背后都有一个故事，而他愿意做那个倾听者。
+      照顾客人就像调酒——有时候，少就是多。
+    unlock_condition: "fox_uncle_phase_3_complete"
+    depth_level: 3
+
+  - id: "true_god_form"
+    title: "稻荷神的守护"
+    content: |
+      他即是稻荷神本身，丰收与商业的守护者。
+      他守护的不仅是生意，更是人心。
+      千年守候，只为看着每一杯酒背后的故事。
+      他曾是这间店的创始人，如今化作人形在黄昏时分来访。
+      不为别的，只为将调酒的智慧与温柔传承下去。
+    unlock_condition: "fox_uncle_phase_3_complete"
+    depth_level: 3

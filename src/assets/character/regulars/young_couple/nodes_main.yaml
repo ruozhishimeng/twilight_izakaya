@@ -1,0 +1,216 @@
+character_id: young_couple
+nodes:
+  - event_id: young_couple_001_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 木门被轻轻推开。
+          - 一对年轻的情侣走了进来。
+          - 男生穿着略显正式的衬衫，领口微微敞开；女生穿着碎花裙子，裙摆随风轻摆。
+          - 他们找了个靠窗的位置坐下。
+          - 男生紧张地清了清嗓子。
+      - type: env
+        content:
+          - 女生握住了他的手，微微笑了笑。
+      - type: npc
+        content:
+          - 「两...两杯教父，谢谢。」
+          - 「就是那个...威士忌加杏仁酒的。」
+      - type: inner
+        content:
+          - 年轻人来这里...大概是有什么特别的日子吧。
+          - 看他们十指紧扣的样子，应该是纪念日之类的。
+    player_options:
+      - option: 「好的，两杯教父。请稍等。」
+        text: 「好的，两杯教父。请稍等。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「谢谢...」
+          - type: env
+            content:
+              - 男生偷偷看了女生一眼，眼神里有些紧张，又有些期待。
+          - type: inner
+            content:
+              - 这气氛...有点微妙啊。
+        next_node: young_couple_001_mixing
+    next_node: null
+
+  - event_id: young_couple_001_mixing
+    trigger_condition:
+      need_event:
+        - young_couple_001_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 调酒进行中...
+    player_options: []
+    next_node: null
+    drink_request:
+      request_text: "两杯教父"
+      player_prompt: "他们点的是两杯「教父」。先把这份干脆又带点甜苦的味道稳稳做出来。"
+      preferred_drink:
+        id: R004
+        name: 教父
+        formula:
+          - bc01
+          - m14
+      steps:
+        - 取威士忌作为基酒
+        - 加入杏仁酒
+        - 轻轻搅拌即可
+    on_mixing_complete: young_couple_001_result
+    on_mixing_fail: young_couple_001_fail
+
+  - event_id: young_couple_001_result
+    trigger_condition:
+      need_event:
+        - young_couple_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，手指微微有些颤抖。
+          - 女生注意到了，轻轻握住了他的手腕。
+      - type: npc
+        content:
+          - 「这酒的名字...挺有意思的。」
+          - 「教父...以后我也可以当你的教父吗？」
+      - type: env
+        content:
+          - 男生深吸一口气，像是在给自己打气。
+      - type: npc
+        content:
+          - 「其实...今天约你出来，是有话想跟你说。」
+          - 「我们认识这么久...我一直没找到合适的时机。」
+      - type: inner
+        content:
+          - 原来是告白啊...
+          - 我假装在整理吧台，耳朵却不自觉地竖了起来。
+    player_options:
+      - option: 「（默默观察）」
+        text: 「（默默观察）」
+        branch_type: flavor
+        script_flow:
+          - type: env
+            content:
+              - 男生从口袋里掏出一个小盒子。
+              - 手在微微发抖。
+          - type: npc
+            content:
+              - 「这...这是我用实习工资买的。」
+              - 「不是什么贵重的东西...但我想...」
+              - 「...我想以后给你买更好的。」
+          - type: inner
+            content:
+              - 他打开盒子，里面是一枚细细的银戒指。
+          - type: npc
+            content:
+              - 「所以...你愿意...」
+              - 「...愿意让我一直照顾你吗？」
+          - type: env
+            content:
+              - 空气仿佛凝固了。
+              - 女生愣住了，眼眶渐渐红了。
+          - type: npc
+            content:
+              - 「傻瓜...」
+              - 「我等这句话...等很久了。」
+          - type: env
+            content:
+              - 她伸出手，让他把戒指戴上。
+              - 窗外的夕阳洒进来，给这一刻镀上了一层金色。
+          - type: inner
+            content:
+              - 风铃轻响。
+              - 也许是居酒屋的祝福吧。
+      - option: 「给他们一点私人空间」
+        text: 「（悄悄转过身，给他们一点空间）」
+        branch_type: flavor
+        script_flow:
+          - type: inner
+            content:
+              - 有些时刻，不需要旁观者的注视。
+              - 我假装在擦拭酒杯，余光却还是忍不住看向那边。
+          - type: env
+            content:
+              - 男生掏出了一个小盒子。
+              - 他深吸一口气，单膝跪地。
+          - type: npc
+            content:
+              - 「我...我知道我现在没什么钱...」
+              - 「但我会努力的...我会给你幸福的...」
+          - type: env
+            content:
+              - 女生愣了一下，然后笑着流出了眼泪。
+          - type: npc
+            content:
+              - 「傻瓜...」
+              - 「我愿意...」
+          - type: inner
+            content:
+              - 风铃又响了。
+              - 像是在为他们庆祝。
+    next_node: young_couple_001_leave
+
+  - event_id: young_couple_001_leave
+    trigger_condition:
+      need_event:
+        - young_couple_001_result
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他们站起身，准备离开。
+          - 男生牵着女生的手，十指紧扣。
+      - type: npc
+        content:
+          - 「谢谢...小老板。」
+          - 「这家店...真的很温暖。」
+      - type: env
+        content:
+          - 女生也回过头，笑着点了点头。
+      - type: npc
+        content:
+          - 「再见...我们会再来的。」
+          - 「下次...带朋友来。」
+      - type: inner
+        content:
+          - 他们走出门，消失在黄昏的街道上。
+          - 风铃轻响。
+          - 年轻真好...爱情的味道，大概就是这样苦涩又甜蜜的吧。
+          - 就像这杯教父。
+    player_options: []
+    next_node: null
+    diary_note: "一对年轻的情侣，要了两杯教父。男孩说这是向女孩表白的那杯酒...爱情真好啊，能为了一个人去做这么浪漫的事。"
+
+  - event_id: young_couple_001_fail
+    trigger_condition:
+      need_event:
+        - young_couple_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，有些失望地笑了笑。
+      - type: npc
+        content:
+          - 「这酒...不是教父的味道。」
+          - 「...算了，也行吧。」
+      - type: inner
+        content:
+          - 看来今天不是个特别的日子。
+          - 但也许...下次会更好吧。
+    player_options: []
+    next_node: null
+    diary_note: '今天没调好教父，那对情侣还是走了。男孩说"下次会更好"...希望下次他们来的时候，我能调出对的酒。'

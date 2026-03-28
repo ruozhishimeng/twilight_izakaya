@@ -1,0 +1,27 @@
+character_id: young_couple
+base_info:
+  name: "年轻情侣"
+  age: 24
+  occupation: "公司职员/大学生"
+  description: "一对年轻情侣，男孩略显拘谨，女孩更大方一些。两人十指交扣，感情看起来很好。"
+  type: "普通人"
+  personality: "甜蜜、紧张、男生略显拘谨，女生更大方"
+  short_story: |
+    他们在一起两年了，今晚是男孩第一次请女孩来居酒屋。
+    男孩想要一个"教父"式的承诺，却笨拙地只能用酒名来表达。
+    爱情的味道，大概就是这样苦涩又甜蜜的吧。
+
+arrival_pattern: "random"
+arrival_condition:
+  type: "always"
+  description: "周末夜晚随机可能来访"
+
+drink_request:
+  type: "concrete"
+  description: "两杯教父，谢谢"
+  recipe_id: "R004"
+
+visits_possible: 1
+is_unlocked: true
+
+generated_at: "2026-03-21T00:00:00.000Z"

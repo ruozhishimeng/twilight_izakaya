@@ -1,0 +1,44 @@
+# 日程表定义
+# 每天可定义多个来访客人，按顺序访问
+schedule:
+  # 第一周
+  - day: W1_D1
+    guests:
+      - character_id: fox_uncle
+        start_node: fox_uncle_001_dialogue_main
+      - character_id: tired_salaryman
+        start_node: tired_salaryman_001_dialogue_main
+
+  - day: W1_D2
+    guests:
+      - character_id: fox_uncle
+        start_node: fox_uncle_003_dialogue_main
+      - character_id: homesick_grandma
+        start_node: homesick_grandma_001_dialogue_main
+
+  - day: W1_D3
+    guests:
+      - character_id: fox_uncle
+        start_node: fox_uncle_005_dialogue_main
+      - character_id: aqiang
+        start_node: aqiang_001_dialogue_main
+
+  - day: W1_D4
+    guests:
+      - character_id: fox_uncle
+        start_node: fox_uncle_007_dialogue_main
+      - character_id: young_couple
+        start_node: young_couple_001_dialogue_main
+
+  - day: W1_D5
+    guests:
+      - character_id: fox_uncle
+        start_node: fox_uncle_008_dialogue_main
+      - character_id: yuki
+        start_node: yuki_001_dialogue_main
+
+  - day: W1_D6
+    guests: []
+
+  - day: W1_D7
+    guests: []

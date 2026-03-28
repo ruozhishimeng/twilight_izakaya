@@ -1,0 +1,11 @@
+import fs from 'fs';
+const file = 'src/assets/character/fox_uncle/nodes_main.yaml';
+let content = fs.readFileSync(file, 'utf8');
+content = content.replace(/fox_uncle_001_/g, 'visit_01_');
+content = content.replace(/fox_uncle_002_/g, 'visit_02_');
+content = content.replace(/fox_uncle_003_/g, 'visit_03_');
+content = content.replace(/fox_uncle_004_/g, 'visit_04_');
+content = content.replace(/fox_uncle_005_/g, 'visit_05_');
+content = content.replace(/fox_uncle_006_/g, 'visit_06_');
+content = content.replace(/fox_uncle_007_/g, 'visit_07_');
+fs.writeFileSync(file, content);

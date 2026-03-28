@@ -1,0 +1,175 @@
+character_id: fox_uncle
+
+# 奖励清单
+rewards:
+  # 配料奖励
+  - id: "reward_m08_kalpiss"
+    type: "ingredient"
+    item_id: "m08"
+    name: "可尔必思"
+    description: "日本特有的乳酸饮料，酸酸甜甜的童年味道。是调日式鸡尾酒的重要配角。"
+    quantity: 1
+    source_event: "fox_uncle_reward_01"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_01_mixing"
+      description: "完成纯米嗨棒教学后"
+
+  - id: "reward_bj04_matcha"
+    type: "ingredient"
+    item_id: "bj04"
+    name: "抹茶"
+    description: "茶道的苦涩，一期一会的禅意。是日本文化中「和敬清寂」的象征。"
+    quantity: 1
+    source_event: "fox_uncle_reward_02"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_02_mixing"
+      description: "完成甘酒嗨棒教学后"
+
+  - id: "reward_f17_honey"
+    type: "ingredient"
+    item_id: "f17"
+    name: "蜂蜜"
+    description: "天然蜂蜜的甜润，像是蜜蜂的亲吻。是愈合与温柔的象征。"
+    quantity: 1
+    source_event: "fox_uncle_reward_03"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_03_mixing"
+      description: "完成止痛药教学后"
+
+  - id: "reward_f18_yuzu"
+    type: "ingredient"
+    item_id: "f18"
+    name: "柚子酱"
+    description: "日本柚子的果香，清新中带着微微的苦。是日本料理中不可或缺的调味品。"
+    quantity: 1
+    source_event: "fox_uncle_reward_review"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_review_mixing"
+      description: "完成复习教学后"
+
+  - id: "reward_m09_oolong"
+    type: "ingredient"
+    item_id: "m09"
+    name: "乌龙茶"
+    description: "半发酵茶的醇厚，苦涩中带着回甘。是日本茶道中重要的组成部分。"
+    quantity: 1
+    source_event: "fox_uncle_reward_04"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_04_mixing"
+      description: "完成蜜柚茶教学后"
+
+  - id: "reward_m08_kalpiss_x2"
+    type: "ingredient"
+    item_id: "m08"
+    name: "可尔必思"
+    description: "日本特有的乳酸饮料，酸酸甜甜的童年味道。是调日式鸡尾酒的重要配角。"
+    quantity: 2
+    source_event: "fox_uncle_reward_05"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_free_practice_mixing"
+      description: "完成自由练习教学后"
+
+  - id: "reward_f18_yuzu_x1"
+    type: "ingredient"
+    item_id: "f18"
+    name: "柚子酱"
+    description: "日本柚子的果香，清新中带着微微的苦。是日本料理中不可或缺的调味品。"
+    quantity: 1
+    source_event: "fox_uncle_reward_review_02"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_review_02_mixing"
+      description: "完成第二周复习教学后"
+
+  # 配方奖励
+  - id: "reward_r026_mizuku_tea"
+    type: "recipe"
+    recipe_id: "R026"
+    name: "蜜柚茶"
+    description: "清酒与乌龙茶、蜂蜜的结合，是成熟果实的温柔，秋日的私语。"
+    source_event: "fox_uncle_reward_04"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_04_mixing"
+      description: "完成蜜柚茶教学后"
+
+# 配方解锁
+recipe_unlocks:
+  - recipe_id: "R021"
+    name: "纯米嗨棒"
+    formula: ["bj01", "m01"]
+    unlock_condition:
+      event_id: "fox_uncle_teaching_01"
+      description: "完成第一日教学后"
+
+  - recipe_id: "R022"
+    name: "甘酒嗨棒"
+    formula: ["bj02", "m01"]
+    unlock_condition:
+      event_id: "fox_uncle_teaching_02"
+      description: "完成第二日教学后"
+
+  - recipe_id: "R034"
+    name: "止痛药"
+    formula: ["bc04", "m13", "m11"]
+    unlock_condition:
+      event_id: "fox_uncle_teaching_03"
+      description: "完成第三日教学后"
+
+  - recipe_id: "R026"
+    name: "蜜柚茶"
+    formula: ["bj01", "m09", "f17"]
+    unlock_condition:
+      event_id: "fox_uncle_teaching_04"
+      description: "完成第七日教学后"
+
+# 阶段完成标记
+phase_completion:
+  - phase: 1
+    unlock_condition:
+      event_id: "fox_uncle_reward_04_end"
+      description: "完成第一周所有教学后"
+    unlocks:
+      - "phase_2_dialogue"
+      - "gallery_identity_hint"
+
+  - phase: 2
+    unlock_condition:
+      event_id: "fox_uncle_reward_review_02_end"
+      description: "完成第二周所有教学后"
+    unlocks:
+      - "phase_3_dialogue"
+      - "gallery_identity_reveal"
+
+  - phase: 3
+    unlock_condition:
+      event_id: "fox_uncle_reward_05_end"
+      description: "完成第三周所有教学后"
+    unlocks:
+      - "gallery_teaching_wisdom"
+      - "gallery_true_god_form"
+      - "fox_uncle_complete"
+
+# 打量解锁
+observation_unlocks:
+  - observation_id: "obs_sleeve"
+    name: "袖口稻穗刺绣"
+    unlock_condition:
+      event_id: "fox_uncle_chat_about_embroidery"
+      description: "与狐面大叔谈论袖口时"
+    unlocks:
+      - "gallery_identity_hint"
+
+# 隐藏剧情解锁
+hidden_unlocks:
+  - hidden_id: "hidden_god_form"
+    name: "九尾真身"
+    unlock_condition:
+      event_id: "fox_uncle_teaching_free_practice"
+      time: "W3_D15_Dusk"
+      description: "第三周来访，黄昏时分"
+    requires_phase: 3
+
+  - hidden_id: "hidden_thousand_years"
+    name: "千年守候"
+    unlock_condition:
+      event_id: "fox_uncle_hidden_god_form_confirm"
+      description: "发现狐面大叔真身后"

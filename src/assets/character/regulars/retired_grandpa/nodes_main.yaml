@@ -1,0 +1,249 @@
+character_id: retired_grandpa
+nodes:
+  - event_id: retired_grandpa_001_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 木门被推开。
+          - 一位精神矍铄的老人走了进来。
+          - 他西装革履，胸前别着一朵红花。
+          - 虽然头发已经全白，但腰杆挺得笔直，眼神里透着光。
+      - type: env
+        content:
+          - 他环顾四周，脸上露出满意的笑容。
+      - type: npc
+        content:
+          - 「来一杯威士忌，加冰！」
+          - 「今天是个特别的日子...我退休了！」
+          - 「四十年...总算熬到头了！」
+      - type: inner
+        content:
+          - 四十年...这位老人在职场熬了四十年。
+          - 终于可以休息了。
+      - type: npc
+        content:
+          - 「四十年...从最底层干到退休...」
+          - 「没升过官，没发过财...」
+          - 「但我无愧于心。」
+          - 「...现在，可以歇歇了。」
+    player_options:
+      - option: 「恭喜您退休！四十年辛苦了，我给您倒一杯古典。」
+        text: 「恭喜您退休！四十年辛苦了，我给您倒一杯古典。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「哈哈，谢谢！」
+          - type: inner
+            content:
+              - 他哈哈大笑，笑声里带着一丝释然。
+        next_node: retired_grandpa_001_mixing
+    next_node: null
+
+  - event_id: retired_grandpa_001_mixing
+    trigger_condition:
+      need_event:
+        - retired_grandpa_001_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 调酒进行中...
+    player_options: []
+    next_node: null
+    drink_request:
+      request_text: "古典鸡尾酒"
+      player_prompt: "老人家想要的不像是新奇，更像是一杯老派、稳重、能让人慢慢回味的酒。我该朝经典的方向去调。"
+      preferred_drink:
+        id: R008
+        name: 古典
+        formula:
+          - bc01
+          - f01
+          - f09
+      steps:
+        - 取威士忌作为基酒
+        - 加入方糖
+        - 加入黑胡椒
+    on_mixing_complete: retired_grandpa_001_result
+    on_mixing_fail: retired_grandpa_001_fail
+
+  - event_id: retired_grandpa_001_result
+    trigger_condition:
+      need_event:
+        - retired_grandpa_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，一饮而尽，大呼痛快。
+      - type: npc
+        content:
+          - 「好酒！」
+          - 「古典...好名字！」
+      - type: inner
+        content:
+          - 他闭上眼睛，像是在回味什么。
+      - type: npc
+        content:
+          - 「我这辈子，都是个古典的人。」
+          - 「按部就班，从不出格。」
+          - 「别人说往东，我绝不往西。」
+          - 「...但我心里有数。」
+      - type: env
+        content:
+          - 他放下酒杯，目光变得悠远。
+      - type: npc
+        content:
+          - 「你知道吗...」
+          - 「四十年里...我有机会贪污的。」
+          - 「三次。」
+          - 「...我都拒了。」
+          - 「老婆骂我傻...但我不后悔。」
+          - 「...对得起良心。」
+      - type: inner
+        content:
+          - 老人的眼神里，有一丝不易察觉的光。
+          - 那是对得起做人的骄傲。
+      - type: npc
+        content:
+          - 「但今天开始...我终于可以换个活法了！」
+          - 「不用再看人脸色了！」
+          - 「不用再点头哈腰了！」
+      - type: env
+        content:
+          - 他笑了，笑得像个孩子。
+      - type: npc
+        content:
+          - 「小老板...再给我来一杯！」
+          - 「今晚，我要好好庆祝一下！」
+          - 「...为我这四十年的问心无愧！」
+      - type: inner
+        content:
+          - 我又给他倒了一杯。
+          - 四十年，熬出了头发白，熬走了身边人。
+          - 但退休不是结束，是另一种开始。
+          - 也许对他来说，最重要的是终于有时间...好好为自己活一次了。
+    player_options:
+      - option: 「为您四十年的坚持干杯！」
+        text: 「为您四十年的坚持干杯！」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好！干杯！」
+          - type: env
+            content:
+              - 他举起酒杯，一饮而尽。
+          - type: npc
+            content:
+              - 「...爽快！」
+              - 「小老板...你这里不错。」
+              - 「下次来...我给你带点好茶。」
+              - 「武夷山的大红袍...我存了二十年了。」
+          - type: inner
+            content:
+              - 二十年的茶...这位老人，真是讲究人。
+      - option: 「您老婆孩子呢？他们不为您的退休庆祝吗？」
+        text: 「您老婆孩子呢？他们不为您的退休庆祝吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「...」
+          - type: env
+            content:
+              - 他愣了一下，笑容凝固了一瞬。
+          - type: npc
+            content:
+              - 「老婆...走了。」
+              - 「三年前...一场病...」
+          - type: inner
+            content:
+              - 他低下头，声音轻了下来。
+          - type: npc
+            content:
+              - 「她这辈子...跟着我吃苦了。」
+              - 「没享过什么福...」
+              - 「...这是我最后悔的事。」
+          - type: env
+            content:
+              - 他又给自己倒了一杯。
+          - type: npc
+            content:
+              - 「但我总算...熬出头了。」
+              - 「现在可以...去看看她了。」
+              - 「告诉她...我退休了。」
+              - 「...终于可以陪她了。」
+          - type: inner
+            content:
+              - 风铃轻响。
+              - 也许这就是他来这里的意义。
+              - 不是为了买醉，而是为了告别。
+    next_node: retired_grandpa_001_leave
+
+  - event_id: retired_grandpa_001_leave
+    trigger_condition:
+      need_event:
+        - retired_grandpa_001_result
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他站起身，整理了一下胸前的红花。
+          - 动作庄重，像是在举行什么仪式。
+      - type: npc
+        content:
+          - 「...谢谢你，小老板。」
+          - 「今晚...我很开心。」
+      - type: env
+        content:
+          - 他从口袋里掏出一张照片。
+          - 照片上是一个朴素的女性，笑容温柔。
+      - type: npc
+        content:
+          - 「这是我家老婆子...」
+          - 「...我得去看看她了。」
+          - 「跟她说一声...我退休了。」
+          - 「...终于...可以陪她了。」
+      - type: inner
+        content:
+          - 他走出门，身影渐渐消失在夜色中。
+          - 风铃轻响。
+          - 四十年职场，二十年婚姻，一场病魔。
+          - 但这一切，都在这一刻得到了释怀。
+          - 也许...这就是和解吧。
+          - 与过去的自己和解，与失去的人和解。
+    player_options: []
+    next_node: null
+    diary_note: '一个退休的老人，四十年工作问心无愧。他说老婆三年前走了，今晚退休了想"去看看她"...四十年，值了。'
+
+  - event_id: retired_grandpa_001_fail
+    trigger_condition:
+      need_event:
+        - retired_grandpa_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，尝了一口，皱了皱眉。
+      - type: npc
+        content:
+          - 「...这味道，不对。」
+          - 「算了...将就吧。」
+          - 「...反正我也不是来喝酒的。」
+      - type: inner
+        content:
+          - 也许他只是想找个地方坐坐。
+          - 退休第一天，茫然若失。
+    player_options: []
+    next_node: null
+    diary_note: '今天没调好古典，老人说"反正不是来喝酒的"。退休第一天，他大概只是需要有个地方坐坐吧...下次会更好的。'

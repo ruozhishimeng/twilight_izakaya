@@ -1,0 +1,74 @@
+character_id: yuki
+observations:
+  # Phase 1 观察点
+  - id: obs_wet_uniform
+    area: "衣着"
+    objective: "湿透的深蓝色水手服"
+    subjective: "像是刚刚从水里捞出来...或者从未干过。那场雨，似乎从未停止。"
+    hint: "她身上的水不是今天的雨，是那个永远不会结束的雨夜。"
+    revealed_at: phase_1
+
+  - id: obs_red_yarn
+    area: "右腕"
+    objective: "褪色的红毛线绳"
+    subjective: "长期佩戴的痕迹，边缘起毛。这根绳子被抚摸了无数次。"
+    hint: "红色是哥哥说的'太阳落山前最后一秒的颜色'。"
+    revealed_at: phase_1
+
+  - id: obs_cat_carrier
+    area: "肩部"
+    objective: "空荡的黑色猫包"
+    subjective: "里面什么都没有，但拉链头因长期摩挲而发亮。"
+    hint: "小墨...她一直在找的那只猫，后来被老板娘收养了。"
+    revealed_at: phase_1
+
+  - id: obs_finger_piano
+    area: "手部"
+    objective: "指尖在空气中轻轻弹动"
+    subjective: "无意识的行为，像是在弹奏什么。她听见的是钢琴的声音。"
+    hint: "这是她和音乐之间最后的纽带，也是她拒绝接受结束的防线。"
+    revealed_at: phase_1
+
+  # Phase 2 观察点
+  - id: obs_music_box_bag
+    area: "随身物品"
+    objective: "装着音乐盒碎片的小布袋"
+    subjective: "撞击碎裂的玻璃和金属，还有几颗猫咪零食和一张褪色的照片。"
+    hint: "那是哥哥送她的生日礼物，现在只剩下碎片了。"
+    revealed_at: phase_2
+
+  - id: obs_photo
+    area: "小布袋内"
+    objective: "一张泛黄的旧照片"
+    subjective: "只有她和哥哥，没有父母。照片背面写着歪歪扭扭的字。"
+    hint: "「小雪18岁生日快乐」——那是哥哥的笔迹。"
+    revealed_at: phase_2
+
+  - id: obs_cat_snacks
+    area: "小布袋内"
+    objective: "几颗猫咪零食"
+    subjective: "小墨最爱吃的，但她再也找不到小墨了。"
+    hint: "她在雨中一直回头，想找到那只跟着她的黑猫。"
+    revealed_at: phase_2
+
+  # Phase 3 观察点
+  - id: obs_blue_fabric
+    area: "记忆"
+    objective: "蓝色的滴水声"
+    subjective: "小时候屋顶漏水，哥哥用蓝染布接水的声音。"
+    hint: "那是他为她创造的第一个'钢琴声'。"
+    revealed_at: phase_3
+
+  - id: obs_sato_piano
+    area: "记忆"
+    objective: "佐藤奶奶的钢琴店"
+    subjective: "免费让她练琴的退休音乐老师。那架她每天放学的钢琴。"
+    hint: "奶奶常说：'这孩子的耳朵是老天爷给的，不弹琴可惜了。'"
+    revealed_at: phase_3
+
+  - id: obs_last_words
+    area: "记忆"
+    objective: "哥哥最后的背影"
+    subjective: "他穿着雨衣，怀里抱着一个盒子，说'天黑前一定回来'。"
+    hint: "那天的雨太大了，能见度不足十米。"
+    revealed_at: phase_3

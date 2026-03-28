@@ -1,0 +1,149 @@
+character_id: yuki
+base_info:
+  name: "小雪"
+  real_name: "晴山 雪 (Haruyama Yuki)"
+  age: 18
+  occupation: "高中生 / 钢琴天才"
+  description: |
+    一个湿透的水手服少女，站在门口。深蓝色的制服贴在身上，像是刚刚淋了一场暴雨。
+    她的眼睛空洞却又执着，像是在看着某个不在这里的人。
+    右腕系着一根褪色的红毛线绳，手指偶尔会在空气中轻轻弹动。
+  type: "滞留者"
+  short_story: |
+    晴山家曾是墨田区经营"晴山染工"的蓝染小户，在电车轨道旁经营了三代。
+    父亲因病早逝，母亲精神崩溃后将所有红色染料倒入隅田川。
+    兄妹俩守着祖母留下的老破小相依为命。哥哥阿相14岁辍学打工，把所有省下的钱都给了小雪读书。
+    小雪极具钢琴天赋，在邻居佐藤奶奶的钢琴店自学了《月光》《致爱丽丝》《小星星变奏曲》。
+    阿相发誓要为她送出一架有她名字的钢琴。18岁生日那天，他去取定制音乐盒，却再也没能回来。
+    小雪从此被困在那个雨夜，湿透的水手服再也没有干过。
+
+profile_sections:
+  - id: "surface"
+    title: "湿透的少女"
+    content: |
+      一个湿透的水手服少女，站在门口。
+      深蓝色的制服贴在身上，像是刚刚从水里捞出来。
+      她的眼睛空洞却又执着，像是在看着某个不在这里的人。
+    unlock_condition: "obs_wet_uniform"
+    depth_level: 1
+
+  - id: "red_yarn"
+    title: "褪色的红绳"
+    content: |
+      右腕上系着一根褪色的红毛线绳。
+      长期佩戴的痕迹，边缘起毛，却被抚摸得发亮。
+      哥哥说：红色是太阳落山前最后一秒的颜色。
+    unlock_condition: "obs_red_yarn"
+    depth_level: 1
+
+  - id: "empty_carrier"
+    title: "空荡的猫包"
+    content: |
+      她肩上背着一个空荡的黑色猫包。
+      里面什么都没有，拉链头却因长期摩挲而发亮。
+      小墨是她的黑猫，在那个雨夜走丢了。
+    unlock_condition: "obs_cat_carrier"
+    depth_level: 1
+
+  - id: "piano_fingers"
+    title: "无形的钢琴"
+    content: |
+      她的手指偶尔会在空气中轻轻弹动。
+      那是她无意识的行为，像是在弹奏什么。
+      她听见的是钢琴的声音——即使周围没有琴键。
+    unlock_condition: "obs_finger_piano"
+    depth_level: 1
+
+  - id: "music_box_pieces"
+    title: "音乐盒的碎片"
+    content: |
+      她随身携带一个小布袋，里面装着音乐盒的碎片。
+      那是哥哥送她的18岁生日礼物，在车祸中被撞碎。
+      她一块一块地收集起来，像是能拼回什么。
+    unlock_condition: "obs_music_box_bag"
+    depth_level: 2
+
+  - id: "photo"
+    title: "泛黄的合照"
+    content: |
+      照片里只有她和哥哥，没有父母。
+      照片背面写着：「小雪18岁生日快乐」。
+      那是哥哥的笔迹，写着再也无法兑现的承诺。
+    unlock_condition: "obs_photo"
+    depth_level: 2
+
+  - id: "blue_rain"
+    title: "蓝染的雨声"
+    content: |
+      小时候屋顶漏水，哥哥用染坊废弃的蓝染布接水。
+      蓝色的水滴落下的声音，是他为她创造的第一个"钢琴声"。
+      那时候虽然苦，但有哥哥在。
+    unlock_condition: "obs_blue_fabric"
+    depth_level: 2
+
+  - id: "sato_piano"
+    title: "佐藤奶奶的钢琴"
+    content: |
+      佐藤奶奶是邻居钢琴店的退休音乐教师。
+      她发现小雪的天赋，允许她每天放学后免费练琴。
+      "这孩子的耳朵是老天爷给的，不弹琴可惜了。"
+      那架钢琴，是她灵魂的一部分。
+    unlock_condition: "obs_sato_piano"
+    depth_level: 2
+
+  - id: "the_accident"
+    title: "那个雨夜"
+    content: |
+      18岁生日那天的暴雨。下午四点十七分。
+      能见度不足十米。哥哥骑着车，怀里抱着音乐盒。
+      他说：天黑前一定回来。
+      但那天之后再没有天黑。
+    unlock_condition: "obs_last_words"
+    depth_level: 3
+
+  - id: "brother"
+    title: "哥哥"
+    content: |
+      阿相，晴山家的长子。14岁辍学打工，供妹妹读书。
+      他说：等小雪考上大学，哥就轻松了。
+      他说：哥要给你买一架有你名字的钢琴。
+      他说：天黑前一定回来。
+    unlock_condition: "yuki_phase_2_complete"
+    depth_level: 3
+
+  - id: "black_cat"
+    title: "小墨"
+    content: |
+      小墨是她的黑猫，在那个雨夜走丢了。
+      它一直跟在她身后，但在某个路口消失了。
+      后来听说，有人在事故现场附近看到一只黑猫，一直望着路口的方向。
+      也许小墨也一直在等什么人。
+    unlock_condition: "yuki_phase_3_complete"
+    depth_level: 3
+
+  - id: "the_truth"
+    title: "真相"
+    content: |
+      那个雨夜，她冲出家门去找哥哥。
+      她看到哥哥躺在路边，身边散落着音乐盒的碎片。
+      她叫了救护车，但已经太迟了。
+      她一直陪着他，直到最后一刻。
+      但她的执念太深，灵魂被困在那个雨夜。
+    unlock_condition: "yuki_hidden_truth"
+    depth_level: 4
+
+  - id: "full_story"
+    title: "彼岸的重逢"
+    content: |
+      她在黄昏的居酒屋终于听到了那首未完成的《月光》。
+      哥哥的声音从音乐盒的碎片中响起，温柔而遥远。
+
+      "小雪，哥做到了。"
+
+      "但你要继续走下去。不是为了哥，是为了你自己。"
+
+      "钢琴是你的。不要放弃。"
+
+      她终于哭了出来。那场雨，终于停了。
+    unlock_condition: "yuki_released"
+    depth_level: 4

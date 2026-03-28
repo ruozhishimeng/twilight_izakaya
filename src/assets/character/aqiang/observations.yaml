@@ -1,0 +1,74 @@
+character_id: aqiang
+observations:
+  # Phase 1 观察点
+  - id: obs_temple_bruise
+    area: "头部"
+    objective: "右太阳穴的青紫撞伤"
+    subjective: "车祸致命伤的残留，淤血的紫混着靛青色。在某些角度隐约透出暗红。"
+    hint: "他似乎察觉不到这道伤的存在，从不触碰，也从不遮挡。"
+    revealed_at: phase_1
+
+  - id: obs_wet_uniform
+    area: "衣着"
+    objective: "湿透的速运制服"
+    subjective: "深蓝色，左胸口印着白色logo。右肘磨得最薄，左肩有块歪歪扭扭的补丁。"
+    hint: "那是他长期骑行时撑在车把上的痕迹。雪帮他缝的针脚，她从没拆掉重缝。"
+    revealed_at: phase_1
+
+  - id: obs_broken_phone
+    area: "手部"
+    objective: "碎裂的手机屏幕"
+    subjective: "裂纹像蛛网一样蔓延，从左上角碎到右下角。但他还在不停地滑动查看。"
+    hint: "屏幕背面贴着一张褪色的大头贴——是雪初中毕业时拍的。"
+    revealed_at: phase_1
+
+  - id: obs_raincoat
+    area: "衣着"
+    objective: "雨衣拉链损坏"
+    subjective: "拉链只能拉到胸口位置，领口处有已经结痂的血痕。"
+    hint: "别针扎进锁骨下方的皮肤，但他似乎感觉不到疼。"
+    revealed_at: phase_1
+
+  - id: obs_chest_package
+    area: "胸口"
+    objective: "微微鼓起的胸口"
+    subjective: "里面装着什么硬质的东西，他用左手手臂时刻压着。"
+    hint: "系着粉色丝带的盒子——那是他要送给雪的东西。"
+    revealed_at: phase_1
+
+  # Phase 2 观察点
+  - id: obs_pink_ribbon
+    area: "胸口"
+    objective: "粉色丝带"
+    subjective: "两边长短差了将近三厘米，像是笨拙地打了很久才放弃的蝴蝶结。"
+    hint: "他在百元店挑了二十分钟才选定这个颜色——'太红的像血，太浅的像病'。"
+    revealed_at: phase_2
+
+  - id: obs_sister_photo
+    area: "手机背面"
+    objective: "褪色的大头贴"
+    subjective: "雪穿着制服，表情有点紧张，嘴角微微抿着。边角翘起，透明胶带发黄。"
+    hint: "他用胶带粘过两次，但舍不得换新的。"
+    revealed_at: phase_2
+
+  - id: obs_worn_shoes
+    area: "脚步"
+    objective: "磨平的鞋底"
+    subjective: "左脚鞋底几乎平了，右脚鞋带换过一根——深蓝色的，和制服相近。"
+    hint: "鞋面上有被雨水浸泡后留下的白色水渍痕迹。"
+    revealed_at: phase_2
+
+  # Phase 3 观察点
+  - id: obs_music_box
+    area: "胸口"
+    objective: "音乐盒"
+    subjective: "盒子的棱角硌进肋骨的位置。他说'没有碎'。"
+    hint: "定制音乐盒，录有德彪西《月光》。他攒了八个月、一百六十七单才买下的。"
+    revealed_at: phase_3
+
+  - id: obs_broken_clock
+    area: "记忆"
+    objective: "手机时间停在17:58"
+    subjective: "导航显示'预计送达时间已过'。但他还在滑动屏幕。"
+    hint: "他不知道自己已经不在了。他只知道他还要把音乐盒送到雪手里。"
+    revealed_at: phase_3

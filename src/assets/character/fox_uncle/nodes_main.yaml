@@ -1,0 +1,689 @@
+character_id: fox_uncle
+nodes:
+  - event_id: fox_uncle_001_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: W1_D1_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 风铃轻响。
+          - 木门被缓缓推开。
+          - 淡淡的陈年酒香先行飘入...
+          - 随后是一位头戴狐狸面具的老者，拄着拐杖慢步走入。
+          - 他的步伐不急不缓，像是走了千百年的路。
+      - type: env
+        content:
+          - 葫芦轻轻晃荡，发出沉闷的声响。
+          - 面具下的眼神在昏黄的灯光中闪动。
+      - type: npc
+        content:
+          - 「呀列呀列...第一天开业啊。」
+          - 「嘿嘿，这里的酒，真是香气扑鼻。」
+          - 「...这味道，和以前一样啊。」
+      - type: inner
+        content:
+          - 他说"以前"...难道他以前来过这里？
+          - 可我...什么都不记得了。
+    trigger_observation:
+      prompt: "进来了一位神秘的大叔，还是仔细观察下吧..."
+      continue_node: fox_uncle_001_dialogue_main_after_obs
+      feature_groups: ["phase_1"]
+
+  - event_id: fox_uncle_001_dialogue_main_after_obs
+    trigger_condition:
+      need_event:
+        - fox_uncle_001_dialogue_main
+      need_time: W1_D1_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他注意到了你的小心思，脸上的微笑却更加神秘了。
+      - type: inner
+        content:
+          - 「还是赶紧接待这位古怪的客人吧...」
+    player_options:
+      - option: 「想喝点什么」
+        text: 「您好，请问想喝点什么？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「哈哈，服务态度不错。」
+        impact_log: 以服务态度开场
+      - option: 「您从哪里来的」
+        text: 「您是...第一次来小店吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......」
+              - 「你小子，忘性一直都那么大。」
+              - 「...算了，不记得就不记得吧。」
+          - type: env
+            content:
+              - 他的眼神锐利如刀，但语气并不责备。
+          - type: npc
+            content:
+              - 「就当我是个熟客吧，小子，你看，这里的每一支酒杯都认得我。」
+        impact_log: 好奇询问身份
+      - option: 「您的面具」
+        text: 「您好，现在应该不是万圣节吧？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「哈哈哈哈哈哈！小子，你这把老夫逗的。」
+              - 「老夫的这面具，可不是什么万灵...哦，应该是万圣节吧！」
+          - type: env
+            content:
+              - 他笑得眼角皱纹都舒展开来。
+          - type: npc
+            content:
+              - 「这面具啊...是很久以前一个故人送的。」
+              - 「...不过你应该不记得了哟！嘿嘿。」
+        impact_log: 谦虚请求指教
+    next_node: fox_uncle_001_before_teaching
+ 
+ 
+  - event_id: fox_uncle_001_before_teaching
+    trigger_condition:
+      need_event:
+        - fox_uncle_001_dialogue_main
+      need_time: W1_D1_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 大叔微微颔首。
+          - 眼神突然认真地看向你，目光如炬。
+      - type: npc
+        content:
+          - 「小子，你虽坐在这吧台里，桌上这么多酒，你会调吗？」
+      - type: inner
+        content:
+          - 看着眼前的酒杯，我翻找着我的记忆...却发现只有一片空白。
+          - 「我...我明明是个调酒师，怎么会...」
+      - type: npc
+        content:
+          - 「...果然忘了...你这小子」
+          - 「没关系。」
+      - type: env
+        content:
+          - 他轻轻叹了口气。面具下那双眼睛清澈深邃。
+      - type: npc
+        content:
+          - 「坐下吧，小子。你不会，我就来教你。」
+          - 「这第一天呢，我们从最基础的开始。」
+          - 「这杯酒，不知道教过你多少次了呢。」
+      - type: env
+        content:
+          - 他的皱纹泛起一阵涟漪。
+          - 像是想起了什么很遥远的事。
+      - type: npc
+        content:
+          - 「...也没什么。」
+    player_options: []
+    next_node: fox_uncle_teaching_01
+  
+  - event_id: fox_uncle_002_dialogue_main
+    trigger_condition:
+      need_event:
+        - fox_uncle_001_dialogue_main
+      need_time: W1_D1_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从腰间解下葫芦。
+          - 放在桌上，轻轻晃了晃。
+      - type: npc
+        content:
+          - 「我们开始吧。」
+          - 「...别紧张。」
+          - 「...老夫又不吃人。」
+      - type: env
+        content:
+          - 他在吧台前坐定，拐杖轻轻靠在一旁。
+          - 那葫芦上的花纹在灯光下若隐若现。
+      - type: npc
+        content:
+          - 「...这第一杯，很简单。」
+          - 「...但简单的东西...」
+          - 「...往往最难。」
+          - 「...调酒最重要的，不是技术。」
+          - 「...是用心。」
+    player_options:
+      - option: 「我准备好了！」
+        text: 「我准备好了！」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好。」
+              - 「...放松点。」
+              - 「...你太紧了。」
+              - 「...调酒这事...要享受才行。」
+        impact_log: 准备好学习
+      - option: 「这配方难吗？」
+        text: 「这配方难吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「不难，你要记住，难的永远是用心。」
+              - 「...技术嘛...多练就会了。」
+              - 「...但要是心不正...」
+              - 「...调出来的酒，就少了那点味道。」
+          - type: env
+            content:
+              - 他轻轻敲了敲桌面。
+              - 像是某种无声的提醒。
+        impact_log: 询问配方难度
+    next_node: fox_uncle_teaching_01
+  - event_id: fox_uncle_003_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: W1_D2_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 风铃轻响。
+          - 木门再次被推开。
+          - 熟悉的拐杖声响起...
+          - 狐面大叔如约而至。
+      - type: npc
+        content:
+          - 「呀列呀列...第二天了。」
+          - 「今天的酒，要带点甜味。」
+      - type: env
+        content:
+          - 他在吧台前坐下，歪着头看了看我。
+          - 那面具下的眼神，似乎在打量着什么。
+      - type: npc
+        content:
+          - 「...怎么样，小子？」
+          - 「...昨天教你的，还记得吗？」
+          - 「...还是说，又忘了？」
+          - 「...嘿嘿。」
+    player_options:
+      - option: 「甜味的酒？」
+        text: 「甜味的酒？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「嗯，今天教你甘酒嗨棒。」
+              - 「...昨天那杯太苦了。」
+              - 「今天来点甜的...缓缓。」
+          - type: env
+            content:
+              - 他轻轻晃了晃葫芦。
+              - 里面发出沉闷的声响，像是陈年的老酒。
+        impact_log: 好奇甜味
+      - option: 「我记得，昨天是纯米嗨棒。」
+        text: 「我记得，昨天是纯米嗨棒。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「是的，那是昨天。」
+              - 「...难得你还记得。」
+              - 「...老夫还以为你又忘了呢。」
+          - type: env
+            content:
+              - 他的语气里带着一丝打趣。
+              - 像是在故意逗我。
+        impact_log: 记得昨天的酒
+      - option: 「请指教。」
+        text: 「请指教。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好，今天教你甜的。」
+              - 「...希望你能记住。」
+              - 「...虽然老夫也不指望。」
+        impact_log: 谦虚请求
+    next_node: fox_uncle_003_before_teaching
+  - event_id: fox_uncle_003_before_teaching
+    trigger_condition:
+      need_event:
+        - fox_uncle_003_dialogue_main
+      need_time: W1_D2_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他满意地从腰间解下葫芦。
+          - 放在桌上，轻轻拍了拍。
+      - type: npc
+        content:
+          - 「好，开始吧。」
+          - 「...今天这杯，比昨天那杯难一点。」
+          - 「...但没关系，慢慢来。」
+          - 「...老夫有的是耐心。」
+      - type: env
+        content:
+          - 他的语气温和，像是在哄一个孩子。
+          - 虽然话语里带着点打趣，但并不让人反感。
+    player_options: []
+    next_node: fox_uncle_teaching_02
+  - event_id: fox_uncle_004_dialogue_main
+    trigger_condition:
+      need_event:
+        - fox_uncle_003_dialogue_main
+      need_time: W1_D2_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他满意地从腰间解下葫芦。
+          - 放在桌上，轻轻拍了拍。
+      - type: npc
+        content:
+          - 「好，开始吧。」
+          - 「...今天这杯，比昨天那杯难一点。」
+          - 「...但没关系，慢慢来。」
+          - 「...老夫有的是耐心。」
+      - type: env
+        content:
+          - 他的语气温和，像是在哄一个孩子。
+          - 虽然话语里带着点打趣，但并不让人反感。
+    player_options:
+      - option: 「甘酒...是酒酿吗？」
+        text: 「甘酒...是酒酿吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「差不多，但要的就是那个甜。」
+              - 「...你小子，脑子还是转得挺快的。」
+              - 「...比昨天强点了。」
+        impact_log: 询问甘酒
+      - option: 「我准备好了！」
+        text: 「我准备好了！」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好，开始吧。」
+              - 「...你这小子，每次都说准备好了。」
+              - 「...但下次来...还是紧张兮兮的。」
+              - 「...算了，习惯就好。」
+        impact_log: 准备好学习
+    next_node: fox_uncle_teaching_02
+  - event_id: fox_uncle_005_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: W1_D3_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 第三天的黄昏。
+          - 夕阳透过窗户洒进来。
+          - 金色的光芒给狐面大叔的面具镀上一层暖色。
+          - 但今天...他的目光有些凝重。
+      - type: env
+        content:
+          - 他望向窗外，眼神有些悠远。
+          - 像是在看着某个即将到来的人。
+      - type: npc
+        content:
+          - 「呀列呀列...三天了。」
+          - 「你学得很快。」
+          - 「...比上次快多了。」
+      - type: inner
+        content:
+          - 他说"上次"...难道我以前也学过？
+          - 可我...真的什么都不记得了。
+      - type: npc
+        content:
+          - 「今天教你一杯特别的...」
+          - 「...“止痛药”，酒如其名。...这杯酒，是关于那些...」
+          - 「来不及，做不到，放不下的事的。」
+      - type: env
+        content:
+          - 他的声音比平时低沉了一些。
+          - 狐面下的眼神，闪过一丝悲凉。
+      - type: inner
+        content:
+          - 来不及的事...
+          - 老先生在说什么？
+          - 为什么今天的他...看起来这么悲伤？
+      - type: npc
+        content:
+          - 「...有些人，有些事...」
+          - 「...错过了就是错过了...」
+          - 「...没有第二次机会的...」
+      - type: env
+        content:
+          - 他沉默了片刻，然后轻轻叹了口气。
+          - 那叹息里，仿佛诉说了无尽的遗憾和无奈。
+      - type: npc
+        content:
+         - 「看看这吧台的木头。」
+      - type: env
+        content:
+          - 他抚摸着那隔在我俩之间的古老吧台，上面的纹路轮廓分明。
+      - type: npc
+        content:
+          - 「人啊...心碎的时候，就跟木材裂开一样...」
+          - 「顺着纹路，自上而下，完全开裂。」
+          - 「...算了，不说这些了。」
+          - 「...希望你永远不要遇上需要这杯酒的客人。」
+    player_options:
+      - option: 「老师，这到底是...」
+        text: 「老师，这杯酒到底是...」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「...这居酒屋的七情六欲...」
+              - 「...是多少世态炎凉。」
+              - 「...每一杯酒背后，都有一个故事。」
+              - 「...止痛药，是为那些在深夜里独自舔舐伤口的人调的。」
+          - type: env
+            content:
+              - 他的声音很轻。
+              - 一向稳重、看上去不谙世事，甚至有点老顽童的老师，今天却有些悲伤。
+          - type: npc
+            content:
+              - 「...算了，来学调酒吧。」
+        impact_log: 好奇七情六欲
+      - option: 「我准备好了。」
+        text: 「老师，不管是什么酒，我都准备好了。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好。」
+              - 「...但愿你永远不需要用到这杯酒。」
+              - 「...酒...本身也是无罪的。」
+        impact_log: 准备好
+      - option: 「老师今天...似乎有心事？」
+        text: 「老师今天似乎有些不寻常。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......」
+              - 「...你这小子，眼睛倒是挺尖的。」
+              - 「...老夫活了这么久，看的事情多了。」
+              - 「...有些事，不必多问。」
+        impact_log: 注意到老师的异样
+    next_node: fox_uncle_teaching_03
+  - event_id: fox_uncle_007_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: W1_D4_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 第四天的黄昏。
+          - 狐面大叔推门而入。
+          - 他的脚步依旧沉稳...
+          - 但今天的步伐似乎多了几分欣慰。
+      - type: npc
+        content:
+          - 「呀列呀列...四天了。」
+          - 「来，复习一下之前的酒。」
+          - 「...纯米嗨棒，甘酒嗨棒。」
+          - 「...还记得吗？」
+      - type: env
+        content:
+          - 他歪了歪头，面具下的眼神带着一丝打趣。
+      - type: npc
+        content:
+          - 「...还是说，又忘了？」
+          - 「...嘿嘿。」
+    player_options:
+      - option: 「我记得有纯米嗨棒和甘酒嗨棒。」
+        text: 「我记得有纯米嗨棒和甘酒嗨棒。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「很好，记性不错。」
+              - 「...比上次强多了。」
+              - 「...虽然老夫也不知道这算是夸你还是损你。」
+        impact_log: 记得之前学的酒
+      - option: 「请先生检验我的学习成果。」
+        text: 「请先生检验我的学习成果。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好，让我看看。」
+              - 「...不过说真的，你这小子...」
+              - 「...每次来都像新来的。」
+              - 「...但每次学得都比上次快一点。」
+              - 「...有意思。」
+        impact_log: 请求检验
+      - option: 「我有点忘了...」
+        text: 「我有点忘了...」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「...没关系。」
+              - 「忘了就再学，老夫有的是耐心。」
+          - type: env
+            content:
+              - 他的语气温和得像是在哄孩子。
+          - type: npc
+            content:
+              - 「...反正你每次都会忘。」
+              - 「...每次也都会再学会。」
+              - 「...老夫早习惯了。」
+        impact_log: 承认遗忘
+    next_node: fox_uncle_teaching_review_mixing
+  - event_id: fox_uncle_008_dialogue_main
+    trigger_condition:
+      need_event:
+        - fox_uncle_007_dialogue_main
+      need_time: W1_D5_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从袖中取出柚子酱和蜂蜜。
+          - 放在吧台上。
+      - type: npc
+        content:
+          - 「来，复习一下。」
+    player_options: []
+    next_node: fox_uncle_teaching_review
+  - event_id: fox_uncle_009_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: W1_D6_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 第六天的黄昏。
+          - 一周就这样过去了。
+          - 狐面大叔推门而入。
+          - 他的脸上带着一丝欣慰的笑意。
+      - type: npc
+        content:
+          - 「呀列呀列...一周过去了。」
+          - 「你学得不错。」
+          - 「...比老夫预想的...快一点。」
+      - type: inner
+        content:
+          - 他每次说的"比上次快"是什么意思？
+          - 我...到底忘了多少东西？
+      - type: npc
+        content:
+          - 「今天教你最后一杯——蜜柚茶。」
+          - 「...也是老夫最爱的一杯。」
+    player_options:
+      - option: 「蜜柚茶？名字真美。」
+        text: 「蜜柚茶？名字真美。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「是的，秋天的味道。」
+              - 「...这一杯，尝起来会有点苦。」
+              - 「但苦过之后...是回甘。」
+              - 「...像是人生吧。」
+        impact_log: 赞美茶名
+      - option: 「我准备好了！」
+        text: 「我准备好了！」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好。」
+              - 「...你这小子，每次都说准备好了。」
+              - 「但下次来...又是满脸迷茫。」
+              - 「...算了，这就是你吧。」
+        impact_log: 准备好
+      - option: 「请指教。」
+        text: 「请指教。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好，成熟滋味的酒。」
+              - 「...这杯酒啊，老夫调了很多年。」
+              - 「每次喝...都能想起一些事。」
+              - 「...一些不该忘的事。」
+        impact_log: 谦虚请求
+    next_node: fox_uncle_teaching_review_02_mixing
+  - event_id: fox_uncle_010_dialogue_main
+    trigger_condition:
+      need_event:
+        - fox_uncle_009_dialogue_main
+      need_time: W1_D5_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从袖中取出一张配方纸。
+      - type: npc
+        content:
+          - 「今天教你一杯新的——蜜柚茶。」
+    player_options: []
+    next_node: fox_uncle_teaching_04
+  
+  - event_id: fox_uncle_011_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: W1_D7_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 黄昏时分。
+          - 木门被轻轻推开。
+          - 熟悉的木屐声响起...
+          - 啪嗒、啪嗒，不紧不慢。
+      - type: npc
+        content:
+          - 「呀列呀列...又来了。」
+          - 「...一周就这样过去了。」
+          - 「...时间不等人啊。」
+      - type: env
+        content:
+          - 他拄着拐杖，在门口站了一会儿。
+          - 仿佛在等什么。
+      - type: npc
+        content:
+          - 「...怎么样，小子？」
+          - 「...这一周...有没有偷懒？」
+          - 「...老夫可都看着呢。」
+    player_options:
+      - option: 「老先生，您来了。」
+        text: 「老先生，您来了。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「嗯，今天复习。」
+              - 「...让老夫看看你这周学得怎么样。」
+        impact_log: 问候老先生
+    next_node: fox_uncle_teaching_review_02
+  
+  - event_id: fox_uncle_012_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: W3_D15_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 周一黄昏。
+          - 狐面大叔推门而入。
+          - 带着一如既往的沉稳步伐。
+          - 和那永远不急不躁的气息。
+      - type: npc
+        content:
+          - 「呀列呀列...又一周过去了。」
+          - 「来，复习一下。」
+    player_options:
+      - option: 「我记得有纯米嗨棒、甘酒嗨棒、止痛药和蜜柚茶。」
+        text: 「我记得有纯米嗨棒、甘酒嗨棒、止痛药和蜜柚茶。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「很好，记性不错。」
+              - 「...有时候老夫都怀疑...」
+              - 「...你到底是忘了，还是在装傻。」
+          - type: env
+            content:
+              - 他的语气里带着一丝打趣。
+          - type: npc
+            content:
+              - 「...算了，不管你。」
+              - 「...反正记得就好。」
+        impact_log: 记得所有学过的酒
+      - option: 「我一直在练习！」
+        text: 「我一直在练习！」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「很好，让我看看你的进步。」
+              - 「...要是退步了...」
+              - 「...老夫可是要罚你的。」
+          - type: env
+            content:
+              - 他故意压低了声音，装作严肃的样子。
+              - 但那拐杖轻轻点地的声音，出卖了他的笑意。
+        impact_log: 一直在练习
+      - option: 「请先生指教。」
+        text: 「请先生指教。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「好，调一杯你最拿手的。」
+              - 「...老夫等着看看。」
+              - 「...这周...有没有白费。」
+        impact_log: 请求指教
+    next_node: fox_uncle_teaching_free_practice_mixing
+  - event_id: fox_uncle_013_dialogue_main
+    trigger_condition:
+      need_event:
+        - fox_uncle_012_dialogue_main
+      need_time: W3_D15_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从袖中取出小布包。
+      - type: npc
+        content:
+          - 「好，今天自由练习。我来看看你的手艺。」
+    player_options: []
+    next_node: fox_uncle_teaching_free_practice

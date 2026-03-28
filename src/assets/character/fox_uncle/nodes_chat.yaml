@@ -1,0 +1,207 @@
+character_id: fox_uncle
+nodes:
+  - id: chat_01
+    event_id: "fox_uncle_chat_001"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "他望向窗外的夕阳。"
+      - "拐杖轻轻靠在一边。"
+    speaker: null
+    content:
+      - "「...今天的酒，还算及格。」"
+      - "「继续努力吧。」"
+    player_options:
+      - text: "「谢谢老先生！」"
+        immediate_response: "「嗯。」"
+        next_node: null
+        fallback_node: null
+        impact_log: "感谢鼓励"
+        branch_type: "flavor"
+    next_node: null
+
+  - id: chat_02
+    event_id: "fox_uncle_chat_002"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "他拄着拐杖站在门口。"
+      - "回头望了一眼。"
+    speaker: null
+    content:
+      - "「下雨天...适合在屋里待着。」"
+      - "「你也早点休息。」"
+    player_options:
+      - text: "「老先生慢走！」"
+        immediate_response: "「嗯，早点休息。」"
+        next_node: null
+        fallback_node: null
+        impact_log: "道别"
+        branch_type: "flavor"
+    next_node: null
+
+  - id: chat_03
+    event_id: "fox_uncle_chat_003"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "他坐在角落的位置。"
+      - "轻轻抚摸着葫芦。"
+    speaker: null
+    content:
+      - "「这间店...变化不大。」"
+      - "「但人已经换了好几代了。」"
+      - "「......」"
+    player_options:
+      - text: "「老先生...您在这间店多久了？」"
+        immediate_response: null
+        next_node: "fox_uncle_chat_003_deep"
+        fallback_node: null
+        impact_log: "追问历史"
+        branch_type: "plot"
+      - text: "「...」"
+        immediate_response: "「......」"
+        next_node: null
+        fallback_node: null
+        impact_log: "沉默"
+        branch_type: "flavor"
+    next_node: null
+
+  - id: chat_003_deep
+    event_id: "fox_uncle_chat_003_deep"
+    trigger_condition:
+      need_event: ["fox_uncle_chat_003"]
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "他的手指停在葫芦上。"
+      - "沉默了一会儿。"
+    speaker: null
+    content:
+      - "「很久很久了。」"
+      - "「久到...记不清了。」"
+    player_options: []
+    next_node: null
+
+  - id: chat_04
+    event_id: "fox_uncle_chat_004"
+    trigger_condition:
+      need_event: []
+      need_time: "after_teaching"
+      need_item: []
+    atmosphere_lines:
+      - "他摸了摸白胡须。"
+      - "眼神有些悠远。"
+    speaker: null
+    content:
+      - "「调酒这件事...急不得。」"
+      - "「就像种田一样，春天播种，秋天收获。」"
+      - "「你明白吗？」"
+    player_options:
+      - text: "「我明白了。」"
+        immediate_response: "「很好。」"
+        next_node: null
+        fallback_node: null
+        impact_log: "领悟道理"
+        branch_type: "flavor"
+      - text: "「请老先生再指点。」"
+        immediate_response: "「调酒没有捷径。」"
+        next_node: null
+        fallback_node: null
+        impact_log: "请求更多指点"
+        branch_type: "flavor"
+    next_node: null
+
+  - id: chat_05
+    event_id: "fox_uncle_chat_005"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "黄昏的光线透过窗户洒在他的面具上。"
+    speaker: null
+    content:
+      - "「呀列...今天的黄昏真美。」"
+      - "「这样的景色，我看了上千年了。」"
+      - "「但还是不腻。」"
+    player_options:
+      - text: "「老先生...喜欢黄昏吗？」"
+        immediate_response: null
+        next_node: "fox_uncle_chat_005_deep"
+        fallback_node: null
+        impact_log: "询问黄昏"
+        branch_type: "plot"
+      - text: "「是啊，很美。」"
+        immediate_response: "「嗯，是的。」"
+        next_node: null
+        fallback_node: null
+        impact_log: "认同"
+        branch_type: "flavor"
+    next_node: null
+
+  - id: chat_005_deep
+    event_id: "fox_uncle_chat_005_deep"
+    trigger_condition:
+      need_event: ["fox_uncle_chat_005"]
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "他轻轻笑了笑。"
+    speaker: null
+    content:
+      - "「黄昏...是白天和黑夜的交界。」"
+      - "「也是...最容易遇见客人的时候。」"
+    player_options: []
+    next_node: null
+
+  - id: chat_weather_rain
+    event_id: "fox_uncle_chat_weather_rain"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "窗外下着雨。"
+      - "他望着雨幕。"
+    speaker: null
+    content:
+      - "「雨天...客人会少一些。」"
+      - "「但也是调酒师休息和练习的好时候。」"
+    player_options:
+      - text: "「我会趁这时候练习的。」"
+        immediate_response: "「很好。」"
+        next_node: null
+        fallback_node: null
+        impact_log: "表示会练习"
+        branch_type: "flavor"
+    next_node: null
+
+  - id: chat_sake
+    event_id: "fox_uncle_chat_about_sake"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他轻轻摇晃着葫芦。"
+    speaker: null
+    content:
+      - "「清酒这东西...要温着喝。」"
+      - "「但也不能太烫。」"
+      - "「太烫会烫嘴，太凉会伤胃。」"
+      - "「刚刚好...才是最难掌握的。」"
+    player_options:
+      - text: "「就像照顾客人一样？」"
+        immediate_response: "「嗯...也可以这么说。」"
+        next_node: null
+        fallback_node: null
+        impact_log: "类比照顾客人"
+        branch_type: "flavor"
+    next_node: null

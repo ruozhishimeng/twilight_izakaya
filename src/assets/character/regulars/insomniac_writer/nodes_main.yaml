@@ -1,0 +1,170 @@
+character_id: insomniac_writer
+nodes:
+  - event_id: insomniac_writer_001_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 木门被轻轻推开。
+          - 没有风铃声。
+          - 一个年轻人走了进来，眼睛布满血丝。
+          - 手指敲着吧台，像在数着什么。
+          - 他的笔记本上写满了密密麻麻的字，又被划掉了一半。
+      - type: env
+        content:
+          - 他的眼神空洞，却又带着一丝执着。
+      - type: npc
+        content:
+          - 「要一杯'深夜的灵感'...你有吗？」
+          - 「就是那种...能让脑子清醒，但又不会睡着的味道。」
+      - type: inner
+        content:
+          - 又是一个被灵感折磨的人。
+          - 看那笔记本上的字迹，删了又写，写了又删...
+          - 灵感这东西，不是等就能来的啊。
+      - type: npc
+        content:
+          - 「...你知道吗...」
+          - 「我已经三天没睡觉了。」
+          - 「不是不想睡...是睡不着。」
+          - 「脑子里全是故事...但写不出来...」
+      - type: inner
+        content:
+          - 三天...难怪眼睛布满血丝。
+          - 这样下去，身体会垮的。
+    player_options:
+      - option: 「马丁尼怎么样？干、苦、清醒。」
+        text: 「马丁尼怎么样？干、苦、清醒。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「...好。」
+          - type: inner
+            content:
+              - 他没有多说什么，只是机械地点了点头。
+          - type: npc
+            content:
+              - 「...我试试。」
+        next_node: insomniac_writer_001_mixing
+    next_node: null
+
+  - event_id: insomniac_writer_001_mixing
+    trigger_condition:
+      need_event:
+        - insomniac_writer_001_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 调酒进行中...
+    player_options: []
+    next_node: null
+    drink_request:
+      request_text: "马丁尼"
+      player_prompt: "他要的是一杯「马丁尼」，但更像是在找一种能让思绪安静下来的锋利清醒。我得把这杯酒调得克制一点。"
+      preferred_drink:
+        id: R006
+        name: 马丁尼
+        formula:
+          - bc02
+          - m04
+      steps:
+        - 取伦敦干金酒作为基酒
+        - 加入苦艾酒
+    on_mixing_complete: insomniac_writer_001_result
+    on_mixing_fail: insomniac_writer_001_fail
+
+  - event_id: insomniac_writer_001_result
+    trigger_condition:
+      need_event:
+        - insomniac_writer_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，嗅了嗅。
+          - 然后一饮而尽。
+      - type: npc
+        content:
+          - 「呵...这味道。」
+          - 「像是有人在背后推了我一把。」
+      - type: inner
+        content:
+          - 他放下酒杯，眼神突然变得锐利起来。
+      - type: npc
+        content:
+          - 「灵感啊...从来不是等来的。」
+          - 「是要把自己逼到绝境...才会出现的。」
+      - type: inner
+        content:
+          - 他猛地翻开笔记本，开始奋笔疾书。
+      - type: env
+        content:
+          - 笔尖在纸上飞速划过。
+          - 他的眼睛越来越亮。
+      - type: npc
+        content:
+          - 「...我知道了...」
+          - 「原来是这么回事...」
+          - 「主角不是不想面对...是不能面对...」
+          - 「...他要等，等到他有资格面对的那一天...」
+      - type: inner
+        content:
+          - 我看着他的侧脸。
+          - 此刻的他，像是被什么东西点燃了一样。
+      - type: npc
+        content:
+          - 「小老板...谢谢。」
+          - 「这杯酒...值了。」
+          - 「...我得走了。」
+          - 「我要回去把它写完...」
+          - 「这个故事...憋了我三年了...」
+      - type: env
+        content:
+          - 他抓起笔记本，像抓着什么珍宝一样。
+          - 眼睛里的血丝还在，但眼神已经不一样了。
+          - 是找到了方向的释然。
+      - type: inner
+        content:
+          - 深夜的访客，每个人都带着自己的故事。
+          - 也许他的下一个故事，就藏在今晚这杯酒里。
+          - 灵感这种东西...也许就是一杯酒的距离。
+    player_options: []
+    next_node: null
+    diary_note: '一个失眠了三天的作家，说灵感"等不来，要逼到绝境才会出现"。一杯马丁尼下去，他说他想通了...希望他的故事能写完。'
+
+  - event_id: insomniac_writer_001_fail
+    trigger_condition:
+      need_event:
+        - insomniac_writer_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，喝了一口，皱起眉头。
+      - type: npc
+        content:
+          - 「...不是这个味道。」
+          - 「算了...将就吧。」
+      - type: inner
+        content:
+          - 他看起来有些失望。
+          - 但更多的是疲惫。
+      - type: npc
+        content:
+          - 「...算了，灵感这东西，急不来的。」
+          - 「...再等等吧...」
+      - type: inner
+        content:
+          - 他放下酒杯，又开始盯着笔记本发呆。
+          - 也许...明天会有灵感吧。
+    player_options: []
+    next_node: null
+    diary_note: '今天调的马丁尼不对，那个作家喝完就走了。他说"灵感急不来"...也许他说得对，但下次我会调得更好。'

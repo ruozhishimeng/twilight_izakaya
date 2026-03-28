@@ -1,0 +1,893 @@
+character_id: aqiang
+nodes:
+  # ========================================
+  # 第一幕：初见 - 焦急的最后一单
+  # ========================================
+
+  - event_id: aqiang_001_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 木门被推开。
+          - 没有风铃声。
+          - 一个浑身湿透的年轻人站在门口，深蓝色的速运制服贴在身上。
+          - 左胸口的白色logo已经被雨水泡得模糊。
+          - 右太阳穴有一道青紫的撞伤，但他似乎完全没有察觉到。
+          - 他的怀里紧紧护着什么，用左手手臂压着。
+      - type: npc
+        content:
+          - 「......有酒吗？」
+          - 「......快点。」
+      - type: env
+        content:
+          - 他的手指在碎裂的手机屏幕上机械地滑动。
+          - 屏幕上的裂纹像蛛网，但导航还在运行。
+      - type: inner
+        content:
+          - 这个人......浑身湿透了。像是从雨里直接跑进来的。
+          - 他在赶什么？
+    player_options:
+      - option: 「外面雨很大，要不要先擦一擦？」
+        text: 「外面雨很大，要不要先擦一擦？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「不用。我很快就走。」
+              - 「......送完这单就走。」
+        next_node: aqiang_002_dialogue_main
+        impact_log: 关心他的状态
+      - option: 「您这是......速运员？这么晚还在跑？」
+        text: 「您这是......速运员？这么晚还在跑？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......嗯。速运。」
+              - 「最后一单了。」
+        next_node: aqiang_002_dialogue_main
+        impact_log: 询问职业
+    next_node: aqiang_002_dialogue_main
+
+  - event_id: aqiang_002_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_001_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他低头看了一眼手机屏幕，眉头紧锁。
+      - type: npc
+        content:
+          - 「......还有多远来着。」
+          - 「导航......不准了。」
+      - type: env
+        content:
+          - 他的手指在胸口的位置停留了一下......
+          - 那里有个硬硬的轮廓，像是一个小盒子。
+      - type: inner
+        content:
+          - 他好像在确认什么东西还在不在。
+      - type: npc
+        content:
+          - 「......不是快递。」
+          - 「是......要亲手交给她的东西。」
+    player_options:
+      - option: 「是要送给谁吗？」
+        text: 「是要送给谁吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......嗯。」
+              - 「......我妹妹。」
+          - type: env
+            content:
+              - 提到"妹妹"的时候，他的语气突然慢了下来。
+        impact_log: 询问收件人
+      - option: 「导航怎么不准了？」
+        text: 「导航怎么不准了？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......不知道。」
+              - 「一直显示还有两公里。」
+              - 「但我怎么都到不了。」
+        impact_log: 询问导航问题
+    next_node: aqiang_003_drink_request
+
+  - event_id: aqiang_003_drink_request
+    trigger_condition:
+      need_event:
+        - aqiang_002_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他又看了一眼手机屏幕。
+          - 时间显示：17:58。
+          - 不知道为什么，那个数字似乎停住不动了。
+      - type: npc
+        content:
+          - 「......这酒。」
+          - 「......能让我想起她的吗。」
+      - type: env
+        content:
+          - 他的声音突然变得很轻。
+      - type: inner
+        content:
+          - 「让她想起她」......他在说什么？
+    player_options: []
+    next_node: null
+    drink_request:
+      keywords: ["焦急", "赶时间", "未完成", "遗憾", "妹妹"]
+      hint: 他下意识地摸了摸胸口的位置，像在确认什么东西还在。那里似乎装着什么硬质的东西——像是一个小盒子。他的手机屏幕碎裂，但导航还在运行。
+
+  # ========================================
+  # 第一幕：调酒结果
+  # ========================================
+
+  - event_id: aqiang_phase1_success
+    trigger_condition:
+      need_event:
+        - aqiang_003_drink_request
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，抿了一口。
+          - 眉头微微松开了一点。
+      - type: npc
+        content:
+          - 「......这酒。」
+          - 「......像是要送给重要的人的东西。」
+      - type: env
+        content:
+          - 他又看了一眼胸口的位置。
+      - type: npc
+        content:
+          - 「......我得走了。」
+          - 「......她还在等我。」
+    player_options: []
+    next_node: null
+    diary_note: "一个浑身湿透的速运员，胸口紧紧护着什么东西。他说\"最后一单\"，说\"妹妹还在等\"。雨那么大，愿他平安到达。"
+    on_success:
+      next_phase: 2
+
+  - event_id: aqiang_phase1_fail
+    trigger_condition:
+      need_event:
+        - aqiang_003_drink_request
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他一口喝了大半杯，叹了口气。
+      - type: npc
+        content:
+          - 「......谢谢。」
+          - 「我得走了。」
+    player_options: []
+    next_node: null
+    diary_note: "阿相喝完就走了。他总是很急，赶着去送那最后一单......胸口的硬物，是送给妹妹的礼物吗？"
+    on_success:
+      next_phase: idle
+
+  # ========================================
+  # 第二幕：破冰 - 一百六十七单
+  # ========================================
+
+  - event_id: aqiang_004_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_phase1_success
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他再次出现在门口。
+          - 这次，工服已经干了，但磨损得更明显了。
+          - 右肘的位置薄得几乎要透光，补丁打了三层。
+          - 但他眼底的疲惫，却比上次更深。
+      - type: npc
+        content:
+          - 「......我又来了。」
+          - 「......还剩两公里。」
+      - type: env
+        content:
+          - 他的手机夹在车把支架上，屏幕上的裂纹更大了。
+          - 但他似乎完全没有注意到。
+      - type: inner
+        content:
+          - 又是这句话......"还剩两公里"。
+          - 他到底要送去哪里？
+    player_options:
+      - option: 「两公里......听起来不远？」
+        text: 「两公里......听起来不远？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......很近。」
+              - 「但我走了很久。」
+          - type: env
+            content:
+              - 他的语气很奇怪。
+              - 像是在说一个他自己也不明白的事实。
+        next_node: aqiang_005_dialogue_main
+        impact_log: 询问距离
+      - option: 「您的制服......好像穿了很久了？」
+        text: 「您的制服......好像穿了很久了？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......三年。」
+              - 「多跑一单，她的钢琴就近一寸。」
+          - type: env
+            content:
+              - 提到"她"的时候，他的语气突然软了下来。
+        next_node: aqiang_005_dialogue_main
+        impact_log: 注意到制服磨损
+    next_node: aqiang_005_dialogue_main
+
+  - event_id: aqiang_005_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_004_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他的手指无意识地摩挲着胸口的位置。
+      - type: npc
+        content:
+          - 「......一百六十七单。」
+          - 「......我数过。每一单都数过。」
+      - type: inner
+        content:
+          - 一百六十七单......他在说什么？
+      - type: npc
+        content:
+          - 「从付定金到结清尾款......一百六十七次出发，一百六十七次送达。」
+          - 「......换来的东西。」
+      - type: env
+        content:
+          - 他的目光落在胸口的位置。
+      - type: npc
+        content:
+          - 「......她喜欢《月光》。」
+          - 「德彪西的《月光》。」
+          - 「......她说，想听一次真正的钢琴。」
+      - type: inner
+        content:
+          - 《月光》......他妹妹想要的，是一首钢琴曲。
+          - 但他胸口的东西，显然不是钢琴......
+      - type: npc
+        content:
+          - 「......我还差得远。」
+          - 「钢琴太贵了。八万。」
+          - 「......但音乐盒......三万。我能攒够。」
+    player_options:
+      - option: 「三万......一百六十七单？」
+        text: 「三万......一百六十七单？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......嗯。」
+              - 「一单大概三百日元。」
+              - 「要跑很多很多趟。」
+          - type: env
+            content:
+              - 他的语气很平淡，像是在说一件很普通的事。
+        next_node: aqiang_006_drink_request
+        impact_log: 询问一百六十七单
+      - option: 「她一定很期待。」
+        text: 「她一定很期待。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......」
+              - 「她很懂事。」
+              - 「从来不向我要什么。」
+              - 「但我看到过......她在橱窗前站了很久。」
+              - 「......她以为我没看见。」
+          - type: env
+            content:
+              - 他的声音突然变得很轻。
+              - 像是想起了什么。
+        next_node: aqiang_006_drink_request
+        impact_log: 共情妹妹
+    next_node: aqiang_006_drink_request
+
+  - event_id: aqiang_006_drink_request
+    trigger_condition:
+      need_event:
+        - aqiang_005_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他望着窗外的夜色，目光变得有些遥远。
+      - type: npc
+        content:
+          - 「......今天是她生日。」
+      - type: env
+        content:
+          - 他的声音突然变得很轻。
+      - type: inner
+        content:
+          - 今天是她生日......
+          - 他这么着急，原来是因为这个。
+      - type: npc
+        content:
+          - 「......我要送到。」
+          - 「......一定要送到。」
+    player_options: []
+    next_node: null
+    drink_request:
+      keywords: ["牵挂", "思念", "家人", "妹妹", "生日"]
+      hint: 他说"一百六十七次出发，一百六十七次送达"。他的妹妹想要一架钢琴，但他只能先买得起一个音乐盒。今天是她18岁生日。
+
+  # ========================================
+  # 第二幕：调酒结果
+  # ========================================
+
+  - event_id: aqiang_phase2_success
+    trigger_condition:
+      need_event:
+        - aqiang_006_drink_request
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他端起酒杯，一口喝了大半。
+          - 眼眶有些泛红......
+      - type: npc
+        content:
+          - 「......这酒。」
+          - 「......像小时候的味道。」
+          - 「......爸染布的时候......」
+          - 「......不说了。我得走了。」
+      - type: env
+        content:
+          - 他放下酒杯，目光落在胸口的位置。
+      - type: npc
+        content:
+          - 「......快了。」
+          - 「......就快到了。」
+    player_options: []
+    next_node: null
+    diary_note: "阿相喝酒的时候想起了小时候爸爸染布的味道。他说一百六十七单，只为给妹妹买一个音乐盒。今天是她18岁生日......真是个好哥哥。"
+    on_success:
+      next_phase: 3
+
+  - event_id: aqiang_phase2_fail
+    trigger_condition:
+      need_event:
+        - aqiang_006_drink_request
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他放下酒杯，若有所思地望着窗外。
+      - type: npc
+        content:
+          - 「......」
+          - 「她等了我很久了。」
+          - 「这次......不能再让她失望了。」
+    player_options: []
+    next_node: null
+    diary_note: "阿相说不能再让\"她\"失望了。他一直在说\"就快到了\"......但为什么他说的距离，好像永远都走不完？"
+    on_success:
+      next_phase: idle
+
+  # ========================================
+  # 第三幕：揭露 - 那场雨
+  # ========================================
+
+  - event_id: aqiang_007_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_phase2_success
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他出现在门口。
+          - 这次，他的步伐慢了下来。
+          - 手机屏幕上的时间似乎停在了某个数字——17:58。
+      - type: npc
+        content:
+          - 「......」
+          - 「那天......也是下雨天。」
+      - type: env
+        content:
+          - 他的目光有些迷茫。
+          - 像是想起了什么，又像是不敢去想。
+      - type: inner
+        content:
+          - 那天的雨......他说的是什么意思？
+    player_options:
+      - option: 「那天......发生什么了？」
+        text: 「那天......发生什么了？」
+        branch_type: plot
+        script_flow:
+          - type: npc
+            content:
+              - 「......」
+              - 「那天......我是去送东西的。」
+        next_node: aqiang_008_dialogue_main
+        impact_log: 询问那天的事
+      - option: 「手机上的时间......好像停住了？」
+        text: 「手机上的时间......好像停住了？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......是吗？」
+              - 「......我不知道。」
+              - 「我只知道......要送到。」
+          - type: env
+            content:
+              - 他的语气有些迷茫。
+        next_node: aqiang_008_dialogue_main
+        impact_log: 注意到停止的时间
+    next_node: aqiang_008_dialogue_main
+
+  - event_id: aqiang_008_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_007_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从胸口小心翼翼地捧出一个小盒子。
+          - 系着粉色丝带，两边长短差了将近三厘米。
+          - 丝带是他自己在百元店挑了二十分钟才选定的。
+      - type: npc
+        content:
+          - 「......没有碎。」
+      - type: inner
+        content:
+          - 没有碎......他在说什么？
+      - type: npc
+        content:
+          - 「一百六十七单。换来的东西。」
+          - 「......」
+          - 「雨很大。单价翻三倍。我想多跑几单。」
+          - 「......就快到了。」
+      - type: env
+        content:
+          - 他的声音变得很轻。
+      - type: npc
+        content:
+          - 「我低头看了一眼手机......」
+          - 「就一眼。」
+      - type: inner
+        content:
+          - 那一瞬间......发生了什么？
+      - type: npc
+        content:
+          - 「......然后就是车灯。」
+          - 「......很大的声音。」
+          - 「......」
+          - 「但我只想到一件事。」
+      - type: env
+        content:
+          - 他的左手死死地护着胸口的位置。
+      - type: npc
+        content:
+          - 「......还好。」
+          - 「......没有碎。」
+      - type: inner
+        content:
+          - 他在说......什么？
+          - 那场雨里......到底发生了什么？
+    player_options:
+      - option: 「......什么声音？」
+        text: 「......什么声音？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......刹车声。」
+              - 「......或者......撞到了什么。」
+              - 「......我不记得了。」
+          - type: env
+            content:
+              - 他的眼神有些迷茫。
+          - type: npc
+            content:
+              - 「......但我记得我说的话。」
+              - 「......还好，没有碎。」
+        next_node: aqiang_009_drink_request
+        impact_log: 追问细节
+      - option: 「......你还好吗？」
+        text: 「......你还好吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......」
+              - 「我没事。」
+              - 「......雪还在等我。」
+              - 「......我要送到。」
+          - type: env
+            content:
+              - 他的语气很坚定。
+        next_node: aqiang_009_drink_request
+        impact_log: 表达关心
+    next_node: aqiang_009_drink_request
+
+  - event_id: aqiang_009_drink_request
+    trigger_condition:
+      need_event:
+        - aqiang_008_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他把音乐盒收回胸口的位置。
+          - 动作很轻，很小心。
+      - type: npc
+        content:
+          - 「......有一杯酒。」
+          - 「......是关于那些来不及的事的。」
+          - 「......你有吗？」
+      - type: inner
+        content:
+          - 来不及的事......
+          - 他说的那场雨......难道......
+      - type: npc
+        content:
+          - 「......有些事，错过了就是错过了。」
+          - 「......有些人，等不到了就是等不到了。」
+          - 「......」
+          - 「......但我还能送到。」
+          - 「......我相信。」
+    player_options: []
+    next_node: null
+    drink_request:
+      keywords: ["遗憾", "悔恨", "来不及", "来不及的事"]
+      hint: 他说"来不及的事"。他提到了那场雨，那声刹车，那句"还好，没有碎"。他的妹妹还在等他——但他好像......永远到不了了。
+
+  # ========================================
+  # 第三幕：调酒结果
+  # ========================================
+
+  - event_id: aqiang_phase3_success
+    trigger_condition:
+      need_event:
+        - aqiang_009_drink_request
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他接过酒杯，手微微发抖。
+          - 喝了一口，眉头紧锁。
+      - type: npc
+        content:
+          - 「......这酒。」
+          - 「......苦中带甜。」
+          - 「......像是......在愈合什么。」
+      - type: inner
+        content:
+          - 他好像......想起了什么。
+      - type: npc
+        content:
+          - 「......小雪......」
+          - 「......对不起......」
+          - 「......哥......来晚了吗......」
+      - type: env
+        content:
+          - 他的眼眶红了。
+          - 第一次，他的眉头松开了。
+    player_options: []
+    next_node: null
+    diary_note: "阿相终于说出了\"对不起\"。他说的那场雨、那声刹车、那句\"还好，没有碎\"......我终于明白了。他一直觉得自己来晚了。但他已经......"
+    on_success:
+      next_phase: 4
+
+  - event_id: aqiang_phase3_fail
+    trigger_condition:
+      need_event:
+        - aqiang_009_drink_request
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他沉默地喝着酒。
+          - 眼神飘向远方。
+      - type: npc
+        content:
+          - 「......」
+          - 「......她还在等。」
+          - 「......我得走了。」
+      - type: env
+        content:
+          - 他站起身，准备离开。
+          - 但他的身影......为什么看起来有些透明？
+    player_options: []
+    next_node: null
+    diary_note: "他要走的时候，我好像看到了什么......他的身影，为什么有些模糊？像是不属于这个世界的人。"
+    on_success:
+      next_phase: idle
+
+  # ========================================
+  # 第四幕：救赎 - 月光
+  # ========================================
+
+  - event_id: aqiang_010_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_phase3_success
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他来了。
+          - 但这次不一样。
+          - 他的步伐慢了下来，不再那么焦急。
+          - 手机屏幕上的时间......还是17:58。
+      - type: npc
+        content:
+          - 「......我又来了。」
+      - type: env
+        content:
+          - 他的声音很平静。
+          - 不再像以前那样急促。
+      - type: inner
+        content:
+          - 他......不一样了。
+      - type: npc
+        content:
+          - 「......我想通了一些事。」
+          - 「......或者说......有人告诉了我一些事。」
+      - type: inner
+        content:
+          - 有人......？
+    player_options:
+      - option: 「什么人？」
+        text: 「什么人？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......一只猫。」
+              - 「......一只黑猫。」
+              - 「......它挡了一下。」
+          - type: env
+            content:
+              - 他的眼神有些迷茫，又有些释然。
+          - type: npc
+            content:
+              - 「......但我还是没能......」
+        next_node: aqiang_011_dialogue_main
+        impact_log: 询问那只猫
+      - option: 「你看起来......平静多了。」
+        text: 「你看起来......平静多了。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......嗯。」
+              - 「......有人告诉我，她已经收到了。」
+              - 「......不是音乐盒。是我。」
+          - type: env
+            content:
+              - 他说这话的时候，嘴角微微上扬。
+        next_node: aqiang_011_dialogue_main
+        impact_log: 注意到他的变化
+    next_node: aqiang_011_dialogue_main
+
+  - event_id: aqiang_011_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_010_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从胸口拿出那个音乐盒。
+          - 粉色丝带在昏暗的灯光下微微发亮。
+      - type: npc
+        content:
+          - 「......一百六十七单。」
+          - 「......就是为了这个。」
+          - 「......但我现在知道了。」
+      - type: inner
+        content:
+          - 知道什么......？
+      - type: npc
+        content:
+          - 「......雪需要的不是音乐盒。」
+          - 「......她需要我好好活着。」
+          - 「......看着她弹完那首《月光》。」
+          - 「......」
+      - type: env
+        content:
+          - 他的声音有些哽咽。
+      - type: npc
+        content:
+          - 「......但我做不到。」
+          - 「......从那天起......我就做不到了。」
+          - 「......」
+          - 「......对不起，小雪。」
+      - type: env
+        content:
+          - 他低着头，双手捧着音乐盒。
+          - 左袖口微微卷起，露出里面藏着的一截红绳。
+      - type: inner
+        content:
+          - 那个红绳......是什么？
+    player_options:
+      - option: 「那个红绳是......？」
+        text: 「那个红绳是......？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......这是雪给我的。」
+          - type: env
+            content:
+              - 他低头看着那截缝进袖口的红绳。
+          - type: npc
+            content:
+              - 「......她12岁的时候系的。」
+              - 「......她说，这个会保护我。」
+              - 「......后来绳子磨断了......」
+              - 「......我没有扔掉，把它缝进了袖口里。」
+              - 「......我不想让她知道，'平安绳'断了。」
+          - type: inner
+            content:
+              - 12岁......那是很多年前的事了。
+              - 他一直带着这个......即使它早就断了、旧了......
+          - type: npc
+            content:
+              - 「......但现在我知道了。」
+              - 「......真正能保护我的......」
+              - 「......不是这根绳子。」
+              - 「......是我活着的每一天。」
+        next_node: aqiang_012_dialogue_main
+        impact_log: 询问红绳
+    next_node: aqiang_012_dialogue_main
+
+  - event_id: aqiang_012_dialogue_main
+    trigger_condition:
+      need_event:
+        - aqiang_011_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他抬起头，目光穿过蒙蒙的雨幕。
+          - 落在某个温柔的地方。
+      - type: npc
+        content:
+          - 「......小雪。」
+          - 「......哥先走一步了。」
+          - 「......但你要记住。」
+          - 「......你弹《月光》的时候，哥一直在听。」
+          - 「......每一天，哥都在听。」
+      - type: env
+        content:
+          - 他把音乐盒轻轻放在吧台上。
+      - type: npc
+        content:
+          - 「......这个，留给你。」
+          - 「......不，是还给你。」
+          - 「......它本来就是你的。」
+      - type: inner
+        content:
+          - 他......在告别吗？
+    player_options:
+      - option: 「......你要走了吗？」
+        text: 「......你要走了吗？」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「......嗯。」
+              - 「......我不属于这里了。」
+              - 「......雪在等我。」
+          - type: env
+            content:
+              - 他的身影开始变得透明。
+          - type: npc
+            content:
+              - 「......谢谢你。」
+              - 「......谢谢你的酒。」
+              - 「......让我想起了很多事。」
+              - 「......让我能好好地......说再见。」
+        impact_log: 道别
+    next_node: aqiang_013_ending
+
+  - event_id: aqiang_013_ending
+    trigger_condition:
+      need_event:
+        - aqiang_012_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 音乐盒的旋律响起。
+          - 是德彪西的《月光》。
+          - 窄小的音域里流淌出被压扁的音色，带着木头温度，微微发颤。
+      - type: npc
+        content:
+          - 「......月光。」
+          - 「......替哥染一片最好的蓝。」
+      - type: env
+        content:
+          - 他笑了，很轻，很淡。
+          - 像是终于放下了什么。
+      - type: npc
+        content:
+          - 「......爸说过，要把最好的蓝色染给世界看。」
+          - 「......我没能继承他的蓝色。」
+          - 「......但雪可以。」
+          - 「......她会替我们......染一片最好的蓝。」
+      - type: env
+        content:
+          - 他的身影渐渐消散。
+          - 像是被月光融化了一样。
+          - 最后一缕光消散的时候，《月光》的旋律正好停在最后一个音符。
+    player_options: []
+    next_node: null
+    diary_note: "阿相走了。他终于把音乐盒送到了雪手里——不是用一百六十七单，而是用他自己的方式。他说，\"你才是那首《月光》\"。月光照耀着他们，愿他们永远在一起。"
+    on_success:
+      next_phase: released
+      redemption_summary: |
+        晴山冰相，17岁那年父亲去世，母亲精神崩溃。他撕掉国立大学有希望的成绩单，继承染坊。
+
+        敌不过机械化印染的洪流，染坊一年后倒闭。他卖了所有器械，带着妹妹搬进祖母的老破小。
+
+        为让有钢琴天赋的妹妹继续学琴，他什么都做：工地搬砖、便利店夜班、餐厅洗碗。最后选择了速运员——多跑一单，雪的钢琴就近一寸。
+
+        小雪18岁生日前两个月，他终于攒够尾款，在一家手工音乐盒店买下了定制音乐盒。录有德彪西《月光》的旋律。他算过：从付定金到结清尾款，一共跑了一百六十七单。
+
+        那天暴雨。单价翻三倍。他想多跑几单。下午五点五十八分，交叉路口。他低头看了一眼手机导航——就一眼。
+
+        侧方驶来的卡车在湿滑路面上刹车失控。他做了一个动作：不是转向，不是刹车。而是弓起身体，左手死死护住胸口那个位置。
+
+        "还好，"他想，"没有碎。"
+
+        他不知道自己已经死了。他只知道雪还在等。他得把音乐盒送到她手里。
+
+        但他永远到不了了——或者说，他以为自己永远到不了了。
+
+        直到那天，有人告诉他：她已经收到了。不是音乐盒。是你。
+
+        你活着的时候给她的每一天，你省下的每一口饭，你缝补了三次的制服，你站在她房门口听的每一次呼吸——这些才是真正的礼物。
+
+        音乐盒只是一个盒子。你才是那首《月光》。
+
+        那场雨，终于停了。

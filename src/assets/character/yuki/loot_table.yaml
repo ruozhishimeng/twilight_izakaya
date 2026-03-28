@@ -1,0 +1,164 @@
+character_id: yuki
+
+# 阶段完成标记
+phase_completion:
+  - phase: 1
+    unlock_condition:
+      event_id: "yuki_phase1_most_loved_success"
+      description: "调对最爱的酒后进入第二阶段"
+    unlocks:
+      - "yuki_phase_2_dialogue"
+      - "gallery_music_box_pieces"
+      - "gallery_photo"
+
+  - phase: 2
+    unlock_condition:
+      event_id: "yuki_phase2_most_loved_success"
+      description: "调对最爱的酒后进入第三阶段"
+    unlocks:
+      - "yuki_phase_3_dialogue"
+      - "gallery_the_accident"
+      - "gallery_brother"
+
+  - phase: 3
+    unlock_condition:
+      event_id: "yuki_phase3_redemption_end"
+      description: "完成救赎对话后"
+    unlocks:
+      - "gallery_the_truth"
+      - "gallery_black_cat"
+
+  - released:
+    unlock_condition:
+      event_id: "yuki_phase3_redemption_end"
+      description: "小雪获得救赎，前往彼岸"
+    unlocks:
+      - "gallery_full_story"
+      - "yuki_released"
+
+# 打量解锁
+observation_unlocks:
+  - observation_id: "obs_wet_uniform"
+    name: "湿透的水手服"
+    unlock_condition:
+      event_id: "yuki_001_dialogue_main"
+      description: "首次来访时自动可见"
+    unlocks:
+      - "gallery_surface"
+
+  - observation_id: "obs_red_yarn"
+    name: "褪色的红毛线绳"
+    unlock_condition:
+      event_id: "yuki_002_dialogue_main"
+      description: "第二轮对话时"
+    unlocks:
+      - "gallery_red_yarn"
+
+  - observation_id: "obs_cat_carrier"
+    name: "空荡的猫包"
+    unlock_condition:
+      event_id: "yuki_003_drink_request"
+      description: "调酒请求时"
+    unlocks:
+      - "gallery_empty_carrier"
+
+  - observation_id: "obs_finger_piano"
+    name: "无形的钢琴"
+    unlock_condition:
+      event_id: "yuki_004_dialogue_main"
+      description: "第二阶段来访时"
+    unlocks:
+      - "gallery_piano_fingers"
+
+  - observation_id: "obs_music_box_bag"
+    name: "音乐盒碎片"
+    unlock_condition:
+      event_id: "yuki_005_dialogue_main"
+      description: "第五对话节点"
+    unlocks:
+      - "gallery_music_box_pieces"
+
+  - observation_id: "obs_blue_fabric"
+    name: "蓝染的雨声"
+    unlock_condition:
+      event_id: "yuki_hidden_blue_rain"
+      description: "触发隐藏对话后"
+    unlocks:
+      - "gallery_blue_rain"
+
+  - observation_id: "obs_sato_piano"
+    name: "佐藤奶奶的钢琴"
+    unlock_condition:
+      event_id: "yuki_hidden_sato_piano"
+      description: "触发隐藏对话后"
+    unlocks:
+      - "gallery_sato_piano"
+
+  - observation_id: "obs_last_words"
+    name: "哥哥最后的背影"
+    unlock_condition:
+      event_id: "yuki_phase3_redemption"
+      description: "进入救赎对话后"
+    unlocks:
+      - "gallery_the_accident"
+
+# 隐藏剧情解锁
+hidden_unlocks:
+  - hidden_id: "hidden_truth"
+    name: "真相"
+    unlock_condition:
+      event_id: "yuki_phase3_redemption"
+      time: "any"
+      description: "进入救赎对话后触发"
+    requires_phase: 3
+
+  - hidden_id: "hidden_blue_rain"
+    name: "蓝染的雨声"
+    unlock_condition:
+      event_id: "yuki_005_dialogue_main"
+      description: "第五对话节点时可能触发"
+    requires_phase: 2
+
+  - hidden_id: "hidden_red_dye"
+    name: "红色的记忆"
+    unlock_condition:
+      event_id: "yuki_002_dialogue_main"
+      description: "第二轮对话时可能触发"
+    requires_phase: 1
+
+  - hidden_id: "hidden_sato_piano"
+    name: "佐藤奶奶的钢琴"
+    unlock_condition:
+      event_id: "yuki_004_dialogue_main"
+      description: "第二阶段来访时可能触发"
+    requires_phase: 2
+
+  - hidden_id: "hidden_brother_last_words"
+    name: "哥哥最后的话"
+    unlock_condition:
+      event_id: "yuki_phase3_redemption"
+      description: "进入救赎对话后"
+    requires_phase: 3
+
+  - hidden_id: "hidden_cat_return"
+    name: "小墨的下落"
+    unlock_condition:
+      event_id: "yuki_phase3_redemption"
+      description: "进入救赎对话后"
+    requires_phase: 3
+
+# 救赎总结
+redemption:
+  true_story: |
+    小雪，晴山家的最后一个孩子。她的哥哥阿相在送她18岁生日礼物的路上遭遇车祸，再也没有回来。
+
+    阿相14岁辍学打工，把所有省下的钱都给了小雪读书。他发誓要为她买一架有她名字的钢琴。18岁生日那天，他去取定制音乐盒，却再也没能回来。
+
+    从那天起，小雪就被困在那个雨夜。湿透的水手服再也没有干过。她每天都会出门，寻找哥哥和走丢的黑猫小墨。
+
+    但哥哥已经不在了。小墨也被附近的好心人收养了。只有她，还留在那个雨夜，等待一个永远不会到来的天黑。
+
+  lesson: |
+    有些失去，是活着的人必须背负的重量。但爱不会消失，它会变成另一种形式，陪伴着我们。
+    小雪终于明白，哥哥希望她继续走下去，不是为了他，是为了她自己。
+    那场雨，终于停了。

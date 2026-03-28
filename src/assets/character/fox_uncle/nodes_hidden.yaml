@@ -1,0 +1,195 @@
+character_id: fox_uncle
+nodes:
+  - id: hidden_god_form
+    event_id: "fox_uncle_hidden_god_form"
+    trigger_condition:
+      need_event: []
+      need_time: "W3_D15_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "黄昏的光线逐渐变暗。"
+      - "狐面大叔站在窗边。"
+      - "他的影子在夕阳下拉得很长..."
+      - "那影子的轮廓...似乎有些不同。"
+    speaker: null
+    content:
+      - "「......」"
+    player_options:
+      - text: "「老先生...您的影子...」"
+        next_node: "fox_uncle_hidden_god_form_reveal"
+        impact_log: "发现影子异常"
+    next_node: null
+
+  - id: hidden_god_form_reveal
+    event_id: "fox_uncle_hidden_god_form_reveal"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_god_form"]
+      need_time: "W3_D15_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "他停下脚步。"
+      - "缓缓转过身来。"
+      - "夕阳下，他的影子显现出清晰的九尾狐狸轮廓。"
+    speaker: null
+    content:
+      - "「呀列...被发现了。」"
+      - "「你小子...眼神还挺厉害的。」"
+    player_options:
+      - text: "「九尾...您是...」"
+        next_node: "fox_uncle_hidden_god_form_confirm"
+        impact_log: "追问身份"
+    next_node: null
+
+  - id: hidden_god_form_confirm
+    event_id: "fox_uncle_hidden_god_form_confirm"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_god_form_reveal"]
+      need_time: "W3_D15_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "他摸了摸胡须。"
+      - "声音变得悠远。"
+    speaker: null
+    content:
+      - "「稻荷神。」"
+      - "「丰收与商业的守护者。」"
+      - "「这间店...是我很久以前开的。」"
+      - "「那时的调酒师...现在已经不在了。」"
+      - "「但我还在。」"
+      - "「一直都在。」"
+    player_options:
+      - text: "「...谢谢您一直守护着这里。」"
+        next_node: "fox_uncle_hidden_god_form_end"
+        impact_log: "表达感谢"
+    next_node: null
+
+  - id: hidden_god_form_end
+    event_id: "fox_uncle_hidden_god_form_end"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_god_form_confirm"]
+      need_time: "W3_D15_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "他摆摆手。"
+    speaker: null
+    content:
+      - "「不用谢。」"
+      - "「我只是想看着...每一杯酒背后的故事。」"
+      - "「你是最新的一个了。」"
+      - "「好好调酒，年轻人。」"
+    player_options: []
+    next_node: null
+    unlock_gallery: "true_god_form"
+
+  - id: hidden_thousand_years
+    event_id: "fox_uncle_hidden_thousand_years"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_god_form_confirm"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他拄着拐杖站在窗边。"
+      - "望向窗外的黄昏。"
+    speaker: null
+    content:
+      - "「这间店...有一千年了。」"
+      - "「我看着它建起来。」"
+      - "「看着一代代调酒师来来去去。」"
+    player_options:
+      - text: "「一千年...」"
+        next_node: "fox_uncle_hidden_thousand_years_02"
+        impact_log: "惊叹千年"
+    next_node: null
+
+  - id: hidden_thousand_years_02
+    event_id: "fox_uncle_hidden_thousand_years_02"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_thousand_years"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他的目光变得悠远。"
+    speaker: null
+    content:
+      - "「你知道为什么叫'黄昏'居酒屋吗？」"
+      - "「因为黄昏...是白天和黑夜的交界。」"
+      - "「也是活人和...其他东西的交界。」"
+      - "「我的客人们...常常是赶路赶累了的人。」"
+      - "「还有...一些不想离开的魂魄。」"
+    player_options:
+      - text: "「所以这里...也是为您这样的存在开的？」"
+        next_node: "fox_uncle_hidden_thousand_years_03"
+        impact_log: "理解居酒屋的意义"
+    next_node: null
+
+  - id: hidden_thousand_years_03
+    event_id: "fox_uncle_hidden_thousand_years_03"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_thousand_years_02"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他笑了笑。"
+    speaker: null
+    content:
+      - "「可以这么说。」"
+      - "「调酒师的工作...不只是调酒。」"
+      - "「是让人开口说话。」"
+      - "「无论活人还是死人。」"
+      - "「一杯酒...有时候比千言万语都管用。」"
+    player_options: []
+    next_node: null
+
+  - id: hidden_embroidery
+    event_id: "fox_uncle_hidden_embroidery"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他的袖口在风中微微飘动。"
+      - "金色的稻穗刺绣若隐若现。"
+    speaker: null
+    content:
+      - "「你在看这个？」"
+    player_options:
+      - text: "「这稻穗...很特别。」"
+        next_node: "fox_uncle_hidden_embroidery_02"
+        impact_log: "询问稻穗"
+    next_node: null
+
+  - id: hidden_embroidery_02
+    event_id: "fox_uncle_hidden_embroidery_02"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_embroidery"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他轻轻抚过袖口。"
+    speaker: null
+    content:
+      - "「稻穗...是丰收的象征。」"
+      - "「也是我的...标志吧。」"
+      - "「以前的人...会在门口放稻穗来供奉我。」"
+    player_options:
+      - text: "「所以您就是...稻荷神？」"
+        next_node: "fox_uncle_hidden_embroidery_03"
+        impact_log: "确认身份"
+    next_node: null
+
+  - id: hidden_embroidery_03
+    event_id: "fox_uncle_hidden_embroidery_03"
+    trigger_condition:
+      need_event: ["fox_uncle_hidden_embroidery_02"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他摸了摸胡须。"
+    speaker: null
+    content:
+      - "「呀列...又被你猜到了。」"
+      - "「不用那么惊讶。」"
+      - "「神也好，人也好...调酒的技术是一样的。」"
+    player_options: []
+    next_node: null
+    unlock_gallery: "identity_reveal"

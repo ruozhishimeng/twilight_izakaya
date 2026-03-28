@@ -1,0 +1,156 @@
+character_id: homesick_grandma
+nodes:
+  - event_id: homesick_grandma_001_dialogue_main
+    trigger_condition:
+      need_event: []
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 木门被轻轻推开。
+          - 一位头发花白的老奶奶走了进来。
+          - 她穿着一件褪色的蓝灰色和服，步履蹒跚。
+          - 她慢慢地坐在吧台前，眼神有些恍惚。
+      - type: env
+        content:
+          - 她的手指无意识地摩挲着衣角。
+          - 像是在抚摸什么看不见的东西。
+      - type: npc
+        content:
+          - 「...有没有那种...喝下去会想起老家的酒？」
+          - 「我老家在九州...那里的人喜欢喝梅酒。」
+          - 「酸酸甜甜的...像是夏天的味道。」
+      - type: inner
+        content:
+          - 老奶奶的眼神飘向了远方。
+          - 她在想念什么呢？故乡？已故的亲人？还是那些再也回不去的岁月？
+      - type: npc
+        content:
+          - 「...老了...记性也不好了...」
+          - 「但梅酒的味道...我这辈子都记得。」
+          - 「我妈妈当年...总是在夏天酿好多...」
+    player_options:
+      - option: 「梅酒嗨棒怎么样」
+        text: 「梅酒嗨棒怎么样？酸甜的味道，很像您描述的。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「...好...麻烦你了...」
+          - type: inner
+            content:
+              - 梅酒嗨棒？ 我下意识推荐了它，却不清楚怎么调。
+              - 清酒嗨棒是清酒配苏打水，那梅酒嗨棒则是...
+              - 她的嘴角微微上扬，像是在回忆什么美好的事情。
+          - type: npc
+            content:
+              - 「...梅酒嗨棒...好像就是我妈妈最爱的一种...」
+        next_node: homesick_grandma_001_mixing
+    next_node: null
+
+  - event_id: homesick_grandma_001_mixing
+    trigger_condition:
+      need_event:
+        - homesick_grandma_001_dialogue_main
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 调酒进行中...
+    player_options: []
+    next_node: null
+    drink_request:
+      request_text: "...清酒嗨棒是清酒配苏打水，那梅酒嗨棒则是..."
+      player_prompt: "她念着清酒嗨棒和梅酒嗨棒，真正惦记的像是一种熟悉的家常味道。我该把这杯酒调得温和一点。"
+      preferred_drink:
+        id: R024
+        name: 梅酒嗨棒
+        formula:
+          - bj06
+          - m01
+      steps:
+        - 取梅酒作为底酒
+        - 加入苏打水
+    on_mixing_complete: homesick_grandma_001_result
+    on_mixing_fail: homesick_grandma_001_fail
+
+  - event_id: homesick_grandma_001_result
+    trigger_condition:
+      need_event:
+        - homesick_grandma_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她接过酒杯，抿了一小口。
+          - 那一瞬间，她的眼眶渐渐湿润了。
+      - type: npc
+        content:
+          - 「...这味道...」
+          - 「像我妈妈当年酿的...」
+          - 「她总是会在夏天摘很多梅子...」
+          - 「然后...一大罐一大罐地酿起来...」
+      - type: inner
+        content:
+          - 她的手微微颤抖着。
+          - 有些记忆，一旦被唤醒，就像决堤的洪水一样涌出来。
+      - type: npc
+        content:
+          - 「...我老头子走的时候...也是喝的这个...」
+          - 「他说...这辈子值了...」
+          - 「...我们认识的时候...也是夏天...」
+          - 「那时候他家穷...就拿了一罐自己酿的梅酒来提亲...」
+          - 「我妈说...这小子除了梅酒什么都没有...」
+          - 「我说...有梅酒就够了...」
+          - 「...五十三年了...他每年夏天都会给我酿一罐...」
+          - 「...去年...他走之前的那天晚上...」
+          - 「...他说想再喝一杯...我就调给他喝...」
+          - 「...他喝了一口...笑着说...」
+          - 「...老太婆...这辈子...值了...」
+          - 「...我那时候还不明白...」
+          - 「...现在我懂了...」
+      - type: env
+        content:
+          - 她又抿了一口，泪水顺着皱纹滑落。
+      - type: inner
+        content:
+          - 我没有说话，只是静静地给她又倒了一杯温水。
+          - 有些话，不需要回应。
+          - 只需要有人听就好。
+      - type: npc
+        content:
+          - 「...谢谢你，小老板...」
+          - 「...好久没有人...听我说这些了...」
+          - 「...这酒...真好...」
+          - 「...像我妈妈的酒...」
+    player_options: []
+    next_node: null
+    diary_note: "一个想家的老奶奶，说梅酒让她想起九州的妈妈，还有她去世的老伴。他们相识于夏天，他拿梅酒提亲，五十三年的婚姻，每年夏天他都给她酿一罐梅酒...去年他走之前，想再喝一杯她调的梅酒，喝完笑着说：这辈子值了。"
+
+  - event_id: homesick_grandma_001_fail
+    trigger_condition:
+      need_event:
+        - homesick_grandma_001_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 她接过酒杯，尝了一口。
+          - 眉头微微皱了皱。
+      - type: npc
+        content:
+          - 「...不是这个味道...」
+          - 「...差了一点...」
+          - 「...没关系...」
+          - 「...我妈妈的酒...外面买不到的...」
+      - type: inner
+        content:
+          - 有些味道，是任何配方都调不出来的。
+          - 那是记忆的味道。
+    player_options: []
+    next_node: null
+    diary_note: '今天没调出对的梅酒，老奶奶说"我妈妈的酒外面买不到"。是啊，有些味道配方调不出来，那是记忆的味道。'

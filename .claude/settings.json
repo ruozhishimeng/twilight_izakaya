@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"f:\\\\twilight_izakaya\\\\.tsx\")"
+    ],
+    "additionalDirectories": [
+      "f:\\twilight_izakaya"
+    ]
+  }
+}

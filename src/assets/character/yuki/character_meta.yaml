@@ -1,0 +1,83 @@
+character_id: yuki
+base_info:
+  name: "小雪"
+  real_name: "晴山 雪 (Haruyama Yuki)"
+  age: 18
+  occupation: "高中生 / 钢琴天才"
+  identity: |
+    小雪，18岁，晴山家的最后一个孩子。曾在墨田区女子高中就读。
+    她极具钢琴天赋，从未受过正式训练，却能凭听觉在琴键上复现任何听到的旋律。
+    她的哥哥阿相在送她18岁生日礼物的路上遭遇车祸，从此她被困在那个雨夜。
+    她不相信死亡，只相信"寻找"。
+  description: |
+    一个湿透的水手服少女，站在门口。深蓝色的制服贴在身上，像是刚刚淋了一场暴雨。
+    她的眼睛空洞却又执着，像是在看着某个不在这里的人。
+    右腕系着一根褪色的红毛线绳，手指偶尔会在空气中轻轻弹动。
+  type: "滞留者"
+  personality: "极度安静、克制、病态的执拗、拒绝承认失去"
+  short_story: |
+    晴山家曾是墨田区经营"晴山染工"的蓝染小户，在电车轨道旁经营了三代。
+    父亲因病早逝，母亲精神崩溃后将所有红色染料倒入隅田川，晴山染工从此衰落。
+    兄妹俩守着祖母留下的老破小相依为命。哥哥阿相14岁辍学打工，把所有省下的钱都给了小雪读书。
+    小雪极具钢琴天赋，在邻居佐藤奶奶的钢琴店学会了《月光》《致爱丽丝》《小星星变奏曲》。
+    阿相发誓要为她送出一架有她名字的钢琴。18岁生日那天，阿相去取定制音乐盒，却再也没能回来。
+
+death_cause: "她的身体留在了那个雨夜。真正的死亡，是因为没有人来告诉她真相。"
+core_item: "音乐盒碎片"
+lingering_regret: "只要我不停止寻找，失去的人就不算真正消失。"
+
+current_phase: 1
+pending_phase: null
+
+arrival_pattern: "fixed"
+fixed_schedule: "weekly_first"
+arrival_condition:
+  type: "progress"
+  description: "玩家完成15杯调酒后小雪可能被吸引而来"
+  required_count: 15
+  count_type: "drinks_made"
+
+drinks:
+  most_loved:
+    phase_1:
+      id: "R001"
+      name: "未竟的生诞"
+      formula: ["bc01", "m04", "f03"]
+      reason: "未竟的生诞——送给离去之人的酒。烟熏味深处藏着的一丝甜，像是生命最后的光。"
+    phase_2:
+      id: "R001"
+      name: "未竟的生诞"
+      formula: ["bc01", "m04", "f03"]
+      reason: "这杯酒里有哥哥最后想对她说的话"
+    phase_3:
+      id: "R001"
+      name: "未竟的生诞"
+      formula: ["bc01", "m04", "f03"]
+      reason: "彼岸的重逢——是告别，也是新的开始"
+  generally_liked:
+    phase_1:
+      - id: "R021"
+        name: "纯米嗨棒"
+        formula: ["bj01", "m01"]
+        reason: "清酒的平淡，像哥哥沉默的爱"
+    phase_2:
+      - id: "R025"
+        name: "柚子蜂蜜"
+        formula: ["bj01", "f18", "f17"]
+        reason: "蜂蜜的温柔，像哥哥对她的照顾"
+  regular:
+    phase_1:
+      - id: "R006"
+        name: "马丁尼"
+        formula: ["bc02", "m04"]
+        reason: "苦涩清醒，适合迷失的灵魂"
+    phase_2:
+      - id: "R022"
+        name: "甘酒嗨棒"
+        formula: ["bj02", "m01"]
+        reason: "甘酒的甜，像童年的回忆"
+
+is_unlocked: false
+visits_count: 0
+
+generated_at: "2026-03-21T00:00:00.000Z"

@@ -1,0 +1,27 @@
+character_id: tired_salaryman
+base_info:
+  name: "疲惫的上班族"
+  age: 38
+  occupation: "IT工程师"
+  description: "一个疲惫的男人，领带松垮垮地挂在脖子上，西装皱巴巴的。眼睛下面有深深的黑眼圈，像是很久没有睡好了。"
+  type: "普通人"
+  personality: "沉默寡言、疲惫、但保持基本的礼貌"
+  short_story: |
+    他在一家IT公司工作了十年，每天加班到深夜。
+    今天又加班到很晚，他只是想找个地方喝一杯，忘记今天的疲惫。
+    明天大概还是会加班吧。
+
+arrival_pattern: "random"
+arrival_condition:
+  type: "always"
+  description: "每天傍晚随机可能来访"
+
+drink_request:
+  type: "abstract"
+  description: "能让我忘记今天加班的味道"
+  keywords: ["忘记", "加班", "疲惫"]
+
+visits_possible: 1
+is_unlocked: true
+
+generated_at: "2026-03-21T00:00:00.000Z"

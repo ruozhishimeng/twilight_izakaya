@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/ruozh/.claude/skills/twilight-izakaya/**)",
+      "Edit(~/.claude/skills/twilight-izakaya/**)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)",
+      "Bash(xxd)"
+    ]
+  }
+}

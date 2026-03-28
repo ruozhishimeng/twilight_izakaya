@@ -1,0 +1,27 @@
+character_id: homesick_grandma
+base_info:
+  name: "怀念故乡的老奶奶"
+  age: 72
+  occupation: "退休"
+  description: "一位满头银发的老奶奶，慢慢地坐在吧台前。眼神有些恍惚，像是在回忆什么遥远的事情。"
+  type: "普通人"
+  personality: "温和、健谈、偶尔沉默望向远方"
+  short_story: |
+    她老家在九州，年轻时嫁到了东京。
+    几十年来，她总是会想起老家门前的那棵梅子树，和妈妈亲手酿的梅酒。
+    酸酸甜甜的...那是夏天的味道，是故乡的味道，是再也回不去的从前。
+
+arrival_pattern: "random"
+arrival_condition:
+  type: "always"
+  description: "下午随机可能来访"
+
+drink_request:
+  type: "abstract"
+  description: "有没有那种...喝下去会想起老家的酒？"
+  keywords: ["故乡", "老家", "梅酒"]
+
+visits_possible: 1
+is_unlocked: true
+
+generated_at: "2026-03-21T00:00:00.000Z"

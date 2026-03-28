@@ -1,0 +1,27 @@
+character_id: insomniac_writer
+base_info:
+  name: "失眠的作家"
+  age: 35
+  occupation: "自由撰稿人"
+  description: "一个双眼布满血丝的男人，眼神锐利但时有温柔。手指总是在敲着什么东西，像是在思考下一个情节。"
+  type: "普通人"
+  personality: "神经质、敏感、眼神锐利但时有温柔"
+  short_story: |
+    他是一个自由撰稿人，已经失眠了很多天。
+    每天深夜都在赶稿，灵感却总是迟迟不来。
+    今晚他又失眠了，只是想找个地方喝一杯，看看能不能找到一点灵感。
+
+arrival_pattern: "random"
+arrival_condition:
+  type: "always"
+  description: "深夜随机可能来访"
+
+drink_request:
+  type: "abstract"
+  description: "要一杯'深夜的灵感'，你有吗？"
+  keywords: ["灵感", "深夜", "清醒"]
+
+visits_possible: 1
+is_unlocked: true
+
+generated_at: "2026-03-21T00:00:00.000Z"
