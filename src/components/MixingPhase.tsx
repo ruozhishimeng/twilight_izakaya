@@ -45,6 +45,7 @@ type SelectableItem = {
   id: string;
   name: string;
   icon: string;
+  image?: string;
   color: string;
   type: string;
   desc: string;
@@ -210,6 +211,18 @@ export default function MixingPhase({
       : null,
   ].filter(Boolean) as SelectedItem[];
 
+  const renderItemVisual = (item: SelectableItem, isLocked: boolean) => (
+    <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-md border-2 border-[#3e2723] bg-[#2c1e16] p-1">
+      {isLocked ? (
+        <span className="text-2xl text-[#b8a58a]">{'\u9501'}</span>
+      ) : item.image ? (
+        <img src={item.image} alt={item.name} className="h-full w-full object-contain pixel-rounded-lg" />
+      ) : (
+        <span className="text-2xl">{item.icon}</span>
+      )}
+    </div>
+  );
+
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden pb-48 pt-24">
       <div
@@ -245,9 +258,7 @@ export default function MixingPhase({
                           : 'border-[#3e2723] bg-[#1a110c] hover:border-[#8b5a2b]'
                     }`}
                   >
-                    <div className="relative flex-shrink-0 rounded-md border-2 border-[#3e2723] bg-[#2c1e16] p-2 text-2xl">
-                      {isLocked ? '\u9501' : liquor.icon}
-                    </div>
+                    {renderItemVisual(liquor, isLocked)}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="whitespace-nowrap border-2 border-[#4a3f35] bg-[#2c1e16] px-1 py-0.5 text-[10px] font-bold text-[#e0f2fe]">
@@ -288,9 +299,7 @@ export default function MixingPhase({
                           : 'border-[#3e2723] bg-[#1a110c] hover:border-[#8b5a2b]'
                     }`}
                   >
-                    <div className="relative flex-shrink-0 rounded-md border-2 border-[#3e2723] bg-[#2c1e16] p-2 text-2xl">
-                      {isLocked ? '\u9501' : mixer.icon}
-                    </div>
+                    {renderItemVisual(mixer, isLocked)}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="whitespace-nowrap border-2 border-[#4a3f35] bg-[#2c1e16] px-1 py-0.5 text-[10px] font-bold text-[#86efac]">
@@ -331,9 +340,7 @@ export default function MixingPhase({
                           : 'border-[#3e2723] bg-[#1a110c] hover:border-[#8b5a2b]'
                     }`}
                   >
-                    <div className="relative flex-shrink-0 rounded-md border-2 border-[#3e2723] bg-[#2c1e16] p-2 text-2xl">
-                      {isLocked ? '\u9501' : flavor.icon}
-                    </div>
+                    {renderItemVisual(flavor, isLocked)}
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="whitespace-nowrap border-2 border-[#4a3f35] bg-[#2c1e16] px-1 py-0.5 text-[10px] font-bold text-[#fca5a5]">
@@ -373,7 +380,13 @@ export default function MixingPhase({
                     title={'\u70b9\u51fb\u79fb\u9664\u6b64\u6750\u6599'}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-xl">{item.icon}</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-md border-2 border-[#d4b886] bg-[#2c1e16] p-1">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} className="h-full w-full object-contain pixel-rounded-lg" />
+                        ) : (
+                          <span className="text-xl">{item.icon}</span>
+                        )}
+                      </div>
                       <div className="flex flex-col items-start">
                         <span className="text-[10px] text-gray-400">{item.slotLabel}</span>
                         <span style={{ color: item.color }}>{item.name}</span>

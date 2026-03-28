@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import recipesData from '../assets/recipes/recipes.json';
-import { GUESTS } from '../data/gameData';
+import { GUESTS, getCocktailImage, getIngredientImage } from '../data/gameData';
 
 interface Props {
   onClose: () => void;
@@ -16,6 +16,7 @@ type Tab = 'items' | 'recipes' | 'characters';
 interface ItemEntry {
   id: string;
   name: string;
+  image?: string;
   category: string;
   tag1?: string;
   tag2?: string;
@@ -30,6 +31,7 @@ interface ItemEntry {
 interface RecipeEntry {
   id: string;
   name: string;
+  image?: string;
   formula?: string[];
   tag1?: string;
   tag2?: string;
@@ -93,7 +95,7 @@ function pageClass(side: 'left' | 'right') {
   return `relative flex min-h-0 flex-1 flex-col bg-[#2c1e16] px-8 py-8 text-[#e8dcc4] ${edge}`;
 }
 
-function renderIcon(mark: string, label: string, muted = false) {
+function renderIcon(mark: string, label: string, muted = false, image?: string) {
   return (
     <div
       className={`flex h-14 w-14 flex-col items-center justify-center border-4 text-[10px] font-bold leading-none ${
@@ -102,8 +104,18 @@ function renderIcon(mark: string, label: string, muted = false) {
           : 'border-[#734523] bg-[#efc786] text-[#4a2b16]'
       }`}
     >
-      <span className="text-lg">{mark}</span>
-      <span>{label}</span>
+      {image ? (
+        <img
+          src={image}
+          alt={label}
+          className={`h-full w-full object-contain p-1 ${muted ? 'opacity-45 grayscale' : ''}`}
+        />
+      ) : (
+        <>
+          <span className="text-lg">{mark}</span>
+          <span>{label}</span>
+        </>
+      )}
     </div>
   );
 }
@@ -159,6 +171,7 @@ export default function BookModal({
       group.values
         .map(item => ({
           ...item,
+          image: getIngredientImage(item.id),
           unlocked: Boolean(item.unlocked) || inventory.includes(item.id),
           sectionId: group.id,
           sectionLabel: group.label,
@@ -194,6 +207,7 @@ export default function BookModal({
     return [...recipesData.recipes]
       .map(recipe => ({
         ...recipe,
+        image: getCocktailImage(recipe.id, recipe.name),
         unlocked:
           Boolean((recipe as { unlocked?: boolean }).unlocked) ||
           unlockedRecipes.includes(recipe.id) ||
@@ -361,7 +375,7 @@ export default function BookModal({
                               }`}
                             >
                               <div className="flex flex-col items-center gap-2">
-                                {renderIcon(item.sectionMark, item.id.toUpperCase().slice(-2), !item.unlocked)}
+                                {renderIcon(item.sectionMark, item.id.toUpperCase().slice(-2), !item.unlocked, item.image)}
                                 <div className={`text-xs ${item.unlocked ? 'text-[#e8dcc4]' : 'text-[#8c7d67]'}`}>
                                   {item.unlocked ? item.name : '未解锁'}
                                 </div>
@@ -386,7 +400,7 @@ export default function BookModal({
                     <div className="flex flex-col gap-4">
                       <div className="border-2 border-[#4a3f35] bg-[#1a110c] p-5 pixel-rounded-lg">
                         <div className="flex flex-col items-start gap-4">
-                          {renderIcon(selectedItem.sectionMark, selectedItem.id.toUpperCase().slice(-2), !selectedItem.unlocked)}
+                          {renderIcon(selectedItem.sectionMark, selectedItem.id.toUpperCase().slice(-2), !selectedItem.unlocked, selectedItem.image)}
                           <div className="w-full">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-3xl font-bold">
@@ -446,7 +460,7 @@ export default function BookModal({
                             : 'border-[#3e2723] bg-[#1a110c] hover:border-[#8b5a2b]'
                         }`}
                       >
-                        {renderIcon('酒', recipe.id.slice(-2), !recipe.unlocked)}
+                        {renderIcon('酒', recipe.id.slice(-2), !recipe.unlocked, recipe.image)}
                         <div className="min-w-0 flex-1">
                           <div className="truncate text-lg font-bold">
                             {recipe.unlocked ? recipe.name : '未解锁酒谱'}
@@ -472,7 +486,7 @@ export default function BookModal({
                     <div className="flex flex-col gap-4">
                       <div className="border-2 border-[#4a3f35] bg-[#1a110c] p-5 pixel-rounded-lg">
                         <div className="flex items-start gap-4">
-                          {renderIcon('谱', selectedRecipe.id.slice(-2), !selectedRecipe.unlocked)}
+                          {renderIcon('谱', selectedRecipe.id.slice(-2), !selectedRecipe.unlocked, selectedRecipe.image)}
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-3xl font-bold">
@@ -513,7 +527,8 @@ export default function BookModal({
                                   {renderIcon(
                                     ingredient?.sectionMark || '料',
                                     id.toUpperCase().slice(-2),
-                                    !ingredient?.unlocked
+                                    !ingredient?.unlocked,
+                                    ingredient?.image
                                   )}
                                   <div className="min-w-0">
                                     <div className="truncate font-bold text-[#e8dcc4]">

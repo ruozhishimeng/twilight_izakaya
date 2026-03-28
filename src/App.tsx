@@ -761,18 +761,6 @@ export default function App() {
     }
   };
 
-  useEffect(() => {
-    if (phase !== 'intro' || !currentGuestData || !startNodeId || !!guestInterludeText) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      beginGuestArrival();
-    }, 1200);
-
-    return () => window.clearTimeout(timer);
-  }, [beginGuestArrival, currentGuestData, guestInterludeText, phase, startNodeId]);
-
   if (!imagesPreloaded) {
     return (
       <div className="min-h-screen bg-[#000] text-gray-200 font-mono flex items-center justify-center p-4 pixel-art-container">
@@ -930,6 +918,13 @@ export default function App() {
                   {pendingGuestReflection.text}
                 </p>
                 <button
+                  type="button"
+                  onClick={beginGuestArrival}
+                  className="mt-10 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
+                >
+                  准备接待
+                </button>
+                <button
                   onClick={() => finalizeGuestAdvance(pendingGuestReflection)}
                   className="mt-12 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
                 >
@@ -966,9 +961,19 @@ export default function App() {
                 <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full bg-[radial-gradient(circle,rgba(230,184,125,0.18)_0%,rgba(230,184,125,0.08)_45%,rgba(230,184,125,0)_72%)]">
                   <BellRing size={84} className="animate-shake text-amber-200 drop-shadow-[0_0_24px_rgba(251,191,36,0.55)]" />
                 </div>
+                <p className="hidden">
+                  门铃轻响
+                </p>
                 <p className="mt-8 text-xl tracking-[0.35em] text-amber-100/80">
                   门铃轻响
                 </p>
+                <button
+                  type="button"
+                  onClick={beginGuestArrival}
+                  className="mt-10 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
+                >
+                  准备接待
+                </button>
               </div>
             </div>
           )}

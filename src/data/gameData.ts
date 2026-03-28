@@ -78,6 +78,60 @@ const nodesMainRaw = import.meta.glob('../assets/character/**/nodes_main.yaml', 
 const nodesTeachingRaw = import.meta.glob('../assets/character/**/nodes_teaching.yaml', { eager: true, query: '?raw', import: 'default' });
 const observationsRaw = import.meta.glob('../assets/character/**/observations.yaml', { eager: true, query: '?raw', import: 'default' });
 const imageFiles = import.meta.glob('../assets/character/**/media/*.png', { eager: true, query: '?url', import: 'default' });
+const drinkImageFiles = import.meta.glob('../assets/drink/**/*.png', { eager: true, query: '?url', import: 'default' });
+
+type DrinkImageBucket = 'base' | 'mixer' | 'flavor' | 'cocktail';
+
+const drinkImageMap: Record<DrinkImageBucket, Map<string, string>> = {
+  base: new Map(),
+  mixer: new Map(),
+  flavor: new Map(),
+  cocktail: new Map(),
+};
+
+Object.entries(drinkImageFiles).forEach(([rawPath, rawUrl]) => {
+  if (typeof rawUrl !== 'string') {
+    return;
+  }
+
+  const normalizedPath = rawPath.replace(/\\/g, '/');
+  const match = normalizedPath.match(/\/drink\/(base|mixer|flavor|cocktail)\/([^/]+)\.png$/i);
+  if (!match) {
+    return;
+  }
+
+  const bucket = match[1].toLowerCase() as DrinkImageBucket;
+  const key = match[2];
+  drinkImageMap[bucket].set(key, rawUrl);
+});
+
+export function getIngredientImage(id: string) {
+  if (!id) {
+    return undefined;
+  }
+
+  if (id.startsWith('b')) {
+    return drinkImageMap.base.get(id);
+  }
+  if (id.startsWith('m')) {
+    return drinkImageMap.mixer.get(id);
+  }
+  if (id.startsWith('f')) {
+    return drinkImageMap.flavor.get(id);
+  }
+
+  return undefined;
+}
+
+export function getCocktailImage(id?: string, name?: string) {
+  if (id && drinkImageMap.cocktail.has(id)) {
+    return drinkImageMap.cocktail.get(id);
+  }
+  if (name && drinkImageMap.cocktail.has(name)) {
+    return drinkImageMap.cocktail.get(name);
+  }
+  return undefined;
+}
 
 const parseYamlMap = (rawMap: Record<string, unknown>) => {
   const parsed: Record<string, any> = {};
@@ -645,6 +699,7 @@ export const BASE_LIQUORS = recipesData.ingredients.bases.japanese.map(b => ({
   name: b.name,
   desc: b.gallery_description,
   color: '#e0f2fe',
+  image: getIngredientImage(b.id),
   icon: '🍶',
   unlocked: b.unlocked,
   type: '日式基酒'
@@ -653,6 +708,7 @@ export const BASE_LIQUORS = recipesData.ingredients.bases.japanese.map(b => ({
   name: b.name,
   desc: b.gallery_description,
   color: '#fef08a',
+  image: getIngredientImage(b.id),
   icon: '🥃',
   unlocked: b.unlocked,
   type: '经典基酒'
@@ -664,6 +720,7 @@ export const MIXERS = recipesData.ingredients.mixers.map(m => ({
   type: m.category,
   desc: m.gallery_description,
   color: '#86efac',
+  image: getIngredientImage(m.id),
   icon: '🥤',
   unlocked: m.unlocked
 })).sort((a, b) => (a.unlocked === b.unlocked ? 0 : a.unlocked ? -1 : 1));
@@ -674,6 +731,7 @@ export const FLAVORS = recipesData.ingredients.flavors.map(f => ({
   type: f.category,
   desc: f.gallery_description,
   color: '#fca5a5',
+  image: getIngredientImage(f.id),
   icon: '🍒',
   unlocked: f.unlocked
 })).sort((a, b) => (a.unlocked === b.unlocked ? 0 : a.unlocked ? -1 : 1));
