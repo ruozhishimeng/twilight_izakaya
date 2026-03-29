@@ -95,27 +95,40 @@ function pageClass(side: 'left' | 'right') {
   return `relative flex min-h-0 flex-1 flex-col bg-[#2c1e16] px-8 py-8 text-[#e8dcc4] ${edge}`;
 }
 
-function renderIcon(mark: string, label: string, muted = false, image?: string) {
+function renderIcon(
+  mark: string,
+  label: string,
+  muted = false,
+  image?: string,
+  size: 'default' | 'large' | 'xlarge' = 'default'
+) {
+  const imageSizeClass =
+    size === 'xlarge' ? 'h-40 w-40' : size === 'large' ? 'h-32 w-32' : 'h-16 w-16';
+  const fallbackSizeClass =
+    size === 'xlarge' ? 'h-28 w-28' : size === 'large' ? 'h-24 w-24' : 'h-14 w-14';
+
+  if (image) {
+    return (
+      <div className={`flex ${imageSizeClass} items-center justify-center`}>
+        <img
+          src={image}
+          alt={label}
+          className={`h-full w-full object-contain ${muted ? 'opacity-40 grayscale' : ''}`}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`flex h-14 w-14 flex-col items-center justify-center border-4 text-[10px] font-bold leading-none ${
+      className={`flex ${fallbackSizeClass} flex-col items-center justify-center border-4 text-[10px] font-bold leading-none ${
         muted
           ? 'border-[#8a7a64] bg-[#b9ac94] text-[#f6eedc]'
           : 'border-[#734523] bg-[#efc786] text-[#4a2b16]'
       }`}
     >
-      {image ? (
-        <img
-          src={image}
-          alt={label}
-          className={`h-full w-full object-contain p-1 ${muted ? 'opacity-45 grayscale' : ''}`}
-        />
-      ) : (
-        <>
-          <span className="text-lg">{mark}</span>
-          <span>{label}</span>
-        </>
-      )}
+      <span className="text-lg">{mark}</span>
+      <span>{label}</span>
     </div>
   );
 }
@@ -400,7 +413,7 @@ export default function BookModal({
                     <div className="flex flex-col gap-4">
                       <div className="border-2 border-[#4a3f35] bg-[#1a110c] p-5 pixel-rounded-lg">
                         <div className="flex flex-col items-start gap-4">
-                          {renderIcon(selectedItem.sectionMark, selectedItem.id.toUpperCase().slice(-2), !selectedItem.unlocked, selectedItem.image)}
+                          {renderIcon(selectedItem.sectionMark, selectedItem.id.toUpperCase().slice(-2), !selectedItem.unlocked, selectedItem.image, 'large')}
                           <div className="w-full">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-3xl font-bold">
@@ -485,10 +498,10 @@ export default function BookModal({
                   <div className="min-h-0 flex-1 overflow-y-auto pr-3 custom-scrollbar">
                     <div className="flex flex-col gap-4">
                       <div className="border-2 border-[#4a3f35] bg-[#1a110c] p-5 pixel-rounded-lg">
-                        <div className="flex items-start gap-4">
-                          {renderIcon('谱', selectedRecipe.id.slice(-2), !selectedRecipe.unlocked, selectedRecipe.image)}
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col items-center gap-5 text-center">
+                          {renderIcon('谱', selectedRecipe.id.slice(-2), !selectedRecipe.unlocked, selectedRecipe.image, 'xlarge')}
+                          <div className="w-full">
+                            <div className="flex flex-wrap items-center justify-center gap-2">
                               <h3 className="text-3xl font-bold">
                                 {selectedRecipe.unlocked ? selectedRecipe.name : '未解锁酒谱'}
                               </h3>
@@ -504,7 +517,7 @@ export default function BookModal({
                             <div className="mt-2 text-sm text-[#a38c66]">
                               {selectedRecipe.unlocked ? selectedRecipe.series || '通用配方' : '未记录'}
                             </div>
-                            <p className="mt-4 leading-7 text-[#d8c7a8]">
+                            <p className="mx-auto mt-5 max-w-2xl leading-7 text-[#d8c7a8]">
                               {selectedRecipe.unlocked
                                 ? selectedRecipe.gallery_description || '这张配方卡还没有写下更多说明。'
                                 : '这页上只留下了模糊的名字，详细配方还没有被记下来。'}
@@ -516,25 +529,28 @@ export default function BookModal({
                       <div className="border-2 border-[#4a3f35] bg-[#1a110c] p-4 pixel-rounded-lg">
                         <div className="text-sm tracking-[0.2em] text-[#8b5a2b]">配方组成</div>
                         {selectedRecipe.unlocked && selectedRecipe.formula?.length ? (
-                          <div className="mt-4 grid grid-cols-2 gap-3">
+                          <div className="mt-4 grid grid-cols-2 gap-4">
                             {selectedRecipe.formula.map(id => {
                               const ingredient = itemLookup.get(id);
                               return (
                                 <div
                                   key={id}
-                                  className="flex items-center gap-3 border-2 border-[#4a3f35] bg-[#2c1e16] px-3 py-3 pixel-rounded-lg"
+                                  className="flex flex-col items-center gap-4 border-2 border-[#4a3f35] bg-[#2c1e16] px-4 py-4 text-center pixel-rounded-lg"
                                 >
+                                  <div className="flex items-center justify-center">
                                   {renderIcon(
                                     ingredient?.sectionMark || '料',
                                     id.toUpperCase().slice(-2),
                                     !ingredient?.unlocked,
-                                    ingredient?.image
+                                    ingredient?.image,
+                                    'large'
                                   )}
-                                  <div className="min-w-0">
-                                    <div className="truncate font-bold text-[#e8dcc4]">
+                                  </div>
+                                  <div className="w-full">
+                                    <div className="font-bold text-[#e8dcc4] break-words">
                                       {ingredient?.name || id}
                                     </div>
-                                    <div className="truncate text-sm text-[#a38c66]">
+                                    <div className="mt-2 text-sm leading-6 text-[#a38c66] break-words">
                                       {ingredient?.sectionLabel || ingredient?.category || '未知分类'}
                                     </div>
                                   </div>
