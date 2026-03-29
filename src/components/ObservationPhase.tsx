@@ -38,12 +38,12 @@ export default function ObservationPhase({ guest, availableGroups, prompt, onCom
           <img
             src={guest.image}
             alt={guest.name}
-            className="w-64 h-96 object-contain shadow-[0_0_30px_rgba(0,0,0,0.8)] mb-6"
+            className="w-64 h-96 object-contain mb-6"
             referrerPolicy="no-referrer"
           />
         ) : (
           <div
-            className="w-64 h-96 relative shadow-[0_0_30px_rgba(0,0,0,0.8)] mb-6"
+            className="w-64 h-96 relative mb-6"
             style={{ backgroundColor: guest.imagePlaceholderColor }}
           >
             <div className="absolute inset-0 flex items-center justify-center text-gray-400 opacity-50">

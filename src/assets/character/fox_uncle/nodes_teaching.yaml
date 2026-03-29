@@ -232,7 +232,6 @@ nodes:
           - 他把椰浆和橙汁轻轻推到你面前。
       - type: npc
         content:
-          - 「椰浆和橙汁，收好。」
           - 「...这杯酒，配方不难...」
           - 「...难的是...懂它的人才会调。」
     player_options: []
@@ -297,269 +296,6 @@ nodes:
               - 「是你的悟性好。」
         impact_log: 感谢指导
     next_node: fox_uncle_reward_03
-  - event_id: fox_uncle_teaching_review
-    trigger_condition:
-      need_event: []
-      need_time: W1_D5_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他从袖中取出柚子酱和蜂蜜。
-          - 放在吧台上。
-      - type: npc
-        content:
-          - 「好，复习一下纯米嗨棒和甘酒嗨棒。」
-    next_node: fox_uncle_teaching_review_mixing
-    teaching:
-      recipe:
-        id: R021
-        name: 纯米嗨棒 & 甘酒嗨棒
-        ingredients:
-          - 纯米清酒 (bj01)
-          - 甘酒 (bj02)
-          - 苏打水 (m01)
-        formula:
-          - bj01
-          - m01
-        steps:
-          - 「纯米嗨棒：清酒1，苏打水2，轻轻搅拌。」
-          - 「甘酒嗨棒：甘酒1，苏打水1，轻轻搅拌。」
-          - 「记住比例，多练习。」
-      mixing_steps_display:
-        - 复习纯米嗨棒：清酒+苏打水1:2
-        - 复习甘酒嗨棒：甘酒+苏打水1:1
-      game_action:
-        trigger: on_teaching_start
-        action: ENTER_MIXING_MODE
-        params:
-          recipe_id: R021
-          show_steps: true
-      tip: 「温故而知新。调酒也是这样，反复练习才能得心应手。」
-  - event_id: fox_uncle_teaching_review_mixing
-    trigger_condition:
-      need_event:
-        - fox_uncle_teaching_review
-      need_time: W1_D5_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 调酒进行中...
-    player_options: []
-    next_node: null
-    drink_request:
-      mode: teaching
-      request_text: "按我教过你的，调出这杯酒。"
-      retry_on_fail: true
-      preferred_drink:
-        id: R021
-        name: 绯闻背锅酒
-        formula:
-          - bj01
-          - m01
-    on_mixing_complete: fox_uncle_reaction_review
-  - event_id: fox_uncle_reaction_review
-    trigger_condition:
-      need_event:
-        - fox_uncle_teaching_review_mixing
-      need_time: any
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他品尝后若有所思。
-      - type: npc
-        content:
-          - 「复习得不错...基本功扎实了许多。」
-    player_options:
-      - option: 「谢谢您的认可。」
-        text: 「谢谢您的认可。」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「继续保持。」
-        impact_log: 表示感谢
-    next_node: fox_uncle_reward_review
-  - event_id: fox_uncle_teaching_04
-    trigger_condition:
-      need_event: []
-      need_time: W1_D7_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他从袖中取出一张配方纸。
-          - 放在吧台上。
-      - type: npc
-        content:
-          - 「今天教你一杯新的——蜜柚茶。」
-    next_node: fox_uncle_teaching_04_mixing
-    teaching:
-      recipe:
-        id: R026
-        name: 蜜柚茶
-        ingredients:
-          - 纯米清酒 (bj01)
-          - 乌龙茶 (m09)
-          - 蜂蜜 (f17)
-        formula:
-          - bj01
-          - m09
-          - f17
-        steps:
-          - 「清酒是底色，代表平淡。」
-          - 「乌龙茶添苦涩，像是成熟人生的滋味。」
-          - 「蜂蜜收尾，带来温柔。」
-          - 「1:1:1的比例，轻轻搅拌。」
-      mixing_steps_display:
-        - 取纯米清酒作为底色
-        - 加入乌龙茶1:1
-        - 蜂蜜收尾
-      game_action:
-        trigger: on_teaching_start
-        action: ENTER_MIXING_MODE
-        params:
-          recipe_id: R026
-          show_steps: true
-      tip: 「乌龙茶的苦涩与蜂蜜的甘甜相遇，像是成熟人生的滋味——有苦有甜，才是完整。」
-  - event_id: fox_uncle_teaching_04_mixing
-    trigger_condition:
-      need_event:
-        - fox_uncle_teaching_04
-      need_time: W1_D7_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 调酒进行中...
-    player_options: []
-    next_node: null
-    drink_request:
-      mode: teaching
-      request_text: "照我刚才说的步骤，调一杯「焰尾残照」。"
-      retry_on_fail: true
-      preferred_drink:
-        id: R026
-        name: 焰尾残照
-        formula:
-          - bj01
-          - m09
-          - f17
-    on_mixing_complete: fox_uncle_reaction_04
-  - event_id: fox_uncle_reaction_04
-    trigger_condition:
-      need_event:
-        - fox_uncle_teaching_04_mixing
-      need_time: any
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他端起酒杯，轻嗅茶香。
-          - 然后一饮而尽。
-      - type: npc
-        content:
-          - 「蜜柚茶...苦中有甘。这杯调得不错。」
-    player_options:
-      - option: 「谢谢您的教导。」
-        text: 「谢谢您的教导。」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「记住今天的味道。」
-        impact_log: 感谢教导
-    next_node: fox_uncle_reward_04
-  - event_id: fox_uncle_teaching_review_02
-    trigger_condition:
-      need_event: []
-      need_time: W2_D8_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他从袖中取出柚子酱。
-          - 放在吧台上。
-      - type: npc
-        content:
-          - 「来，再复习一遍止痛药的做法。」
-    next_node: fox_uncle_teaching_review_02_mixing
-    teaching:
-      recipe:
-        id: R034
-        name: 止痛药
-        ingredients:
-          - 陈年朗姆酒 (bc04)
-          - 椰浆 (m13)
-          - 橙汁 (m11)
-        formula:
-          - bc04
-          - m13
-          - m11
-        steps:
-          - 「朗姆酒是底色，代表那些放不下的执念。」
-          - 「椰浆添一丝温柔，像是给伤心人的安慰。」
-          - 「橙汁收尾，带来一点点甜的回忆。」
-      mixing_steps_display:
-        - 取陈年朗姆酒作为底色
-        - 加入椰浆增添温柔
-        - 加入橙汁带来回忆的甜
-      game_action:
-        trigger: on_teaching_start
-        action: ENTER_MIXING_MODE
-        params:
-          recipe_id: R034
-          show_steps: true
-      tip: 「温故而知新。调酒也是这样，反复练习才能得心应手。」
-  - event_id: fox_uncle_teaching_review_02_mixing
-    trigger_condition:
-      need_event:
-        - fox_uncle_teaching_review_02
-      need_time: W2_D8_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 调酒进行中...
-    player_options: []
-    next_node: null
-    drink_request:
-      mode: teaching
-      request_text: "按我教过你的，调一杯「止痛药」。"
-      retry_on_fail: true
-      preferred_drink:
-        id: R034
-        name: 止痛药
-        formula:
-          - bc04
-          - m13
-          - m11
-    on_mixing_complete: fox_uncle_reaction_review_02
-  - event_id: fox_uncle_reaction_review_02
-    trigger_condition:
-      need_event:
-        - fox_uncle_teaching_review_02_mixing
-      need_time: any
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他仔细品尝。
-      - type: npc
-        content:
-          - 「止痛药...比上次进步了。继续练习。」
-    player_options:
-      - option: 「我会的！」
-        text: 「我会的！」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「嗯。」
-        impact_log: 积极回应
-    next_node: fox_uncle_reward_review_02
   - event_id: fox_uncle_teaching_free_practice
     trigger_condition:
       need_event: []
@@ -626,8 +362,8 @@ nodes:
         formula:
           - bj01
           - m01
-    on_mixing_complete: fox_uncle_reaction_05
-  - event_id: fox_uncle_reaction_05
+    on_mixing_complete: fox_uncle_reaction_free_practice
+  - event_id: fox_uncle_reaction_free_practice
     trigger_condition:
       need_event:
         - fox_uncle_teaching_free_practice_mixing
@@ -649,7 +385,7 @@ nodes:
             content:
               - 「哈哈，继续努力。」
         impact_log: 谦虚回应
-    next_node: fox_uncle_reward_05
+    next_node: fox_uncle_reward_06
   
   - event_id: fox_uncle_reward_01
     trigger_condition:
@@ -827,21 +563,115 @@ nodes:
         name: 蜂蜜
         description: 天然蜂蜜的甜润，像是蜜蜂的亲吻。是愈合与温柔的象征。
         quantity: 1
-  - event_id: fox_uncle_reward_review
+  - event_id: fox_uncle_teaching_05
     trigger_condition:
-      need_event:
-        - fox_uncle_teaching_review_mixing
-      need_time: W1_D5_Dusk
+      need_event: []
+      need_time: W1_D4_Dusk
       need_item: []
     script_flow:
       - type: env
         content:
-          - 他从袖中取出柚子酱和蜂蜜。
-          - 放在吧台上。
+          - 他从袖中取出三样东西。
+          - 一瓶威士忌、一小块方糖、还有一个小瓶子。
+          - 放在吧台上，整整齐齐。
       - type: npc
         content:
-          - 「柚子酱和蜂蜜，补充一下。」
-          - 「下次教你新东西。」
+          - 「今天教你古典——威士忌为底，糖来中和，苦精点睛。」
+    next_node: fox_uncle_teaching_05_mixing
+    teaching:
+      recipe:
+        id: R008
+        name: 古典
+        ingredients:
+          - 威士忌 (bc01)
+          - 方糖 (f01)
+          - 黑胡椒 (f09)
+        formula:
+          - bc01
+          - f01
+          - f09
+        steps:
+          - 「威士忌是底色，代表着时间的重量。」
+          - 「方糖中和苦涩，像是给伤痛加点甜。」
+          - 「黑胡椒点睛，只要一点点...」
+          - 「...多了就辛了，少了就淡了。」
+      mixing_steps_display:
+        - 取威士忌作为底色
+        - 加入方糖一块
+        - 轻轻研磨黑胡椒少许
+      game_action:
+        trigger: on_teaching_start
+        action: ENTER_MIXING_MODE
+        params:
+          recipe_id: R008
+          show_steps: true
+      tip: 「古典之所以是古典，是因为它平衡。威士忌的烈、方糖的甜、黑胡椒的辛——三者缺一不可。」
+  - event_id: fox_uncle_teaching_05_mixing
+    trigger_condition:
+      need_event:
+        - fox_uncle_teaching_05
+      need_time: W1_D4_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 调酒进行中...
+    player_options: []
+    next_node: null
+    drink_request:
+      mode: teaching
+      request_text: "按我教你的，调一杯「古典」。"
+      retry_on_fail: true
+      preferred_drink:
+        id: R008
+        name: 古典
+        formula:
+          - bc01
+          - f01
+          - f09
+    on_mixing_complete: fox_uncle_reaction_05
+  - event_id: fox_uncle_reaction_05
+    trigger_condition:
+      need_event:
+        - fox_uncle_teaching_05_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他端起酒杯，轻嗅威士忌的烟熏。
+          - 然后一饮而尽。
+      - type: npc
+        content:
+          - 「古典...调得不错。」
+          - 「...这杯酒，老夫喝了半辈子。」
+          - 「...每一口都是回忆。」
+    player_options:
+      - option: 「谢谢您的教导。」
+        text: 「谢谢您的教导。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「嗯，不客气。」
+              - 「...下次老夫带点东西给你。」
+    next_node: fox_uncle_reward_04
+  - event_id: fox_uncle_reward_04
+    trigger_condition:
+      need_event:
+        - fox_uncle_teaching_05_mixing
+      need_time: W1_D4_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从怀中取出一个小纸包。
+          - 轻轻放在吧台上。
+      - type: npc
+        content:
+          - 「黑胡椒，给你。」
+          - 「下次调古典的时候用得上。」
+          - 「...记住，只要一点点。」
     player_options:
       - option: 「谢谢老先生！」
         text: 「谢谢老先生！」
@@ -849,87 +679,156 @@ nodes:
         script_flow:
           - type: npc
             content:
-              - 「嗯。」
-        impact_log: 感谢赠礼
-      - option: 「我会继续努力的！」
-        text: 「我会继续努力的！」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「很好。」
-        impact_log: 表示会努力
-    next_node: fox_uncle_reward_review_end
-  - event_id: fox_uncle_reward_review_end
+              - 「嗯，去吧。」
+    next_node: fox_uncle_teaching_06_mixing
+    reward:
+      details:
+        type: ingredient
+        id: f09
+        name: 黑胡椒
+        description: 辛辣的黑胡椒，是味蕾的觉醒。
+        quantity: 1
+  - event_id: fox_uncle_teaching_06
     trigger_condition:
-      need_event:
-        - fox_uncle_reward_review
+      need_event: []
       need_time: W1_D5_Dusk
       need_item: []
     script_flow:
       - type: env
         content:
-          - 他点点头。
+          - 他从袖中取出三样东西。
+          - 一瓶透明的酒、一瓶金色的酒、还有一小罐茶叶。
+          - 放在吧台上。
       - type: npc
         content:
-          - 「去吧，多练习。」
-      - type: inner
-        content:
-          - 复习也是学习的重要部分。老先生的教导，朴实而深刻。
-    player_options: []
-    next_node: null
-    diary_note: "第四天复习了纯米嗨棒和甘酒嗨棒。老先生说我比上次好了...这种话听着，总觉得以前也听过似的。"
-    reward:
-      details:
-        - type: ingredient
-          id: f18
-          name: 柚子酱
-          description: 日本柚子的果香，清新中带着微微的苦。是日本料理中不可或缺的调味品。
-          quantity: 1
-        - type: ingredient
-          id: f17
-          name: 蜂蜜
-          description: 天然蜂蜜的甜润，像是蜜蜂的亲吻。是愈合与温柔的象征。
-          quantity: 1
-  - event_id: fox_uncle_reward_04
+          - 「今天教你一杯老夫最珍视的酒——流金岁月。」
+    next_node: fox_uncle_reward_05
+    teaching:
+      recipe:
+        id: R041
+        name: 流金岁月
+        ingredients:
+          - 伏特加 (bc03)
+          - 陈年朗姆酒 (bc04)
+          - 乌龙茶 (m09)
+        formula:
+          - bc03
+          - bc04
+          - m09
+        steps:
+          - 「伏特加为底，代表着最初的烈。」
+          - 「朗姆添醇厚，像是回忆的重量。」
+          - 「乌龙茶收尾，苦涩中带着回甘...」
+          - 「...这就是人生吧。」
+      mixing_steps_display:
+        - 取伏特加作为底色
+        - 加入陈年朗姆酒
+        - 最后加入乌龙茶
+      game_action:
+        trigger: on_teaching_start
+        action: ENTER_MIXING_MODE
+        params:
+          recipe_id: R041
+          show_steps: true
+      tip: 「流金岁月...这杯酒，老夫调的时候，总会想起一些人。烈、醇、苦，缺一不可。」
+  - event_id: fox_uncle_teaching_06_mixing
     trigger_condition:
       need_event:
-        - fox_uncle_teaching_04_mixing
-      need_time: W1_D7_Dusk
+        - fox_uncle_teaching_06
+      need_time: W1_D5_Dusk
       need_item: []
     script_flow:
       - type: env
         content:
-          - 他从袖中取出一张新的配方纸和一小包茶叶。
-          - 放在吧台上。
-      - type: npc
-        content:
-          - 「这是蜜柚茶的配方。」
-          - 「还有乌龙茶，继续练习。」
-          - 「从下周开始，我每周只来一次了。」
-    player_options:
-      - option: 「蜜柚茶...名字真美。」
-        text: 「蜜柚茶...名字真美。」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「是的，秋天的味道。」
-        impact_log: 赞美茶名
-      - option: 「谢谢老先生！我会努力的！」
-        text: 「谢谢老先生！我会努力的！」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「很好。」
-        impact_log: 表示会努力
-    next_node: fox_uncle_reward_04_end
-  - event_id: fox_uncle_reward_04_end
+          - 调酒进行中...
+    player_options: []
+    next_node: null
+    drink_request:
+      mode: teaching
+      request_text: "按我教你的，调一杯「流金岁月」。"
+      retry_on_fail: true
+      preferred_drink:
+        id: R041
+        name: 流金岁月
+        formula:
+          - bc03
+          - bc04
+          - m09
+    on_mixing_complete: fox_uncle_reaction_06
+  - event_id: fox_uncle_reaction_06
     trigger_condition:
       need_event:
-        - fox_uncle_reward_04
-      need_time: W1_D7_Dusk
+        - fox_uncle_teaching_06_mixing
+      need_time: any
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他端起酒杯，凝视着那琥珀色的液体。
+          - 灯光下，酒液泛着微微的金色光芒。
+          - 然后他一饮而尽。
+      - type: npc
+        content:
+          - 「流金岁月...」
+          - 「...老夫调了很多年。」
+          - 「...每一口都是回忆。」
+    player_options:
+      - option: 「谢谢您的教导。」
+        text: 「谢谢您的教导。」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「...」
+              - 「...去吧，小子。」
+              - 「...记得多加练习。」
+    next_node: fox_uncle_reward_05_end
+  - event_id: fox_uncle_reward_05
+    trigger_condition:
+      need_event:
+        - fox_uncle_teaching_06
+      need_time: W1_D5_Dusk
+      need_item: []
+    script_flow:
+      - type: env
+        content:
+          - 他从怀中取出一个小罐子。
+          - 轻轻放在吧台上。
+      - type: npc
+        content:
+          - 「乌龙茶，给你。」
+          - 「...这杯流金岁月，要用心去调。」
+          - 「...老夫这辈子...调过很多杯。」
+          - 「...但最难忘的那一杯...」
+      - type: env
+        content:
+          - 他的目光望向窗外。
+          - 夕阳的余晖洒在他狐狸面具上，镀上一层金色。
+      - type: npc
+        content:
+          - 「...算了，不说了。」
+          - 「...去吧，好好练习。」
+    player_options:
+      - option: 「谢谢老先生...」
+        text: 「谢谢老先生...」
+        branch_type: flavor
+        script_flow:
+          - type: npc
+            content:
+              - 「...」
+    next_node: fox_uncle_teaching_06_mixing
+    reward:
+      details:
+        type: ingredient
+        id: m09
+        name: 乌龙茶
+        description: 半发酵的乌龙，焙火香中带着时间的沉稳。
+        quantity: 1
+  - event_id: fox_uncle_reward_05_end
+    trigger_condition:
+      need_event:
+        - fox_uncle_reaction_06
+      need_time: W1_D5_Dusk
       need_item: []
     script_flow:
       - type: env
@@ -937,87 +836,12 @@ nodes:
           - 他满意地点头。
       - type: npc
         content:
-          - 「很好。」
-          - 「去吧，年轻人。」
-          - 「记住，调酒不是炫技，是让人开口说话的艺术。」
-      - type: inner
-        content:
-          - 第一周结束了...老先生教的不仅是技术，更是一种态度。感谢您的教导。
-    player_options: []
-    next_node: null
-    diary_note: "第一周最后一天，学会了蜜柚茶。老先生说这是他最爱的一杯，苦中有甘，像人生。他说我每次都会忘，每次都会再学...我真的忘过很多事吗？"
-    reward:
-      details:
-        - type: recipe
-          id: R026
-          name: 蜜柚茶
-          description: 清酒与乌龙茶、蜂蜜的结合，是成熟果实的温柔，秋日的私语。
-        - type: ingredient
-          id: m09
-          name: 乌龙茶
-          description: 半发酵茶的醇厚，苦涩中带着回甘。是日本茶道中重要的组成部分。
-          quantity: 1
-  - event_id: fox_uncle_reward_review_02
-    trigger_condition:
-      need_event:
-        - fox_uncle_teaching_review_02_mixing
-      need_time: W2_D8_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他从袖中取出一罐柚子酱。
-          - 放在吧台上。
-      - type: npc
-        content:
-          - 「柚子酱，给你补充。」
-          - 「多用，才能熟练。」
-    player_options:
-      - option: 「谢谢老先生！」
-        text: 「谢谢老先生！」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「嗯。」
-        impact_log: 感谢赠礼
-      - option: 「我一直在练习！」
-        text: 「我一直在练习！」
-        branch_type: flavor
-        script_flow:
-          - type: npc
-            content:
-              - 「很好。」
-        impact_log: 表示一直在练习
-    next_node: fox_uncle_reward_review_02_end
-  - event_id: fox_uncle_reward_review_02_end
-    trigger_condition:
-      need_event:
-        - fox_uncle_reward_review_02
-      need_time: W2_D8_Dusk
-      need_item: []
-    script_flow:
-      - type: env
-        content:
-          - 他点点头。
-      - type: npc
-        content:
           - 「去吧。」
-          - 「记住，反复练习。」
-      - type: inner
-        content:
-          - 每周一，老先生都会来。是督促，也是鼓励。这间店的前辈，真的很用心。
+          - 「记住，调酒是让人开口说话的艺术。」
     player_options: []
     next_node: null
-    diary_note: "第二周复习了止痛药。老先生说我进步了...虽然我还是不记得以前的事，但他好像一直都在。"
-    reward:
-      details:
-        type: ingredient
-        id: f18
-        name: 柚子酱
-        description: 日本柚子的果香，清新中带着微微的苦。是日本料理中不可或缺的调味品。
-        quantity: 1
-  - event_id: fox_uncle_reward_05
+    diary_note: "第五天学会了流金岁月。老先生说这是他最珍视的一杯，烈、醇、苦缺一不可。那一瞬间，我觉得他像是在借酒怀念某个人。"
+  - event_id: fox_uncle_reward_06
     trigger_condition:
       need_event:
         - fox_uncle_teaching_free_practice_mixing
@@ -1049,11 +873,11 @@ nodes:
             content:
               - 「很好。」
         impact_log: 表示不辜负期望
-    next_node: fox_uncle_reward_05_end
-  - event_id: fox_uncle_reward_05_end
+    next_node: fox_uncle_reward_06_end
+  - event_id: fox_uncle_reward_06_end
     trigger_condition:
       need_event:
-        - fox_uncle_reward_05
+        - fox_uncle_reward_06
       need_time: W3_D15_Dusk
       need_item: []
     script_flow:

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { X, Save, Download, Trash2, ChevronLeft, Home, Wrench } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, Download, Home, Save, Trash2, Wrench, X } from 'lucide-react';
+import { GUESTS, getGuestsForDay } from '../data/gameData';
 import { saveSystem, type SaveSlot } from '../systems/SaveSystem';
 import type { GamePhase } from '../App';
 
@@ -8,7 +9,7 @@ interface Props {
   onReturnToMenu: () => void;
   onSave: (slotId: string, slotName: string) => Promise<void>;
   onLoad: (slotId: string) => Promise<void>;
-  onDebugJump?: (week: number, day: number) => Promise<string>;
+  onDebugJump?: (week: number, day: number, guestInDay?: number) => Promise<string>;
   enableDebugTools?: boolean;
   currentPhase: GamePhase;
   currentWeek: number;
@@ -18,8 +19,7 @@ interface Props {
 type ModalMode = 'main' | 'save' | 'load' | 'debug';
 
 const SLOT_IDS = ['slot_1', 'slot_2', 'slot_3', 'slot_4', 'slot_5', 'slot_6'];
-const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
-const WEEK_LABELS = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
 function formatTimestamp(ts: number): string {
   const date = new Date(ts);
@@ -32,17 +32,16 @@ function formatTimestamp(ts: number): string {
 
 function getSlotDisplayInfo(slot: SaveSlot | null): { name: string; subtitle: string; empty: boolean } {
   if (!slot) {
-    return { name: '空存档位', subtitle: '点击保存到此处', empty: true };
+    return { name: '空存档位', subtitle: '尚未记录任何营业进度', empty: true };
   }
 
   const weekNum = slot.data.currentWeek;
   const dayNum = slot.data.currentDay;
-  const weekStr = WEEK_LABELS[weekNum - 1] || `${weekNum}`;
-  const dayStr = WEEKDAY_LABELS[dayNum - 1] || `${dayNum}`;
+  const dayStr = WEEKDAY_LABELS[dayNum - 1] || `第${dayNum}天`;
 
   return {
     name: slot.name,
-    subtitle: `第${weekStr}周 星期${dayStr} · ${formatTimestamp(slot.timestamp)}`,
+    subtitle: `第 ${weekNum} 周 ${dayStr} · ${formatTimestamp(slot.timestamp)}`,
     empty: false,
   };
 }
@@ -66,12 +65,34 @@ export default function SettingsModal({
   const [message, setMessage] = useState<string | null>(null);
   const [debugWeek, setDebugWeek] = useState(currentWeek);
   const [debugDay, setDebugDay] = useState(currentDay);
+  const [debugGuestInDay, setDebugGuestInDay] = useState(1);
+
+  const availableDebugGuests = useMemo(() => {
+    return getGuestsForDay(debugWeek, debugDay).map((entry, index) => {
+      const guest = GUESTS.find(item => item.id === entry.character_id);
+      return {
+        guestInDay: index + 1,
+        label: `${index + 1}. ${guest?.name || entry.character_id}`,
+      };
+    });
+  }, [debugWeek, debugDay]);
 
   useEffect(() => {
     if (mode === 'save' || mode === 'load') {
       loadAllSaves();
     }
   }, [mode]);
+
+  useEffect(() => {
+    if (availableDebugGuests.length === 0) {
+      setDebugGuestInDay(1);
+      return;
+    }
+
+    if (!availableDebugGuests.some(option => option.guestInDay === debugGuestInDay)) {
+      setDebugGuestInDay(availableDebugGuests[0].guestInDay);
+    }
+  }, [availableDebugGuests, debugGuestInDay]);
 
   const loadAllSaves = async () => {
     try {
@@ -91,7 +112,9 @@ export default function SettingsModal({
       return;
     }
 
-    const name = saveName.trim() || `第${currentWeek}周 星期${WEEKDAY_LABELS[currentDay - 1] || currentDay}`;
+    const fallbackName = `第${currentWeek}周${WEEKDAY_LABELS[currentDay - 1] || currentDay}`;
+    const name = saveName.trim() || fallbackName;
+
     setIsOperating(true);
     setMessage(null);
 
@@ -104,7 +127,7 @@ export default function SettingsModal({
         setMode('main');
         setSelectedSlot(null);
         setSaveName('');
-      }, 1000);
+      }, 900);
     } catch (error) {
       setMessage('保存失败');
       console.error('[SettingsModal] Save failed:', error);
@@ -157,8 +180,8 @@ export default function SettingsModal({
     setMessage(null);
 
     try {
-      const result = await onDebugJump(debugWeek, debugDay);
-      setMessage(result || '跳转完成');
+      const result = await onDebugJump(debugWeek, debugDay, debugGuestInDay);
+      setMessage(result || '已完成跳转');
     } catch (error) {
       setMessage('调试跳转失败');
       console.error('[SettingsModal] Debug jump failed:', error);
@@ -175,14 +198,14 @@ export default function SettingsModal({
           className="flex flex-1 items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-4 text-2xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
         >
           <Save size={28} />
-          保存进度
+          保存游戏
         </button>
         <button
           onClick={() => setMode('load')}
           className="flex flex-1 items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-4 text-2xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
         >
           <Download size={28} />
-          读取进度
+          读取游戏
         </button>
       </div>
 
@@ -202,6 +225,7 @@ export default function SettingsModal({
             onClick={() => {
               setDebugWeek(currentWeek);
               setDebugDay(currentDay);
+              setDebugGuestInDay(1);
               setMessage(null);
               setMode('debug');
             }}
@@ -256,19 +280,17 @@ export default function SettingsModal({
         })}
       </div>
 
-      {selectedSlot && (
+      {selectedSlot && mode === 'save' && (
         <div className="rounded-lg border-4 border-[#1a110c] bg-[#2c1e16] p-4">
-          <div className="mb-2 text-lg text-[#e8dcc4]">存档位 {selectedSlot.replace('slot_', '第 ')} 号</div>
-          {mode === 'save' && (
-            <input
-              type="text"
-              value={saveName}
-              onChange={event => setSaveName(event.target.value)}
-              placeholder={`第${currentWeek}周 星期${WEEKDAY_LABELS[currentDay - 1] || currentDay}`}
-              className="w-full rounded border-2 border-[#3e2723] bg-[#1a110c] px-3 py-2 text-lg text-[#e8dcc4] outline-none focus:border-amber-500"
-              maxLength={30}
-            />
-          )}
+          <div className="mb-2 text-lg text-[#e8dcc4]">存档名称</div>
+          <input
+            type="text"
+            value={saveName}
+            onChange={event => setSaveName(event.target.value)}
+            placeholder={`第${currentWeek}周${WEEKDAY_LABELS[currentDay - 1] || currentDay}`}
+            className="w-full rounded border-2 border-[#3e2723] bg-[#1a110c] px-3 py-2 text-lg text-[#e8dcc4] outline-none focus:border-amber-500"
+            maxLength={30}
+          />
         </div>
       )}
 
@@ -306,9 +328,9 @@ export default function SettingsModal({
   const renderDebugPanel = () => (
     <div className="space-y-5">
       <div className="rounded-lg border-4 border-[#1a110c] bg-[#2c1e16] p-5">
-        <div className="text-lg font-bold text-[#e8dcc4]">开发环境调试</div>
+        <div className="text-lg font-bold text-[#e8dcc4]">调试跳转</div>
         <p className="mt-2 text-sm leading-6 text-gray-400">
-          输入想测试的周数与星期。若当天没有客人，系统会自动跳到最近一个有剧情的日期。
+          先选择目标日期，再选择那一天的客人，直接跳到对应客人的开场。
         </p>
       </div>
 
@@ -332,11 +354,31 @@ export default function SettingsModal({
           >
             {WEEKDAY_LABELS.map((label, index) => (
               <option key={label} value={index + 1}>
-                星期{label}
+                {label}
               </option>
             ))}
           </select>
         </label>
+      </div>
+
+      <div className="rounded-lg border-4 border-[#1a110c] bg-[#2c1e16] p-4">
+        <div className="text-sm font-bold tracking-[0.2em] text-amber-300">当天客人</div>
+        <select
+          value={debugGuestInDay}
+          onChange={event => setDebugGuestInDay(Number(event.target.value))}
+          className="mt-3 w-full rounded border-2 border-[#3e2723] bg-[#1a110c] px-3 py-3 text-xl text-[#e8dcc4] outline-none focus:border-amber-500"
+          disabled={availableDebugGuests.length === 0}
+        >
+          {availableDebugGuests.length === 0 ? (
+            <option value={1}>当天没有客人</option>
+          ) : (
+            availableDebugGuests.map(option => (
+              <option key={option.guestInDay} value={option.guestInDay}>
+                {option.label}
+              </option>
+            ))
+          )}
+        </select>
       </div>
 
       {message && (
@@ -358,9 +400,9 @@ export default function SettingsModal({
         </button>
         <button
           onClick={handleDebugJumpClick}
-          disabled={isOperating}
+          disabled={isOperating || availableDebugGuests.length === 0}
           className={`flex flex-1 items-center justify-center gap-2 rounded-lg border-4 border-[#1a110c] py-3 text-xl font-bold transition-colors ${
-            isOperating
+            isOperating || availableDebugGuests.length === 0
               ? 'cursor-not-allowed bg-[#3e2723] text-gray-500'
               : 'bg-[#3a4d5c] text-[#d9ecff] hover:bg-[#496274]'
           }`}
@@ -374,11 +416,11 @@ export default function SettingsModal({
 
   const title =
     mode === 'main'
-      ? '系统设置'
+      ? '系统菜单'
       : mode === 'save'
-        ? '保存进度'
+        ? '保存游戏'
         : mode === 'load'
-          ? '读取进度'
+          ? '读取游戏'
           : '调试跳转';
 
   return (
@@ -387,7 +429,7 @@ export default function SettingsModal({
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-10 text-[#e8dcc4] transition-all hover:scale-110 hover:text-white"
-          title="关闭设置"
+          title="关闭菜单"
         >
           <X size={32} />
         </button>

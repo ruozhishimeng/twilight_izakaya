@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
 import { BASE_LIQUORS, FLAVORS, Guest, MIXERS } from '../data/gameData';
 import PixelDialogueBox from './PixelDialogueBox';
 
@@ -31,7 +30,7 @@ interface TeachingData {
 
 interface Props {
   guest: Guest;
-  onServe: (base: string, addons: string[]) => void;
+  onServe: (ingredients: string[]) => void;
   isMixing: boolean;
   setIsMixing: (isMixing: boolean) => void;
   inventory: string[];
@@ -91,23 +90,15 @@ function buildTeachingPrompt(teaching?: TeachingData, teachingStep = 0) {
   }
 
   const steps = teaching.recipe?.steps || [];
-  const ingredients = teaching.recipe?.ingredients || teaching.recipe?.formula || [];
-  const formulaText = ingredients.length
-    ? ingredients.join(' + ')
-    : '\u8bf7\u6309\u7167\u521a\u624d\u7684\u6559\u5b66\u914d\u65b9\u6765\u3002';
 
   let currentLine = teaching.introduction || '\u300c\u5c0f\u5b50\uff0c\u542c\u597d\u4e86\u3002\u300d';
   if (teachingStep > 0 && teachingStep <= steps.length) {
-    currentLine = `\u7b2c${teachingStep}\u6b65\uff1a${steps[teachingStep - 1]}`;
+    currentLine = steps[teachingStep - 1];
   } else if (teachingStep > steps.length) {
     currentLine = teaching.tip || '\u6309\u8fd9\u5f20\u914d\u65b9\u5b8c\u6210\u8c03\u5236\u3002';
   }
 
-  return [
-    `\u9152\u8c31\uff1a\u300c${teaching.recipe?.name || '\u672a\u77e5\u914d\u65b9'}\u300d`,
-    `\u914d\u65b9\uff1a${formulaText}`,
-    currentLine,
-  ].filter(Boolean).join('\n');
+  return currentLine;
 }
 
 function sortUnlockedFirst<T extends { unlocked?: boolean }>(items: T[]) {
@@ -130,24 +121,24 @@ export default function MixingPhase({
   mixingRequest,
   teaching,
 }: Props) {
-  const [selectedBase, setSelectedBase] = useState<string | null>(null);
-  const [selectedMixer, setSelectedMixer] = useState<string | null>(null);
-  const [selectedFlavor, setSelectedFlavor] = useState<string | null>(null);
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [teachingStep, setTeachingStep] = useState(0);
+  const [isReviewingPrompt, setIsReviewingPrompt] = useState(false);
 
-  const isReady = selectedBase !== null || selectedMixer !== null || selectedFlavor !== null;
+  const isReady = selectedIngredients.length > 0;
 
   useEffect(() => {
+    setIsReviewingPrompt(false);
     if (startAtServe) {
       setTeachingStep((teaching?.recipe?.steps?.length || 0) + 1);
     } else {
       setTeachingStep(0);
     }
-  }, [startAtServe, teaching]);
+  }, [startAtServe, teaching, promptOverride]);
 
   const defaultRequestText = buildPlayerPrompt(mixingRequest);
   let guidanceText = defaultRequestText;
-  if (promptOverride) {
+  if (promptOverride && !(teaching && isReviewingPrompt)) {
     guidanceText = promptOverride;
   } else if (teaching) {
     guidanceText = buildTeachingPrompt(teaching, teachingStep);
@@ -160,11 +151,22 @@ export default function MixingPhase({
     }
   };
 
+  const handleReviewPrompt = () => {
+    setIsReviewingPrompt(true);
+    setTeachingStep(1);
+  };
+
   const handleServeClick = () => {
     setIsMixing(true);
     setTimeout(() => {
-      onServe(selectedBase || '', [selectedMixer, selectedFlavor].filter(Boolean) as string[]);
+      onServe(selectedIngredients);
     }, 1500);
+  };
+
+  const toggleIngredient = (id: string) => {
+    setSelectedIngredients(prev => (
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    ));
   };
 
   const unlockedItemIds = new Set(inventory);
@@ -187,29 +189,40 @@ export default function MixingPhase({
     }))
   );
 
-  const selectedItems = [
-    selectedBase
-      ? {
-          ...(BASE_LIQUORS.find(item => item.id === selectedBase) as SelectableItem),
+  const selectedItems = selectedIngredients
+    .map(id => {
+      const base = BASE_LIQUORS.find(item => item.id === id);
+      if (base) {
+        return {
+          ...(base as SelectableItem),
           slotLabel: '\u57fa\u9152',
-          onRemove: () => setSelectedBase(null),
-        }
-      : null,
-    selectedMixer
-      ? {
-          ...(MIXERS.find(item => item.id === selectedMixer) as SelectableItem),
+          onRemove: () => toggleIngredient(id),
+        };
+      }
+
+      const mixer = MIXERS.find(item => item.id === id);
+      if (mixer) {
+        return {
+          ...(mixer as SelectableItem),
           slotLabel: '\u8c03\u996e',
-          onRemove: () => setSelectedMixer(null),
-        }
-      : null,
-    selectedFlavor
-      ? {
-          ...(FLAVORS.find(item => item.id === selectedFlavor) as SelectableItem),
+          onRemove: () => toggleIngredient(id),
+        };
+      }
+
+      const flavor = FLAVORS.find(item => item.id === id);
+      if (flavor) {
+        return {
+          ...(flavor as SelectableItem),
           slotLabel: '\u98ce\u5473',
-          onRemove: () => setSelectedFlavor(null),
-        }
-      : null,
-  ].filter(Boolean) as SelectedItem[];
+          onRemove: () => toggleIngredient(id),
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean) as SelectedItem[];
+
+  const isTeacherSpeaking = !!teaching && (!promptOverride || isReviewingPrompt);
 
   const renderItemVisual = (item: SelectableItem, isLocked: boolean, size: 'list' | 'selected' = 'list') => {
     const dimensionClass = size === 'selected' ? 'h-14 w-14' : 'h-16 w-16';
@@ -257,12 +270,12 @@ export default function MixingPhase({
             </h3>
             <div className="custom-scrollbar flex flex-col gap-3 overflow-y-auto pr-2">
               {availableBases.map(liquor => {
-                const isSelected = selectedBase === liquor.id;
+                const isSelected = selectedIngredients.includes(liquor.id);
                 const isLocked = !liquor.unlocked;
                 return (
                   <button
                     key={liquor.id}
-                    onClick={() => !isLocked && setSelectedBase(isSelected ? null : liquor.id)}
+                    onClick={() => !isLocked && toggleIngredient(liquor.id)}
                     disabled={isLocked}
                     className={`pixel-rounded-lg flex items-start gap-3 border-4 p-2 text-left transition-all ${
                       isSelected
@@ -298,12 +311,12 @@ export default function MixingPhase({
             </h3>
             <div className="custom-scrollbar flex flex-col gap-3 overflow-y-auto pr-2">
               {availableMixers.map(mixer => {
-                const isSelected = selectedMixer === mixer.id;
+                const isSelected = selectedIngredients.includes(mixer.id);
                 const isLocked = !mixer.unlocked;
                 return (
                   <button
                     key={mixer.id}
-                    onClick={() => !isLocked && setSelectedMixer(isSelected ? null : mixer.id)}
+                    onClick={() => !isLocked && toggleIngredient(mixer.id)}
                     disabled={isLocked}
                     className={`pixel-rounded-lg flex items-start gap-3 border-4 p-2 text-left transition-all ${
                       isSelected
@@ -339,12 +352,12 @@ export default function MixingPhase({
             </h3>
             <div className="custom-scrollbar flex flex-col gap-3 overflow-y-auto pr-2">
               {availableFlavors.map(flavor => {
-                const isSelected = selectedFlavor === flavor.id;
+                const isSelected = selectedIngredients.includes(flavor.id);
                 const isLocked = !flavor.unlocked;
                 return (
                   <button
                     key={flavor.id}
-                    onClick={() => !isLocked && setSelectedFlavor(isSelected ? null : flavor.id)}
+                    onClick={() => !isLocked && toggleIngredient(flavor.id)}
                     disabled={isLocked}
                     className={`pixel-rounded-lg flex items-start gap-3 border-4 p-2 text-left transition-all ${
                       isSelected
@@ -410,19 +423,6 @@ export default function MixingPhase({
                 </React.Fragment>
               ))
             )}
-
-            {selectedItems.length > 0 && selectedItems.length < 3 && (
-              <>
-                <div className="text-xl font-bold text-[#8b7355]">+</div>
-                <button
-                  disabled
-                  className="pixel-rounded-lg flex w-full cursor-not-allowed items-center justify-center gap-1 border-2 border-dashed border-[#4a3f35] py-2 text-xs font-bold text-[#8b7355] opacity-50"
-                >
-                  <Plus size={14} />
-                  {'\u66f4\u591a\u69fd\u4f4d\u6682\u672a\u5f00\u653e...'}
-                </button>
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -430,12 +430,19 @@ export default function MixingPhase({
       <div className={`pointer-events-none absolute inset-0 transition-transform duration-700 ${isMixing ? 'translate-y-[150%]' : 'translate-y-0'}`}>
         <div className="pointer-events-auto">
           <PixelDialogueBox
-            speakerName={promptOverride ? '\u7cfb\u7edf' : teaching ? '\u8001\u5e08' : '\u6211'}
-            speakerAvatarUrl={promptOverride || !teaching ? undefined : (guest.expressions.normal || guest.image)}
-            speakerAvatarColor={promptOverride || !teaching ? undefined : guest.avatarColor}
+            speakerName={promptOverride && !isReviewingPrompt ? '\u7cfb\u7edf' : teaching ? '\u8001\u5e08' : '\u6211'}
+            speakerAvatarUrl={isTeacherSpeaking ? (guest.expressions.dialogue || guest.expressions.normal || guest.image) : undefined}
+            speakerAvatarColor={isTeacherSpeaking ? guest.avatarColor : undefined}
             text={guidanceText}
             options={
-              teaching && teachingStep <= (teaching.recipe?.steps?.length || 0)
+              promptOverride && teaching && !isReviewingPrompt
+                ? [
+                    {
+                      label: '\u8ba9\u6211\u56de\u5fc6\u4e00\u4e0b...',
+                      onClick: handleReviewPrompt,
+                    },
+                  ]
+                : teaching && teachingStep <= (teaching.recipe?.steps?.length || 0)
                 ? [
                     {
                       label: '\u7ee7\u7eed \u25bc',

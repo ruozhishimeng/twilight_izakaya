@@ -214,7 +214,7 @@
       },
       {
         "id": "m07",
-        "name": "通宁水",
+        "name": "汤力水",
         "category": "配酒",
         "tag1": "西式",
         "tag2": "苦涩",
@@ -240,7 +240,7 @@
         "tag2": "苦涩",
         "emotion_tag": "迷茫",
         "gallery_description": "半发酵的乌龙，焙火香中带着时间的沉稳。",
-        "unlocked": true
+        "unlocked": false
       },
       {
         "id": "m10",
@@ -311,6 +311,36 @@
         "emotion_tag": "初恋",
         "gallery_description": "新鲜的葡萄榨汁，甜中带着一丝酸涩，像是初恋的味道。",
         "unlocked": true
+      },
+      {
+        "id": "m17",
+        "name": "蔓越莓汁",
+        "category": "配酒",
+        "tag1": "通用",
+        "tag2": "果香",
+        "emotion_tag": "浪漫",
+        "gallery_description": "酸甜的蔓越莓汁，像是初恋的滋味，略带羞涩的甜蜜。",
+        "unlocked": true
+      },
+      {
+        "id": "m18",
+        "name": "蓝柑桂",
+        "category": "配酒",
+        "tag1": "西式",
+        "tag2": "果香",
+        "emotion_tag": "遗忘",
+        "gallery_description": "蓝色的柑橘利口酒，像是加勒比的海，清新而浪漫。",
+        "unlocked": false
+      },
+      {
+        "id": "m19",
+        "name": "樱桃利口酒",
+        "category": "配酒",
+        "tag1": "西式",
+        "tag2": "甘甜",
+        "emotion_tag": "留恋",
+        "gallery_description": "樱桃的甜香，像是初恋的味道，微微的苦涩中是成熟的滋味。",
+        "unlocked": false
       }
     ],
     "flavors": [
@@ -373,16 +403,6 @@
         "emotion_tag": "迷茫",
         "gallery_description": "鲜柠檬的酸涩，是清醒的味道。",
         "unlocked": true
-      },
-      {
-        "id": "f07",
-        "name": "樱桃利口酒",
-        "category": "风味剂",
-        "tag1": "西式",
-        "tag2": "甘甜",
-        "emotion_tag": "留恋",
-        "gallery_description": "樱桃的甜香，像是初恋的味道。",
-        "unlocked": false
       },
       {
         "id": "f08",
@@ -463,16 +483,6 @@
         "emotion_tag": "离别",
         "gallery_description": "最简单的调味，却能平衡所有的甜与苦。",
         "unlocked": true
-      },
-      {
-        "id": "f16",
-        "name": "蓝柑桂",
-        "category": "风味剂",
-        "tag1": "西式",
-        "tag2": "果香",
-        "emotion_tag": "遗忘",
-        "gallery_description": "蓝色的柑橘利口酒，像是加勒比的海。",
-        "unlocked": false
       },
       {
         "id": "f17",
@@ -619,7 +629,7 @@
       "formula": [
         "bc01",
         "m04",
-        "f07"
+        "m19"
       ],
       "tag1": "西式",
       "tag2": "苦涩",
@@ -672,7 +682,8 @@
       "name": "伏特加汤力",
       "formula": [
         "bc03",
-        "m07"
+        "m07",
+        "f06"
       ],
       "tag1": "西式",
       "tag2": "清冷",
@@ -680,7 +691,7 @@
         "忘却",
         "孤独"
       ],
-      "gallery_description": "伏特加与通宁水的结合，简洁的刺激，透明的清醒。",
+      "gallery_description": "伏特加与汤力水的结合，简洁的刺激，透明的清醒。",
       "target_npc": "Generic",
       "series": "经典系列"
     },
@@ -730,7 +741,7 @@
       "formula": [
         "bc04",
         "m12",
-        "m10"
+        "f05"
       ],
       "tag1": "西式",
       "tag2": "甘甜",
@@ -739,7 +750,27 @@
         "忘却",
         "希望"
       ],
-      "gallery_description": "朗姆酒与可乐的碰撞，是雪茄与蔗糖的南国。",
+      "gallery_description": "朗姆酒与可乐的碰撞，是雪茄与蔗糖的南国。朗姆的醇厚、可乐的甜、柠檬皮的清香——加勒比海的微风。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R038",
+      "name": "尼格罗尼",
+      "formula": [
+        "bc02",
+        "m15",
+        "f14",
+        "m11"
+      ],
+      "tag1": "西式",
+      "tag2": "苦涩",
+      "emotion_tags": [
+        "执念",
+        "孤独",
+        "留恋"
+      ],
+      "gallery_description": "金酒的清冽、味美思的甘甜、苦精的苦涩、橙汁的果香——经典的意大利苦酒，成年人的滋味。",
       "target_npc": "Generic",
       "series": "经典系列"
     },
@@ -750,7 +781,7 @@
         "bc03",
         "m11",
         "m13",
-        "f16"
+        "m18"
       ],
       "tag1": "西式",
       "tag2": "果香",
@@ -771,7 +802,7 @@
         "bc02",
         "m11",
         "m10",
-        "f07",
+        "m19",
         "f01"
       ],
       "tag1": "西式",
@@ -791,10 +822,11 @@
       "name": "僵尸",
       "formula": [
         "bc03",
+        "bc04",
         "bc05",
         "m11",
         "m10",
-        "f07"
+        "m19"
       ],
       "tag1": "西式",
       "tag2": "果香",
@@ -815,7 +847,7 @@
       "formula": [
         "bc02",
         "m10",
-        "f07",
+        "m19",
         "f11"
       ],
       "tag1": "西式",
@@ -851,20 +883,21 @@
     },
     {
       "id": "R019",
-      "name": "净化之泪",
+      "name": "海洋之泪",
       "formula": [
-        "bc06",
-        "m07",
-        "f02"
+        "bc07",
+        "bc04",
+        "m11",
+        "m01"
       ],
       "tag1": "西式",
-      "tag2": "清冷",
+      "tag2": "果香",
       "emotion_tags": [
-        "释然",
-        "孤独",
-        "离别"
+        "离别",
+        "重逢",
+        "希望"
       ],
-      "gallery_description": "生命之水与通宁水的结合，海盐带来远方的咸涩，泪水洗净铅华。",
+      "gallery_description": "君度的甜、朗姆的醇、橙汁的酸、苏打水的气泡——像是海边的告别，咸涩中带着希望。",
       "target_npc": "Generic",
       "series": "传奇系列"
     },
@@ -1014,7 +1047,7 @@
     },
     {
       "id": "R028",
-      "name": "芋感HIGHBALL",
+      "name": "芋感嗨棒",
       "formula": [
         "bj05",
         "m06",
@@ -1049,11 +1082,11 @@
     },
     {
       "id": "R030",
-      "name": "泡盛荔枝",
+      "name": "泡盛鲜橙",
       "formula": [
         "bj07",
         "m11",
-        "f07"
+        "m19"
       ],
       "tag1": "日式",
       "tag2": "果香",
@@ -1204,6 +1237,84 @@
       "gallery_description": "朗姆的醇厚、金酒的清冽、橙汁的酸甜、乌龙茶的苦涩。四者交织，像是人生百味，苦尽甘来。",
       "target_npc": "Generic",
       "series": "传奇系列"
+    },
+    {
+      "id": "R041",
+      "name": "流金岁月",
+      "formula": [
+        "bc03",
+        "bc04",
+        "m09"
+      ],
+      "tag1": "西式",
+      "tag2": "茶香",
+      "emotion_tags": [
+        "怀旧",
+        "沉淀",
+        "岁月"
+      ],
+      "gallery_description": "伏特加的烈、朗姆的醇、乌龙茶的苦涩——像是看着夕阳慢慢沉入海平面，金色的时光缓缓流淌。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R039",
+      "name": "满江红",
+      "formula": [
+        "bc04",
+        "f06",
+        "m16",
+        "f05"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "热烈",
+        "离别",
+        "初恋"
+      ],
+      "gallery_description": "朗姆的醇厚、柠檬的酸涩、葡萄汁的甜美、柠檬皮的清香——像是夕阳染红的江面，热烈而深沉。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R040",
+      "name": "回柑",
+      "formula": [
+        "m11",
+        "f05",
+        "f01"
+      ],
+      "tag1": "通用",
+      "tag2": "果香",
+      "emotion_tags": [
+        "重逢",
+        "怀念",
+        "希望"
+      ],
+      "gallery_description": "橙汁的甜美、柠檬皮的清香、方糖的温暖——像是久别重逢的那一刻，酸甜中带着微微的苦涩与美好。",
+      "target_npc": "Generic",
+      "series": "传奇系列"
+    },
+    {
+      "id": "R042",
+      "name": "大都会",
+      "formula": [
+        "bc04",
+        "bc03",
+        "m10",
+        "m17"
+      ],
+      "tag1": "西式",
+      "tag2": "果香",
+      "emotion_tags": [
+        "浪漫",
+        "心动",
+        "热情"
+      ],
+      "gallery_description": "朗姆的醇厚、伏特加的清冽、青柠汁的酸涩、蔓越莓汁的甜美——粉色的浪漫，像是都市夜晚的微醺。",
+      "target_npc": "Generic",
+      "series": "经典系列"
     }
   ]
 }

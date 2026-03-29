@@ -89,6 +89,9 @@ const drinkImageMap: Record<DrinkImageBucket, Map<string, string>> = {
   cocktail: new Map(),
 };
 
+const recipeEntries = Array.isArray((recipesData as any).recipes) ? (recipesData as any).recipes : [];
+const cocktailIdByName = new Map<string, string>();
+
 Object.entries(drinkImageFiles).forEach(([rawPath, rawUrl]) => {
   if (typeof rawUrl !== 'string') {
     return;
@@ -103,6 +106,14 @@ Object.entries(drinkImageFiles).forEach(([rawPath, rawUrl]) => {
   const bucket = match[1].toLowerCase() as DrinkImageBucket;
   const key = match[2];
   drinkImageMap[bucket].set(key, rawUrl);
+});
+
+recipeEntries.forEach((recipe: any) => {
+  const id = typeof recipe?.id === 'string' ? recipe.id.trim() : '';
+  const name = typeof recipe?.name === 'string' ? recipe.name.trim() : '';
+  if (id && name) {
+    cocktailIdByName.set(name, id);
+  }
 });
 
 export function getIngredientImage(id: string) {
@@ -124,11 +135,15 @@ export function getIngredientImage(id: string) {
 }
 
 export function getCocktailImage(id?: string, name?: string) {
-  if (id && drinkImageMap.cocktail.has(id)) {
-    return drinkImageMap.cocktail.get(id);
+  const normalizedId = typeof id === 'string' ? id.trim() : '';
+  const normalizedName = typeof name === 'string' ? name.trim() : '';
+  const resolvedId = normalizedId || (normalizedName ? cocktailIdByName.get(normalizedName) ?? '' : '');
+
+  if (resolvedId && drinkImageMap.cocktail.has(resolvedId)) {
+    return drinkImageMap.cocktail.get(resolvedId);
   }
-  if (name && drinkImageMap.cocktail.has(name)) {
-    return drinkImageMap.cocktail.get(name);
+  if (normalizedName && drinkImageMap.cocktail.has(normalizedName)) {
+    return drinkImageMap.cocktail.get(normalizedName);
   }
   return undefined;
 }

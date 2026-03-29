@@ -89,11 +89,44 @@ function resolveMixingOutcomeNode(
   return null;
 }
 
-function formatMixedDrinkLabel(base: string, addons: string[]) {
+function findTeachingNodeForMixing(
+  guest: { nodeMap?: Map<string, any> },
+  teachingCandidate: any,
+  mixingCandidate: any
+) {
+  if (teachingCandidate?.teaching) {
+    return teachingCandidate;
+  }
+
+  if (mixingCandidate?.teaching) {
+    return mixingCandidate;
+  }
+
+  const nodeMap = guest.nodeMap;
+  if (!nodeMap) {
+    return null;
+  }
+
+  const upstreamIds = [
+    ...(Array.isArray(mixingCandidate?.trigger_condition?.need_event) ? mixingCandidate.trigger_condition.need_event : []),
+    ...(Array.isArray(teachingCandidate?.trigger_condition?.need_event) ? teachingCandidate.trigger_condition.need_event : []),
+  ];
+
+  for (const upstreamId of upstreamIds) {
+    const upstreamNode = nodeMap.get(upstreamId);
+    if (upstreamNode?.teaching) {
+      return upstreamNode;
+    }
+  }
+
+  return null;
+}
+
+function formatMixedDrinkLabel(ingredients: string[]) {
   const itemMap = new Map(
     [...BASE_LIQUORS, ...MIXERS, ...FLAVORS].map(item => [item.id, item.name])
   );
-  const names = [base, ...addons].filter(Boolean).map(id => itemMap.get(id) || id);
+  const names = ingredients.filter(Boolean).map(id => itemMap.get(id) || id);
   return names.length > 0 ? names.join(' + ') : '未命名的调配';
 }
 
@@ -152,7 +185,8 @@ export default function App() {
 
   // Reward state
   const [showReward, setShowReward] = useState(false);
-  const [pendingReward, setPendingReward] = useState<any>(null);
+  const [pendingRewards, setPendingRewards] = useState<JournalReward[]>([]);
+  const [pendingRewardNewIds, setPendingRewardNewIds] = useState<string[]>([]);
   const [pendingMixingRetry, setPendingMixingRetry] = useState(false);
   const [mixingPromptOverride, setMixingPromptOverride] = useState<string | undefined>();
   const [guestInterludeText, setGuestInterludeText] = useState<string | undefined>();
@@ -216,33 +250,7 @@ export default function App() {
     transitionTo('story', 1500);
   }, [startNodeId]);
 
-  const handleDebugJump = useCallback(async (week: number, day: number) => {
-    const normalizedWeek = Math.max(1, Math.floor(week) || 1);
-    const normalizedDay = Math.min(DAYS_PER_WEEK, Math.max(1, Math.floor(day) || 1));
-
-    const guestsOnTargetDay = getGuestsForDay(normalizedWeek, normalizedDay);
-    const targetVisit =
-      guestsOnTargetDay.length > 0
-        ? {
-            week: normalizedWeek,
-            day: normalizedDay,
-            guestInDay: 1,
-            exact: true,
-          }
-        : (() => {
-            const nextVisit = findScheduledVisit(normalizedWeek, normalizedDay, 1, true);
-            return nextVisit
-              ? {
-                  ...nextVisit,
-                  exact: nextVisit.week === normalizedWeek && nextVisit.day === normalizedDay,
-                }
-              : null;
-          })();
-
-    if (!targetVisit) {
-      return '未找到可跳转的剧情日期。';
-    }
-
+  const jumpToVisit = useCallback((targetVisit: { week: number; day: number; guestInDay: number }) => {
     transitionTo('intro', 300, () => {
       setCurrentNodeId(null);
       setTeachingNode(null);
@@ -252,7 +260,8 @@ export default function App() {
       setObservationContinueNode(null);
       setAvailableFeatureGroups(undefined);
       setShowReward(false);
-      setPendingReward(null);
+      setPendingRewards([]);
+      setPendingRewardNewIds([]);
       setPendingMixingRetry(false);
       setMixingPromptOverride(undefined);
       setGuestInterludeText(undefined);
@@ -273,13 +282,44 @@ export default function App() {
       setCurrentDay(targetVisit.day);
       setCurrentGuestInDay(targetVisit.guestInDay);
     });
+  }, []);
+
+  const handleDebugJump = useCallback(async (week: number, day: number, guestInDay = 1) => {
+    const normalizedWeek = Math.max(1, Math.floor(week) || 1);
+    const normalizedDay = Math.min(DAYS_PER_WEEK, Math.max(1, Math.floor(day) || 1));
+    const normalizedGuestInDay = Math.max(1, Math.floor(guestInDay) || 1);
+
+    const guestsOnTargetDay = getGuestsForDay(normalizedWeek, normalizedDay);
+    const targetVisit =
+      guestsOnTargetDay.length > 0
+        ? {
+            week: normalizedWeek,
+            day: normalizedDay,
+            guestInDay: Math.min(normalizedGuestInDay, guestsOnTargetDay.length),
+            exact: true,
+          }
+        : (() => {
+            const nextVisit = findScheduledVisit(normalizedWeek, normalizedDay, 1, true);
+            return nextVisit
+              ? {
+                  ...nextVisit,
+                  exact: nextVisit.week === normalizedWeek && nextVisit.day === normalizedDay,
+                }
+              : null;
+          })();
+
+    if (!targetVisit) {
+      return '未找到可跳转的剧情日期。';
+    }
+
+    jumpToVisit(targetVisit);
 
     if (targetVisit.exact) {
       return `已跳转到第 ${targetVisit.week} 周 星期${['一', '二', '三', '四', '五', '六', '日'][targetVisit.day - 1]}。`;
     }
 
     return `指定日期没有客人，已跳转到最近的第 ${targetVisit.week} 周 星期${['一', '二', '三', '四', '五', '六', '日'][targetVisit.day - 1]}。`;
-  }, []);
+  }, [jumpToVisit]);
 
   const buildCurrentGuestRecord = (diaryEntry?: string): DailyGuestRecord => {
     const notes: JournalNote[] = discoveredFeatures
@@ -338,6 +378,17 @@ export default function App() {
     transitionTo(nextPhase, delay, cleanup);
   };
 
+  const enterFromMenuWithBlackScreen = (enter: () => void, holdMs = 2000) => {
+    setTransitionState('fade-out');
+    window.setTimeout(() => {
+      enter();
+      setTransitionState('fade-in');
+      window.setTimeout(() => {
+        setTransitionState('idle');
+      }, 800);
+    }, holdMs);
+  };
+
   const resetGameState = () => {
     setCurrentWeek(1);
     setCurrentDay(1);
@@ -363,7 +414,8 @@ export default function App() {
     setObservationContinueNode(null);
     setAvailableFeatureGroups(undefined);
     setShowReward(false);
-    setPendingReward(null);
+    setPendingRewards([]);
+    setPendingRewardNewIds([]);
     setPendingMixingRetry(false);
     setMixingPromptOverride(undefined);
     setGuestInterludeText(undefined);
@@ -416,18 +468,14 @@ export default function App() {
   const handleEnterMixing = (tNode: any, mNode: any) => {
     setPendingMixingRetry(false);
     setMixingPromptOverride(undefined);
-    const normalizedTeachingNode =
-      (tNode?.teaching ? tNode : null) ||
-      (mNode?.teaching ? mNode : null);
     const normalizedMixingNode =
       ((mNode?.drink_request || mNode?.on_mixing_complete || mNode?.on_mixing_fail) ? mNode : null) ||
-      (normalizedTeachingNode?.next_node
-        ? findNodeForGuest(normalizedTeachingNode.next_node, guest.id, guest.nodeMap!)
+      (tNode?.next_node
+        ? findNodeForGuest(tNode.next_node, guest.id, guest.nodeMap!)
         : null) ||
       ((tNode?.drink_request || tNode?.on_mixing_complete || tNode?.on_mixing_fail) ? tNode : null) ||
-      ((normalizedTeachingNode?.drink_request || normalizedTeachingNode?.on_mixing_complete || normalizedTeachingNode?.on_mixing_fail)
-        ? normalizedTeachingNode
-        : null);
+      null;
+    const normalizedTeachingNode = findTeachingNodeForMixing(guest, tNode, normalizedMixingNode || mNode);
     const taughtRecipeId = normalizedTeachingNode?.teaching?.recipe?.id;
     if (taughtRecipeId) {
       setUnlockedRecipes(prev => (prev.includes(taughtRecipeId) ? prev : [...prev, taughtRecipeId]));
@@ -467,32 +515,28 @@ export default function App() {
     setObservationContinueNode(null);
   };
 
-  const handleServe = (base: string, addons: string[]) => {
+  const handleServe = (ingredients: string[]) => {
     let success = false;
     const activeMixingNode =
       mixingNode ||
       (teachingNode?.next_node ? findNodeForGuest(teachingNode.next_node, guest.id, guest.nodeMap!) : null) ||
       ((teachingNode?.drink_request || teachingNode?.on_mixing_complete || teachingNode?.on_mixing_fail) ? teachingNode : null);
 
-    let idealDrink;
+    let idealFormula: string[] | null = null;
     if (activeMixingNode?.drink_request?.preferred_drink?.formula) {
-      idealDrink = {
-        base: activeMixingNode.drink_request.preferred_drink.formula[0],
-        addons: activeMixingNode.drink_request.preferred_drink.formula.slice(1)
-      };
+      idealFormula = activeMixingNode.drink_request.preferred_drink.formula;
     } else if (teachingNode?.teaching?.recipe?.formula) {
-      idealDrink = {
-        base: teachingNode.teaching.recipe.formula[0],
-        addons: teachingNode.teaching.recipe.formula.slice(1)
-      };
+      idealFormula = teachingNode.teaching.recipe.formula;
     }
 
-    if (!idealDrink) {
+    if (!idealFormula) {
       success = true;
     } else {
-      const isBaseCorrect = base === idealDrink.base;
-      const isAddonsCorrect = addons.length === idealDrink.addons.length && addons.every(a => idealDrink.addons.includes(a));
-      success = isBaseCorrect && isAddonsCorrect;
+      const expectedFormula = [...idealFormula].filter(Boolean).sort();
+      const actualFormula = [...ingredients].filter(Boolean).sort();
+      success =
+        expectedFormula.length === actualFormula.length &&
+        expectedFormula.every((id, index) => id === actualFormula[index]);
     }
 
     setIsSuccess(success);
@@ -512,8 +556,8 @@ export default function App() {
 
     // Find if it matches a known recipe
     import('./assets/recipes/recipes.json').then(recipesData => {
-      const mixedFormula = [base, ...addons].filter(Boolean).sort();
-      const fallbackDrinkLabel = formatMixedDrinkLabel(base, addons);
+      const mixedFormula = [...ingredients].filter(Boolean).sort();
+      const fallbackDrinkLabel = formatMixedDrinkLabel(ingredients);
       const matchedRecipe = recipesData.recipes.find(r => {
         if (!r.formula) return false;
         const rFormula = [...r.formula].sort();
@@ -662,7 +706,17 @@ export default function App() {
 
     if (rewardDetails.length > 0) {
       const normalizedRewardDetails = rewardDetails as JournalReward[];
-      setPendingReward(rewardDetails[0]);
+      const newRewardIds = normalizedRewardDetails
+        .filter(detail => {
+          if (detail.type === 'recipe') {
+            return detail.id && !unlockedRecipes.includes(detail.id);
+          }
+          return detail.id && !inventory.includes(detail.id);
+        })
+        .map(detail => detail.id);
+
+      setPendingRewards(normalizedRewardDetails);
+      setPendingRewardNewIds(newRewardIds);
       setShowReward(true);
       setCurrentGuestRewards(prev => [...prev, ...normalizedRewardDetails]);
       setInventory(prev => {
@@ -761,6 +815,15 @@ export default function App() {
     }
   };
 
+  const handleMenuLoad = async (slotId: string) => {
+    const slot = await saveSystem.getSave(slotId);
+    if (!slot) return;
+
+    enterFromMenuWithBlackScreen(() => {
+      void handleLoad(slotId);
+    });
+  };
+
   if (!imagesPreloaded) {
     return (
       <div className="min-h-screen bg-[#000] text-gray-200 font-mono flex items-center justify-center p-4 pixel-art-container">
@@ -792,11 +855,13 @@ export default function App() {
       {phase === 'main_menu' && (
         <MainMenu
           onNewGame={() => {
-            resetGameState();
-            setPhase('intro_sequence');
+            enterFromMenuWithBlackScreen(() => {
+              resetGameState();
+              setPhase('intro_sequence');
+            });
           }}
           onLoadGame={async (slotId) => {
-            await handleLoad(slotId);
+            await handleMenuLoad(slotId);
           }}
           onBack={() => transitionTo('start_screen')}
         />
@@ -920,13 +985,13 @@ export default function App() {
                 <button
                   type="button"
                   onClick={beginGuestArrival}
-                  className="mt-10 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
+                  className="hidden"
                 >
                   准备接待
                 </button>
                 <button
                   onClick={() => finalizeGuestAdvance(pendingGuestReflection)}
-                  className="mt-12 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
+                  className="mt-10 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
                 >
                   记下这一页
                 </button>
@@ -1047,12 +1112,14 @@ export default function App() {
           )}
 
           {/* Reward Phase */}
-          {showReward && pendingReward && (
+          {showReward && pendingRewards.length > 0 && (
             <RewardPhase
-              reward={pendingReward}
+              rewards={pendingRewards}
+              newRewardIds={pendingRewardNewIds}
               onContinue={() => {
                 setShowReward(false);
-                setPendingReward(null);
+                setPendingRewards([]);
+                setPendingRewardNewIds([]);
               }}
             />
           )}
@@ -1084,8 +1151,8 @@ export default function App() {
         transitionWithCleanup('main_menu', () => {
           setIsSettingsOpen(false);
         });
-      }} onSave={handleSave} onLoad={handleLoad} currentPhase={phase} currentWeek={currentWeek} currentDay={currentDay} enableDebugTools={isDebugMode} onDebugJump={async (week, day) => {
-        const message = await handleDebugJump(week, day);
+      }} onSave={handleSave} onLoad={handleLoad} currentPhase={phase} currentWeek={currentWeek} currentDay={currentDay} enableDebugTools={isDebugMode} onDebugJump={async (week, day, guestInDay) => {
+        const message = await handleDebugJump(week, day, guestInDay);
         setIsSettingsOpen(false);
         return message;
       }} />}

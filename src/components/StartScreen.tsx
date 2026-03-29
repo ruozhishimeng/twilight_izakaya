@@ -18,7 +18,7 @@ export default function StartScreen({ onStart }: Props) {
         
         <button 
           onClick={onStart}
-          className="mt-16 px-12 py-4 text-2xl font-bold bg-[#e6b87d] text-[#3e2723] border-4 border-[#8b5a2b] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.2),inset_4px_4px_0px_0px_rgba(255,255,255,0.5)] hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
+          className="pixel-button pixel-rounded mt-16 px-12 py-4 text-2xl font-bold hover:scale-105 active:scale-95 transition-all"
         >
           开始游戏
         </button>

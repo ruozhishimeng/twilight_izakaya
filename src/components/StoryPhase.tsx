@@ -43,7 +43,7 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
   const [rewardPending, setRewardPending] = useState(false);
   const [rewardShownNodeId, setRewardShownNodeId] = useState<string | null>(null);
   const [portraitVisible, setPortraitVisible] = useState(false);
-  const [portraitExpression, setPortraitExpression] = useState('main');
+  const [portraitExpression, setPortraitExpression] = useState('dialogue');
   const emittedTranscriptKeysRef = useRef<Set<string>>(new Set());
 
   const activeNodeId = currentNodeId;
@@ -52,7 +52,7 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
 
   useEffect(() => {
     setPortraitVisible(false);
-    setPortraitExpression('main');
+    setPortraitExpression('dialogue');
     emittedTranscriptKeysRef.current = new Set();
   }, [guest.id, startNodeId]);
 
@@ -440,7 +440,10 @@ const playerReply = `「${rawText}」`;
     speakerName = guest.name;
   }
 
-  const portraitUrl = guest.expressions[portraitExpression] || guest.image;
+  const portraitUrl =
+    guest.expressions[portraitExpression] ||
+    guest.expressions.dialogue ||
+    guest.image;
   const showPortrait = portraitVisible && !!portraitUrl;
 
   */
@@ -455,10 +458,10 @@ const playerReply = `「${rawText}」`;
       {/* 主立绘：位于对话框左侧，置于下层 z-30 */}
       {showPortrait && (
         <div
-          className="absolute left-40 bottom-45 w-64 h-96 z-30 animate-character-enter"
+          className="absolute left-10 md:left-16 lg:left-24 bottom-0 w-[20rem] h-[30rem] md:w-[24rem] md:h-[34rem] lg:w-[28rem] lg:h-[40rem] z-30 animate-character-enter"
           style={{
             backgroundImage: `url(${portraitUrl})`,
-            backgroundSize: 'cover',
+            backgroundSize: 'contain',
             backgroundPosition: 'center bottom',
             backgroundRepeat: 'no-repeat',
           }}

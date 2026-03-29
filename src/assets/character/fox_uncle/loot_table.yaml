@@ -36,27 +36,16 @@ rewards:
       event_id: "fox_uncle_teaching_03_mixing"
       description: "完成止痛药教学后"
 
-  - id: "reward_f18_yuzu"
-    type: "ingredient"
-    item_id: "f18"
-    name: "柚子酱"
-    description: "日本柚子的果香，清新中带着微微的苦。是日本料理中不可或缺的调味品。"
-    quantity: 1
-    source_event: "fox_uncle_reward_review"
-    unlock_condition:
-      event_id: "fox_uncle_teaching_review_mixing"
-      description: "完成复习教学后"
-
   - id: "reward_m09_oolong"
     type: "ingredient"
     item_id: "m09"
     name: "乌龙茶"
     description: "半发酵茶的醇厚，苦涩中带着回甘。是日本茶道中重要的组成部分。"
     quantity: 1
-    source_event: "fox_uncle_reward_04"
+    source_event: "fox_uncle_reward_05"
     unlock_condition:
-      event_id: "fox_uncle_teaching_04_mixing"
-      description: "完成蜜柚茶教学后"
+      event_id: "fox_uncle_teaching_06_mixing"
+      description: "完成流金岁月教学后"
 
   - id: "reward_m08_kalpiss_x2"
     type: "ingredient"
@@ -68,28 +57,6 @@ rewards:
     unlock_condition:
       event_id: "fox_uncle_teaching_free_practice_mixing"
       description: "完成自由练习教学后"
-
-  - id: "reward_f18_yuzu_x1"
-    type: "ingredient"
-    item_id: "f18"
-    name: "柚子酱"
-    description: "日本柚子的果香，清新中带着微微的苦。是日本料理中不可或缺的调味品。"
-    quantity: 1
-    source_event: "fox_uncle_reward_review_02"
-    unlock_condition:
-      event_id: "fox_uncle_teaching_review_02_mixing"
-      description: "完成第二周复习教学后"
-
-  # 配方奖励
-  - id: "reward_r026_mizuku_tea"
-    type: "recipe"
-    recipe_id: "R026"
-    name: "蜜柚茶"
-    description: "清酒与乌龙茶、蜂蜜的结合，是成熟果实的温柔，秋日的私语。"
-    source_event: "fox_uncle_reward_04"
-    unlock_condition:
-      event_id: "fox_uncle_teaching_04_mixing"
-      description: "完成蜜柚茶教学后"
 
 # 配方解锁
 recipe_unlocks:
@@ -114,35 +81,28 @@ recipe_unlocks:
       event_id: "fox_uncle_teaching_03"
       description: "完成第三日教学后"
 
-  - recipe_id: "R026"
-    name: "蜜柚茶"
-    formula: ["bj01", "m09", "f17"]
-    unlock_condition:
-      event_id: "fox_uncle_teaching_04"
-      description: "完成第七日教学后"
-
 # 阶段完成标记
 phase_completion:
   - phase: 1
     unlock_condition:
-      event_id: "fox_uncle_reward_04_end"
-      description: "完成第一周所有教学后"
+      event_id: "fox_uncle_reward_04"
+      description: "完成第四日古典教学后"
     unlocks:
       - "phase_2_dialogue"
       - "gallery_identity_hint"
 
   - phase: 2
     unlock_condition:
-      event_id: "fox_uncle_reward_review_02_end"
-      description: "完成第二周所有教学后"
+      event_id: "fox_uncle_reward_05"
+      description: "完成第五日流金岁月教学后"
     unlocks:
       - "phase_3_dialogue"
       - "gallery_identity_reveal"
 
   - phase: 3
     unlock_condition:
-      event_id: "fox_uncle_reward_05_end"
-      description: "完成第三周所有教学后"
+      event_id: "fox_uncle_reward_06_end"
+      description: "完成自由练习教学后"
     unlocks:
       - "gallery_teaching_wisdom"
       - "gallery_true_god_form"

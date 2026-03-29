@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { getCocktailImage } from '../data/gameData';
 
 interface Props {
   isSuccess: boolean;
@@ -10,6 +11,7 @@ interface Props {
 export default function ResultPhase({ isSuccess, mixedDrinkName, isNewRecipe, onContinue }: Props) {
   const [show, setShow] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const cocktailImage = isSuccess ? getCocktailImage(undefined, mixedDrinkName) : undefined;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShow(true), 100);
@@ -45,13 +47,21 @@ export default function ResultPhase({ isSuccess, mixedDrinkName, isNewRecipe, on
           )}
 
           <div
-            className={`relative z-10 flex h-full w-full items-center justify-center text-8xl leading-none transition-transform duration-500 group-hover:scale-110 ${
+            className={`relative z-10 flex h-full w-full items-center justify-center transition-transform duration-500 group-hover:scale-110 ${
               isSuccess
                 ? 'drop-shadow-[0_0_20px_rgba(253,224,71,0.8)]'
                 : 'animate-glitch grayscale contrast-125 sepia hue-rotate-[-50deg] opacity-80'
             }`}
           >
-            {'\ud83c\udf78'}
+            {cocktailImage ? (
+              <img
+                src={cocktailImage}
+                alt={mixedDrinkName || '调配结果'}
+                className="h-52 w-52 object-contain drop-shadow-[0_0_24px_rgba(253,224,71,0.5)]"
+              />
+            ) : (
+              <div className="text-8xl leading-none">{'\ud83c\udf78'}</div>
+            )}
           </div>
         </div>
 
