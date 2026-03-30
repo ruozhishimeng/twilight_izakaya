@@ -157,7 +157,7 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
     <div className="text-center space-y-8 animate-fade-in">
       <h2 className="text-5xl font-bold text-amber-300 tracking-[0.3em]">主菜单</h2>
       <p className="mx-auto max-w-2xl text-lg leading-8 text-[#cbb89a]">
-        今夜的灯还亮着。整理好情绪，挑一本账册，再推开那扇门。
+        暮色渐沉，灯笼在檐下摇晃。且在吧台后稍坐，门铃即将响起...
       </p>
 
       <div className="space-y-5 pt-4">
@@ -367,7 +367,6 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
       <div className="text-center mb-8">
         <h2 className="text-4xl font-bold text-amber-300 tracking-[0.25em]">关于</h2>
         <p className="mt-3 text-base text-[#cbb89a]">
-          这里先放作者与制作信息，后续可以继续补完整内容。
         </p>
       </div>
 
@@ -375,13 +374,16 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
         <section className="border-4 border-[#8b5a2b] bg-[#241914] p-6 pixel-rounded">
           <div className="flex items-center gap-3 border-b-2 border-[#4a3f35] pb-3 text-[#f3e5c5]">
             <Info size={24} />
-            <h3 className="text-2xl font-bold">作者信息</h3>
+            <h3 className="text-2xl font-bold">开发者</h3>
           </div>
           <div className="mt-4 space-y-3 text-lg leading-8 text-[#d8c7a8]">
-            <p>主创：待补充</p>
-            <p>剧本：待补充</p>
-            <p>美术：待补充</p>
-            <p>程序：待补充</p>
+            <p>Glow</p>
+            <p>
+              GitHub：<a href="https://github.com/ruozhishimeng" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline">ruozhishimeng</a>
+            </p>
+            <p>
+              主页：<a href="http://glowstavern.me/" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline">glowstavern.me</a>
+            </p>
           </div>
         </section>
 
@@ -391,10 +393,7 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
             <h3 className="text-2xl font-bold">制作备注</h3>
           </div>
           <div className="mt-4 space-y-3 text-lg leading-8 text-[#d8c7a8]">
-            <p>版本：开发中占位版本</p>
-            <p>鸣谢：待补充</p>
-            <p>联系方式：待补充</p>
-            <p>版权信息：待补充</p>
+            <p>版本：V1.0.0</p>
           </div>
         </section>
       </div>
