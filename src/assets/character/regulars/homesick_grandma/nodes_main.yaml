@@ -128,6 +128,10 @@ nodes:
           - 「...像我妈妈的酒...」
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: homesick_grandma_story_02
+          reason: "关于故乡、梅酒和逝去伴侣的回忆，已经在这一天的收尾对白与日记里完整落定。此时解锁第二篇故事，能把玩家对这位老奶奶的理解从“想家”推进到更具体的过往。"
     diary_note: "一个想家的老奶奶，说梅酒让她想起九州的妈妈，还有她去世的老伴。他们相识于夏天，他拿梅酒提亲，五十三年的婚姻，每年夏天他都给她酿一罐梅酒...去年他走之前，想再喝一杯她调的梅酒，喝完笑着说：这辈子值了。"
 
   - event_id: homesick_grandma_001_fail
@@ -153,4 +157,8 @@ nodes:
           - 那是记忆的味道。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: homesick_grandma_story_02
+          reason: "即使没有调出正确的酒，这一天关于故乡与记忆的核心内容已经完整传达，并在日记里被主角重新整理，因此人物故事仍应在这里解锁。"
     diary_note: '今天没调出对的梅酒，老奶奶说"我妈妈的酒外面买不到"。是啊，有些味道配方调不出来，那是记忆的味道。'

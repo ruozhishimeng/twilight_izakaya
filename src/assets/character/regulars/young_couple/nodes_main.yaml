@@ -191,6 +191,10 @@ nodes:
           - 就像这杯教父。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: young_couple_story_02
+          reason: "年轻情侣这一天的来意、试探与收尾已经完整结束，主角也在日记里形成了对他们关系的第一轮理解，此时解锁第二篇故事最能承接当天余韵。"
     diary_note: "一对年轻的情侣，要了两杯教父。男孩说这是向女孩表白的那杯酒...爱情真好啊，能为了一个人去做这么浪漫的事。"
 
   - event_id: young_couple_001_fail
@@ -213,4 +217,8 @@ nodes:
           - 但也许...下次会更好吧。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: young_couple_story_02
+          reason: "即便这次没有调出理想的酒，这对情侣的当日剧情与主角的夜末感受已经足以构成一次完整的人物认知推进，因此同样应该在这里解锁第二篇故事。"
     diary_note: '今天没调好教父，那对情侣还是走了。男孩说"下次会更好"...希望下次他们来的时候，我能调出对的酒。'

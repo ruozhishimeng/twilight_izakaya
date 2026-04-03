@@ -298,6 +298,10 @@ nodes:
           - ...我等着。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: tired_salaryman_story_02
+          reason: "第一天疲惫上班族的完整对话、调酒结果与夜末日记都已经落到“为了女儿继续硬撑”的核心情绪上，此时解锁第二篇人物故事，能把玩家对他的理解从表层疲惫推进到更深一层。"
     diary_note: '一个疲惫的中年男人，为了女儿的生日礼物拼命加班。他说女儿的愿望是"爸爸不加班"...这个愿望实现不了，但他还是想努力试试。'
 
   - event_id: tired_salaryman_001_fail
@@ -320,4 +324,8 @@ nodes:
           - 他喝完就走了，脚步比来时还要沉重。明天...大概还是会加班吧。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: tired_salaryman_story_02
+          reason: "即使这次酒没有调对，玩家仍然完整经历了这位上班族的来意、收尾与日记反思。故事解锁应跟随人物当日剧情闭环，而不是绑定单一成功结果。"
     diary_note: '今天调的酒不对，但那个男人还是喝完了。他说"下次见"...希望下次我能调出对的酒，让他真正放松一下。'

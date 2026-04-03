@@ -1,0 +1,822 @@
+---
+name: twilight-izakaya
+description: 为《黄昏居酒屋》生成角色剧本。所有角色统一使用节点系统；打量文本放入 observations.yaml。
+---
+
+# 黄昏居酒屋 · 角色剧本生成器
+
+## 核心使命
+
+根据角色背景设定，生成符合《黄昏居酒屋》世界观的角色剧本。所有角色类型统一使用节点系统。
+
+---
+
+## 节点系统 (Node System)
+
+### 数据结构 Schema
+
+每个节点必须包含以下字段，所有结构都是扁平的（无嵌套数组）
+
+```yaml
+event_id: "fox_uncle_001_dialogue_main"  # 唯一标识符
+trigger_condition:
+  need_event: [none]      # 必须已发生的 event_id 列表
+  need_time: none          # 触发时间（如 W1_D1_Dusk）
+  need_item: [none]       # 必须持有的道具 ID 列表
+atmosphere_lines:          # 环境/动作描述（数组，随点击切换）
+  - "..."
+npc_talking:              # NPC 说的话
+  - "「...」"
+player_inner:             # 主角（调酒师）心理活动/内心独白，不需要时为空
+  - "..."
+player_options:           # 玩家选项
+  - text: "「选项A」"    # 玩家通过选项说出口的话
+    next_node: "fox_uncle_002_teaching"  # 下一个跳转的 event_id
+    impact_log: "写入店长手记的内容"      # 可选
+    branch_type: "cosmetic"  # cosmetic=不影响剧情，dramatic=影响剧情
+next_node: "fox_uncle_002_teaching"     # 默认下一节点
+```
+
+### player_options 分支类型
+
+| branch_type | 说明 |
+|---------------|------|
+| cosmetic | 不影响剧情走向，选择后继续原流程（next_node 仍指向主流程节点） |
+| dramatic | 影响剧情走向，选择后会跳转到完全不同节点 |
+
+
+### 事件ID格式
+
+{character_id}_{number}_{event_type}
+
+### 事件类型
+
+| 类型 | 说明 |
+|------|------|
+| _dialogue_main | 主线交流（推进剧情） |
+| _dialogue_chat | 闲聊（丰富人设） |
+| _dialogue_lore | 故事倾诉（揭示背景） |
+| _dialogue_hidden | 隐藏剧情（需特殊条件解锁） |
+| _teaching | 教学 |
+| _reward | 奖励 |
+| _challenge | 挑战 |
+| _idle | 等待闲聊 |
+| _ending | 结束 |
+
+### trigger_condition 字段
+
+| 字段 | 说明 | 示例 |
+|------|------|------|
+| need_event | 必须已发生的 event_id | ["fox_uncle_001_dialogue_main"] |
+| need_time | 触发时间 | "W1_D1_Dusk" |
+| need_item | 必须持有的道具 ID | ["配方_R025"] |
+| [none] | 无条件触发 | - |
+
+---
+
+## 角色类型
+
+| 类型 | 特征 | 酒喜爱度系统 | 教学来访 |
+|------|------|-------------|---------|
+| **鬼神** | 固定角色，教学/挑战/赠礼来访 | ❌ | ✅ |
+| **迷失者** | 三阶段救赎剧情 | ✅ | ❌ |
+| **滞留者** | 类似迷失者，更长剧情 | ✅ | ❌ |
+| **普通人** | 单次来访，短暂相遇 | ❌ | ❌ |
+
+---
+
+## 统一目录结构
+
+```
+src/assets/character/{character_id}/
+├── character_meta.yaml                        # 角色基础设定：名字、身份、全局开关、初始心情
+├── observations.yaml                          # 打量特质库：观察点的描述与对应的 Flag 触发
+├── gallery.yaml                              # 人物图鉴：解锁式档案
+├── media/                                    # 媒体资产：头像、立绘、特殊 CG
+│   ├── avatar.png                            # 角色头像
+│   ├── portrait.png                          # 立绘
+│   └── cg_xxx.png                           # 特殊 CG
+├── nodes_main.yaml                           # 主线剧情节点：核心逻辑流
+├── nodes_chat.yaml                           # 闲聊/碎片节点：填充随机访问与人物塑造
+├── nodes_lore.yaml                           # 故事倾诉
+├── nodes_hidden.yaml                         # 隐藏/传说节点：需要特殊条件触发
+├── nodes_teaching_reward_challenge_ending.yaml  # 杂项事件：教学、奖励、挑战、结束
+└── loot_table.yaml                           # 奖励与解锁：道具奖励、新配方解锁逻辑
+```
+
+---
+
+## 输入格式
+
+**鬼神输入示例：**
+```yaml
+name: 狐面大叔
+real_name: 稻荷
+character_type: 鬼神
+identity: 稻荷神，丰收与商业之神。居酒屋的第一任酒保...
+teaching_domain: 调酒基础与日式配料知识
+personality: 慢节奏、慈祥、宽容、幕后老板
+arrival_pattern: fixed
+fixed_schedule: weekly_first
+arrival_condition:
+  type: always
+  description: 第一周每隔一天来访一次；之后每周一只来访
+```
+
+---
+
+## 打量（observations.yaml）
+
+「打量」是游戏玩法：玩家选择观察NPC，获得客观描述+主观推测。
+
+**打量内容与剧情文本分开**：打量放在 observations.yaml，不是对话。
+
+```yaml
+character_id: aqiang
+observations:
+  - id: obs_1
+    objective: 湿透的工服和安全帽
+    subjective: 雨里跑了很久...他似乎在赶时间
+    revealed_at: phase_1
+  - id: obs_2
+    objective: 他反复看手机屏幕
+    subjective: 在确认什么路线...还是在确认什么时间
+    revealed_at: phase_1
+```
+
+| 字段 | 说明 |
+|------|------|
+| objective | 客观描述（玩家打量时看到的事实） |
+| subjective | 主观推测（调酒师的解读） |
+| revealed_at | 首次可揭示的阶段 |
+
+---
+
+## 鬼神角色详解
+
+### 鬼神 phase 结构
+
+| Phase | 说明 | 内容 |
+|-------|------|------|
+| Phase 1 | 初遇/第一天 | 初次来访，建立关系，教学基础 |
+| Phase 2 | 深入/第一周 | 多次来访，教授新配方 |
+| Phase 3 | 长期/第二周+ | 每周来访，复习/新挑战 |
+
+### 鬼神来访类型
+
+| Type | 说明 | 关键字段 |
+|------|------|----------|
+| Type 2 | 喝完给道具/配方/配料 | reward |
+| Type 3 | 教学来访 | teaching |
+| Type 4 | 带配料 + 教学 | reward + teaching |
+| Type 5 | 挑战 | challenge |
+
+### 鬼神 nodes_main.yaml 示例（扁平结构）
+
+```yaml
+character_id: fox_uncle
+nodes:
+  - id: arrival_01
+    event_id: "fox_uncle_001_arrival"
+    trigger_condition:
+      need_event: []
+      need_time: "W1_D1_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "风铃轻响。"
+      - "木门被缓缓推开。"
+      - "淡淡的陈年酒香先行飘入..."
+      - "随后是一位头戴狐狸面具的老者，拄着拐杖慢步走入。"
+    player_inner:
+      - "这位老者...身上有一股说不出的气质。像是这间店的某个传说。"
+    npc_talking:
+      - "「呀列呀列...第一天开业啊。」"
+      - "「让我来看看，新来的调酒师手艺如何。」
+    next_node: "fox_uncle_002_dialogue_main"
+
+  - id: dialogue_01
+    event_id: "fox_uncle_002_dialogue_main"
+    trigger_condition:
+      need_event: ["fox_uncle_001_arrival"]
+      need_time: "W1_D1_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "他满意地点点头，在角落的位置坐下。"
+    player_inner:
+      - "服务态度...老先生似乎很在意这个。"
+    npc_talking:
+      - "「哈哈，你这小子，服务态度很好嘛。」"
+      - "「那今天，我们从最基础的开始。」"
+      - "「坐下吧，年轻人。」
+    player_options:
+      - text: "「您好，请问想喝点什么？」"
+        next_node: "fox_uncle_003_teaching"
+        impact_log: "以服务态度开场"
+        branch_type: "cosmetic"
+    next_node: "fox_uncle_003_teaching"
+
+  - id: teaching_01
+    event_id: "fox_uncle_003_teaching"
+    trigger_condition:
+      need_event: ["fox_uncle_002_dialogue_main"]
+      need_time: "W1_D1_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "他从腰间解下葫芦。"
+    player_inner: []
+    npc_talking:
+      - "「清酒是日式调酒的灵魂。今天教你一杯简单的——」"
+      - "「纯米清酒是底色，它代表平淡的生活。」"
+      - "「苏打水添一丝清爽，不抢戏。」"
+      - "「1:2的比例，搅拌即可。」
+    next_node: "fox_uncle_003_teaching_mixing"
+    teaching:
+      recipe:
+        id: "R021"
+        name: 纯米嗨棒
+        ingredients:
+          - "纯米清酒 (bj01)"
+          - "苏打水 (m01)"
+        formula:
+          - "bj01"
+          - "m01"
+        steps:
+          - "取纯米清酒作为底色"
+          - "加入苏打水1:2"
+          - "轻轻搅拌即可"
+      game_action:
+        trigger: "on_teaching_start"
+        action: "ENTER_MIXING_MODE"
+        params:
+          recipe_id: "R021"
+          show_steps: true
+      tip: "「日式调酒的精髓在于平淡。不要急于加太多风味，先学会欣赏简单之美。」"
+
+  - id: reward_01
+    event_id: "fox_uncle_004_reward"
+    trigger_condition:
+      need_event: ["fox_uncle_003_teaching"]
+      need_time: "W1_D1_Dusk"
+      need_item: []
+    atmosphere_lines:
+      - "他从袖中取出一个小布包，轻轻放在吧台上..."
+    player_inner:
+      - "这是...给我的？"
+    npc_talking:
+      - "「这个给你。」"
+      - "「可尔必思，调日式酒的重要配角。
+    player_options:
+      - text: "「谢谢老先生！」"
+        next_node: "fox_uncle_005_ending"
+        impact_log: "收到了可尔必思，老先生似乎很看好我。"
+        branch_type: "cosmetic"
+      - text: "「这是什么？闻起来很特别...」"
+        next_node: "fox_uncle_005_ending"
+        impact_log: "可尔必思...原来调酒还有这么多学问。"
+        branch_type: "cosmetic"
+    next_node: "fox_uncle_005_ending"
+    reward:
+      type: ingredient
+      id: m08
+      name: 可尔必思
+      description: "日本特有的乳酸饮料，酸酸甜甜的童年味道。是调日式鸡尾酒的重要配角。"
+      quantity: 1
+```
+
+### 鬼神 nodes_chat.yaml（闲聊节点）
+
+```yaml
+character_id: fox_uncle
+nodes:
+  - id: idle_1
+    event_id: "fox_uncle_idle_001"
+    trigger_condition:
+      need_event: ["fox_uncle_003_teaching"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他望向窗外的夕阳..."
+      - "拐杖轻轻靠在一边。"
+    player_inner:
+      - "老先生在欣赏黄昏..."
+    npc_talking:
+      - "「...今天的酒，还算及格。」"
+      - "「继续努力吧。」
+
+  - id: idle_2
+    event_id: "fox_uncle_idle_002"
+    trigger_condition:
+      need_event: []
+      need_time: "between_visits"
+      need_item: []
+    atmosphere_lines:
+      - "他拄着拐杖站在门口..."
+      - "回头望了一眼。"
+    player_inner:
+      - "老先生要走了..."
+    npc_talking:
+      - "「下雨天...适合在屋里待着。」"
+      - "「你也早点休息。
+```
+
+### gallery.yaml（人物图鉴）
+
+gallery.yaml 使用节点解锁机制，玩家通过触发特定事件或发现特定观察点来解锁档案内容。
+
+```yaml
+character_id: fox_uncle
+base_info:
+  name: "狐面大叔"
+  age: "未知"
+  description: 头戴狐狸面具的老者，拄着拐杖慢步走入。洗得发白的蓝色作务衣，腰间挂着朱红色大葫芦。
+  type: "鬼神"
+  short_story: |
+    他是这间店的第一任酒保，如今化作人形在黄昏时分来访。
+    袖口的稻穗刺绣透露着他的身份——稻荷神，丰收与商业之神。
+    上千年的岁月里，他见证了无数调酒师的成长。
+    「调酒不是炫技，是让人开口说话的艺术。」
+
+profile_sections:
+  - id: "appearance_basic"
+    title: "神秘的狐面老者"
+    npc_talking: |
+      头戴狐狸面具的老者，拄着拐杖慢步走入。
+      洗得发白的蓝色作务衣，腰间挂着朱红色大葫芦。
+      脸上的面具歪歪的，像是随手一放。
+    unlock_condition: "none"
+    depth_level: 1
+
+  - id: "identity_hint"
+    title: "袖口的秘密"
+    npc_talking: |
+      仔细观察发现他袖口有金色的稻穗刺绣。
+      这似乎是某种古老神职的象征，与丰收和商业有关。
+    unlock_condition: "obs_inari_embroidery"
+    depth_level: 2
+
+  - id: "identity_reveal"
+    title: "居酒屋的前辈"
+    npc_talking: |
+      他亲口承认曾是这间店的第一任酒保。
+      漫长的岁月里，他见证了无数调酒师的兴衰。
+      这间店的历史，可能比他所谓的「前世」还要久远。
+    unlock_condition: "fox_03_dialogue_hidden"
+    depth_level: 2
+
+  - id: "true_god_form"
+    title: "稻荷神的化身"
+    npc_talking: |
+      他即是稻荷神本身，丰收与商业的守护者。
+      他守护的不仅是生意，更是人心。
+      千年守候，只为看着每一杯酒背后的故事。
+    unlock_condition: "fox_phase_3_complete"
+    depth_level: 3
+```
+
+| 字段 | 说明 |
+|------|------|
+| base_info.type | 角色类型：鬼神、迷失者、滞留者、普通人 |
+| base_info.short_story | 人物背景故事，文本量充足 |
+| profile_sections.id | 档案节点唯一标识 |
+| profile_sections.unlock_condition | 解锁条件：none默认可见，或 obs_xxx打量ID、fox_xx_dialogue_xxx事件ID、fox_phase_x_complete阶段完成 |
+| profile_sections.depth_level | 深度等级：1表面、2中层、3深层 |
+
+---
+
+## 迷失者/滞留者角色详解
+
+### 特点
+
+- 三阶段解锁剧本（Phase 1 → Phase 2 → Phase 3 → Released）
+- 使用酒喜爱度系统（最爱的酒/一般喜爱的酒/普通的酒）
+- Phase 3 后获得救赎
+
+### 核心机制：酒喜爱度系统
+
+| 分类 | 说明 | 效果 |
+|------|------|------|
+| **最爱的酒** | 角色最深层的情感共鸣 | 调对 → 直接进入下一阶段 |
+| **一般喜爱的酒** | 角色性格/职业相关 | 调对 → idle 闲聊，下次调普通酒后进入下一阶段 |
+| **普通的酒** | 基于 hint 匹配当前阶段情绪 | 调对 → 正常对话，不推进阶段 |
+
+### 阶段流转
+
+```
+[Phase 1]
+    ├── 调对「最爱的酒」 → [Phase 2]
+    ├── 调对「一般喜爱的酒」 → idle_dialogue → 等待
+    │                                    ↓
+    │                           下次调对「普通的酒」 → [Phase 2]
+    └── 调对「普通的酒」 → 对话结束，不推进阶段
+
+[Phase 2] → [Phase 3]（同上）
+
+[Phase 3]
+    ├── 调对「最爱的酒」 → [Released] 救赎
+    └── 调对其他酒 → 对话（不推进）
+```
+
+### 迷失者 nodes_main.yaml 示例（扁平结构）
+
+```yaml
+character_id: aqiang
+drinks:
+  most_loved:
+    phase_1:
+      id: "R008"
+      name: 古典
+      formula: ["bc01", "f01", "f09"]
+      reason: 苦涩和执念的交织，匹配他内心的焦躁与坚持
+  generally_liked:
+    phase_1:
+      - id: "R003"
+        name: 血腥玛丽
+        formula: ["bc03", "m05", "f14", "f06", "f09", "f15"]
+        reason: 血色与苦涩，像是成年人压抑的生活
+  regular:
+    phase_1:
+      - id: "R021"
+        name: 纯米嗨棒
+        formula: ["bj01", "m01"]
+        reason: 简单的日式气泡酒，清爽不抢戏
+
+nodes:
+  - id: dialogue_01
+    event_id: "aqiang_001_dialogue_main"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他头也不抬，手指在屏幕上机械地滑动。"
+    player_inner:
+      - "他似乎很着急..."
+    npc_talking:
+      - "「不用，我很快就走。」"
+      - "「......」"
+      - "「送完这单我就走。
+    player_options:
+      - text: "「外面雨很大，要不要先擦一擦？」"
+        next_node: "aqiang_002_dialogue_main"
+        impact_log: "关心他的状况"
+        branch_type: "cosmetic"
+    next_node: "aqiang_002_dialogue_main"
+    drink_request:
+      keywords: ["焦急", "赶时间", "离开"]
+      hint: "他下意识地摸了摸胸口的位置..."
+
+  - id: dialogue_02
+    event_id: "aqiang_002_dialogue_main"
+    trigger_condition:
+      need_event: ["aqiang_001_dialogue_main"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他的动作停顿了一下..."
+    player_inner:
+      - "他提到了什么..."
+    npc_talking:
+      - "「......嗯。」"
+      - "「不是什么重要的东西。」"
+      - "「就是...一个东西。等我的那个人一直想要的。
+    player_options:
+      - text: "「最后一单？是什么重要的东西吗？」"
+        next_node: "aqiang_003_drink_request"
+        impact_log: "询问最后一单"
+        branch_type: "cosmetic"
+    next_node: "aqiang_003_drink_request"
+    drink_request:
+      keywords: ["想起", "归属", "牵挂"]
+      hint: "他望向窗外的雨，眉头微微皱起..."
+
+  - id: most_loved_success
+    event_id: "aqiang_phase1_most_loved_success"
+    trigger_condition:
+      need_event: ["aqiang_003_drink_request"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他接过酒杯，抿了一口。眉头微微松开了一点..."
+    player_inner:
+      - "这杯酒...似乎触动了他什么。"
+    npc_talking:
+      - "「......这酒。」"
+      - "「有点像我老家的味道。」"
+      - "「......不说了。我得走了。
+    next_node: null
+    on_success:
+      next_phase: 2
+      transition_node: "aqiang_phase2_arrival"
+
+  - id: generally_liked_success
+    event_id: "aqiang_phase1_generally_liked_success"
+    trigger_condition:
+      need_event: ["aqiang_003_drink_request"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他一口喝了大半杯，叹了口气。"
+    player_inner:
+      - "他似乎有话想说..."
+    npc_talking:
+      - "「......谢谢。」"
+      - "「我得走了，后天......还有事。
+    next_node: null
+    on_success:
+      next_phase: idle
+      transition_node: "aqiang_idle_01"
+
+  - id: regular_success
+    event_id: "aqiang_phase1_regular_success"
+    trigger_condition:
+      need_event: ["aqiang_003_drink_request"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他礼貌地点点头，把酒一饮而尽。"
+    player_inner:
+      - "他喝完就走了..."
+    npc_talking:
+      - "「......谢了。」"
+      - "「走了。
+    next_node: null
+    on_success:
+      next_phase: null
+```
+
+### 迷失者 nodes_chat.yaml（闲聊节点）
+
+```yaml
+character_id: aqiang
+nodes:
+  - id: idle_1
+    event_id: "aqiang_idle_001"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他低头看着自己的手指..."
+      - "无意识地摩挲着袖口。"
+    player_inner:
+      - "他在想什么..."
+    npc_talking:
+      - "「......」"
+      - "「她等了我很久了。」"
+      - "「......不能再让她等了。
+
+  - id: idle_2
+    event_id: "aqiang_idle_002"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他望向窗外的雨..."
+      - "眼神有些飘远。"
+    player_inner:
+      - "雨让他想起了什么..."
+    npc_talking:
+      - "「这雨...什么时候能停。」"
+      - "「......」"
+      - "「小雪最怕打雷了。
+```
+
+### 迷失者 observations.yaml
+
+```yaml
+character_id: aqiang
+observations:
+  - id: obs_temple_bruise
+    area: "头部"
+    objective: "右太阳穴的青紫撞伤"
+    subjective: "车祸致命伤的残留，淤血的紫混着靛青色..."
+    hint: "他似乎察觉不到这道伤的存在，从不触碰，也从不遮挡。"
+    revealed_at: phase_1
+```
+
+### 迷失者 gallery.yaml
+
+```yaml
+character_id: aqiang
+base_info:
+  name: "阿相"
+  age: 25
+  occupation: "速运员"
+  description: 一个穿着湿透工服的年轻人，安全帽下的头发还在滴水...
+  type: "迷失者"
+  short_story: |
+    他叫冰相，晴山冰相。
+    那天的雨很大，他的车撞上了护栏。
+    胸口还揣着给妹妹小雪的生日礼物。
+    他没能送到。
+
+profile_sections:
+  - id: "surface"
+    title: "焦急的速运员"
+    npc_talking: |
+      一个穿着湿透工服的年轻人，安全帽下的头发还在滴水。
+      他头也不抬，手指在屏幕上机械地滑动。
+    unlock_condition: "obs_1"
+    depth_level: 1
+
+  - id: "true_story"
+    title: "冰相的故事"
+    npc_talking: |
+      他在黄昏的居酒屋终于放下了那份执念。
+      雨停了，他也该走了。
+    unlock_condition: "aqiang_phase3_redemption_end"
+    depth_level: 3
+```
+
+---
+
+## 普通人角色详解
+
+### 特点
+
+- 偶然来访的普通人
+- 每次来访都可能是最后一次
+- 对话简洁（1-2轮）
+- 不需要 idle_dialogue 和 gallery
+
+### 普通人 nodes_main.yaml 示例（扁平结构）
+
+```yaml
+character_id: tired_salaryman
+nodes:
+  - id: dialogue_01
+    event_id: "tired_salaryman_001_dialogue_main"
+    trigger_condition:
+      need_event: []
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他疲惫地靠在吧台边..."
+    player_inner:
+      - "他看起来很累..."
+    npc_talking:
+      - "「来一杯...能让我忘记今天加班的味道。」"
+      - "「越烈越好。
+    player_options:
+      - text: "「欢迎光临，请问想喝点什么？」"
+        next_node: "tired_salaryman_002_drink_request"
+        impact_log: "询问酒品"
+        branch_type: "cosmetic"
+    next_node: "tired_salaryman_002_drink_request"
+    drink_request:
+      keywords: ["忘记", "加班", "烈酒"]
+      hint: "他的眼睛下面有明显的黑眼圈..."
+
+  - id: dialogue_02
+    event_id: "tired_salaryman_002_drink_result"
+    trigger_condition:
+      need_event: ["tired_salaryman_001_dialogue_main"]
+      need_time: "any"
+      need_item: []
+    atmosphere_lines:
+      - "他接过酒杯，一口喝了一半..."
+    player_inner:
+      - "他一口就喝了半杯..."
+    npc_talking:
+      - "「...啊。」"
+      - "「这味道...像极了我的人生。
+    next_node: null
+
+bartender_reflection: 他喝完就走了，生活还在继续。
+```
+
+---
+
+## 叙事风格指南
+
+### 节奏结构
+- **核心节奏**：「一句两句、再一句两句」
+- 2句对话 → 沉默/动作 → 2句对话 → 沉默/动作
+- 沉默统一使用「......」表示
+
+### 阶段递进（迷失者/滞留者）
+
+| 阶段 | 对话轮数 | 每轮句数 | 故事深度 |
+|------|----------|----------|----------|
+| Phase 1 | 2轮 | 2-3句 | 表层：伪装/迷茫 |
+| Phase 2 | 2-3轮 | 3-5句 | 中层：矛盾/回忆 |
+| Phase 3 | 2-3轮 | 4-6句 | 核心：真相/解脱 |
+
+### 阶段信息密度（迷失者/滞留者）
+
+| 阶段 | NPC 话语量 | 可揭示内容 | 禁止出现 |
+|------|-----------|-----------|---------|
+| Phase 1 | 碎片化、回避 | 模糊焦虑感、习惯性动作 | ❌ 真名 ❌ 核心关系 ❌ 核心物品 ❌ 死因 |
+| Phase 2 | 断断续续 | 泛指关系（「等我的人」）、泛指物品 | ❌ 具体姓名 ❌ 完整死因 |
+| Phase 3 | 完整面对 | ✅ 全部真相 | — |
+
+### 强制文学风格要求 (Literary Guidelines)
+1. **潜台词原则 (Show, Don't Tell)**：角色绝对不可以直白地说出"我很伤心"或"我死了"。尽量通过动作（如"无意识地抠着桌角"、"死死盯着屏幕"）和顾左右而言他来表现焦虑。当然，有特殊人设角色除外。
+2. **像素感白描**：atmosphere_lines 必须带有极强的画面感，仿佛能看到 16-bit 像素小人的动作。例如：使用"水滴砸在吧台上"、"指尖微微发抖"、"霓虹灯光扫过他苍白的脸"等描写。
+3. **主角的存在感**：主角（调酒师）的台词必须温和、克制、像一个倾听者。不要急于追问真相。
+4. **禁止过度热情**：除了教学的狐面大叔，所有来访的迷失者前期必须具有强烈的【戒备心】和【防御性】，对话要短促、敷衍。
+---
+
+## 酒匹配规则
+
+从 recipes.json 中根据以下规则匹配：
+
+| 分类 | 匹配依据 |
+|------|----------|
+| **最爱的酒** | 角色的核心遗憾、核心记忆相关的 hint |
+| **一般喜爱的酒** | 角色的职业特征、性格相关的 hint |
+| **普通的酒** | 当前阶段的情绪状态 hint |
+| **drink_hint** | keywords 关键词匹配 recipe 标签 |
+
+### keywords 匹配表
+
+| 关键词 | 暗示的酒 |
+|--------|----------|
+| "想起"、"怀念"、"童年" | R024 梅酒嗨棒 |
+| "苦涩"、"清醒"、"烈" | R008 古典 |
+| "甜"、"温柔"、"小时候" | R022 甘酒嗨棒 |
+| "温暖"、"家的味道" | R021 纯米嗨棒 |
+
+---
+
+## 质量检查清单
+
+### 所有角色
+- [ ] 每个节点有 event_id、trigger_condition、atmosphere_lines、npc_talking、player_inner、player_options、next_node
+- [ ] player_options 有 branch_type 字段（cosmetic 或 dramatic）
+- [ ] 每轮 NPC 回应至少2句
+- [ ] 沉默统一用「......」
+- [ ] 无嵌套结构（rounds[]、npc_response、phase、visits[]、dialogues[]）
+
+### character_meta.yaml
+- [ ] 包含角色基础设定（名字、身份、性格等）
+- [ ] 包含全局开关、初始心情
+
+### nodes_main.yaml
+- [ ] 包含主线剧情节点
+- [ ] 节点ID格式正确：{character_id}_{number}_{event_type}
+
+### nodes_chat.yaml / nodes_lore.yaml / nodes_hidden.yaml
+- [ ] 闲聊/故事倾诉/隐藏剧情节点分开存储
+- [ ] event_id 对应正确的文件
+
+### nodes_teaching_reward_challenge_ending.yaml
+- [ ] 杂项事件节点包含 teaching/reward/challenge/ending
+- [ ] teaching 包含 recipe、game_action
+- [ ] reward 包含 details
+
+### observations.yaml
+- [ ] objective 是客观描述（打量看到的事实）
+- [ ] subjective 是主观推测
+- [ ] revealed_at 正确
+
+### gallery.yaml
+- [ ] 包含 base_info（name、type、description、short_story）
+- [ ] profile_sections 使用节点解锁机制
+- [ ] unlock_condition 正确引用事件ID或打量ID
+- [ ] depth_level 与解锁条件匹配
+
+### loot_table.yaml
+- [ ] 包含奖励与解锁逻辑
+- [ ] 道具ID与游戏系统对应
+- [ ] linked_recipe 存在且标签匹配
+
+---
+
+## 生成执行步骤
+
+### 1. 确定 character_type
+根据输入确定角色类型，自动匹配生成结构。
+
+### 2. 创建目录结构
+```
+{character_id}/
+└── media/
+```
+
+### 3. 生成文件（按功能维度）
+
+**所有角色**：
+1. character_meta.yaml
+2. nodes_main.yaml
+3. observations.yaml
+4. gallery.yaml
+
+**鬼神**：
+5. nodes_chat.yaml（闲聊）
+6. nodes_hidden.yaml（隐藏剧情）
+7. nodes_teaching_reward_challenge_ending.yaml（杂项事件）
+8. loot_table.yaml（奖励）
+
+**迷失者/滞留者**：
+5. nodes_chat.yaml
+6. nodes_lore.yaml
+7. nodes_hidden.yaml
+8. nodes_teaching_reward_challenge_ending.yaml
+9. loot_table.yaml
+
+**普通人**：仅需 character_meta.yaml + nodes_main.yaml
+
+### 4. 验证
+检查生成文件是否符合质量检查清单。

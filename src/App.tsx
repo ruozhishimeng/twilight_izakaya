@@ -130,6 +130,34 @@ function formatMixedDrinkLabel(ingredients: string[]) {
   return names.length > 0 ? names.join(' + ') : '未命名的调配';
 }
 
+function normalizeStoryUnlockEntries(node: any): StoryUnlockEntry[] {
+  const rawChapters = node?.story_unlocks?.chapters;
+  if (!Array.isArray(rawChapters)) {
+    return [];
+  }
+
+  return rawChapters
+    .map((entry: any) => {
+      if (typeof entry === 'string' && entry.trim()) {
+        return {
+          chapterId: entry.trim(),
+          sourceNodeId: node?.event_id,
+        };
+      }
+
+      if (entry && typeof entry === 'object' && typeof entry.id === 'string' && entry.id.trim()) {
+        return {
+          chapterId: entry.id.trim(),
+          reason: typeof entry.reason === 'string' ? entry.reason.trim() : undefined,
+          sourceNodeId: node?.event_id,
+        };
+      }
+
+      return null;
+    })
+    .filter(Boolean) as StoryUnlockEntry[];
+}
+
 interface GuestReflectionState {
   text: string;
   sameDay: boolean;
@@ -146,6 +174,12 @@ interface GuestTranscriptEntry {
   text: string;
 }
 
+interface StoryUnlockEntry {
+  chapterId: string;
+  reason?: string;
+  sourceNodeId?: string;
+}
+
 type ViteImportMeta = ImportMeta & {
   env?: {
     DEV?: boolean;
@@ -159,6 +193,8 @@ export default function App() {
   const [currentGuestInDay, setCurrentGuestInDay] = useState(1); // 1 or 2
   const [characterProgress, setCharacterProgress] = useState<Record<string, number>>({});
   const [characterObservations, setCharacterObservations] = useState<Record<string, string[]>>({});
+  const [pendingStoryUnlocks, setPendingStoryUnlocks] = useState<Record<string, StoryUnlockEntry[]>>({});
+  const [unlockedStoryChapters, setUnlockedStoryChapters] = useState<Record<string, string[]>>({});
   const [discoveredFeatures, setDiscoveredFeatures] = useState<string[]>([]);
   const [isMixing, setIsMixing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -219,6 +255,43 @@ export default function App() {
 
     setCurrentGuestChallenges(prev => (prev.includes(normalized) ? prev : [...prev, normalized]));
   };
+
+  const queueStoryUnlocks = useCallback((guestIdToUnlock: string, entries: StoryUnlockEntry[]) => {
+    if (entries.length === 0) {
+      return;
+    }
+
+    setPendingStoryUnlocks(prev => {
+      const existing = prev[guestIdToUnlock] || [];
+      const next = [...existing];
+
+      entries.forEach(entry => {
+        if (!next.some(item => item.chapterId === entry.chapterId)) {
+          next.push(entry);
+        }
+      });
+
+      return {
+        ...prev,
+        [guestIdToUnlock]: next,
+      };
+    });
+  }, []);
+
+  const commitPendingStoryUnlocks = useCallback(() => {
+    setUnlockedStoryChapters(prev => {
+      const next = { ...prev };
+
+      Object.entries(pendingStoryUnlocks).forEach(([guestIdToUnlock, entries]) => {
+        const existing = new Set(next[guestIdToUnlock] || []);
+        entries.forEach(entry => existing.add(entry.chapterId));
+        next[guestIdToUnlock] = [...existing];
+      });
+
+      return next;
+    });
+    setPendingStoryUnlocks({});
+  }, [pendingStoryUnlocks]);
 
   const appendCurrentGuestTranscript = (entry: GuestTranscriptEntry) => {
     if (!entry.text.trim()) {
@@ -281,6 +354,7 @@ export default function App() {
       setCurrentWeek(targetVisit.week);
       setCurrentDay(targetVisit.day);
       setCurrentGuestInDay(targetVisit.guestInDay);
+      setPendingStoryUnlocks({});
     });
   }, []);
 
@@ -395,6 +469,8 @@ export default function App() {
     setCurrentGuestInDay(1);
     setCharacterProgress({});
     setCharacterObservations({});
+    setPendingStoryUnlocks({});
+    setUnlockedStoryChapters({});
     setDiscoveredFeatures([]);
     setIsMixing(false);
     setIsSuccess(false);
@@ -445,6 +521,7 @@ export default function App() {
     setCurrentGuestTranscript([]);
     setIsTranscriptOpen(false);
     if (payload.daySummary) {
+      commitPendingStoryUnlocks();
       setPendingDaySummary(payload.daySummary);
       setJournalHistory(prev => [...prev, payload.daySummary!]);
       setCurrentDayRecords([]);
@@ -629,10 +706,17 @@ export default function App() {
   }, [phase, isMixing]);
 
   const handleNextGuest = () => {
-    const currentDiaryNote =
+    const currentNode =
       currentNodeId && guest.nodeMap
-        ? findNodeForGuest(currentNodeId, guest.id, guest.nodeMap)?.diary_note
-        : undefined;
+        ? findNodeForGuest(currentNodeId, guest.id, guest.nodeMap)
+        : null;
+    const currentDiaryNote = currentNode?.diary_note;
+    const currentStoryUnlocks = currentNode ? normalizeStoryUnlockEntries(currentNode) : [];
+
+    if (currentStoryUnlocks.length > 0) {
+      queueStoryUnlocks(guest.id, currentStoryUnlocks);
+    }
+
     const completedGuestRecord = buildCurrentGuestRecord(currentDiaryNote);
     const nextDayRecords = [...currentDayRecords, completedGuestRecord];
 
@@ -766,6 +850,8 @@ export default function App() {
       currentGuestChallenges,
       currentDayRecords,
       journalHistory,
+      pendingStoryUnlocks,
+      unlockedStoryChapters,
       pendingDaySummary,
       pendingGuestReflection,
       currentGuestTranscript,
@@ -802,6 +888,8 @@ export default function App() {
     setCurrentGuestChallenges(d.currentGuestChallenges || []);
     setCurrentDayRecords(d.currentDayRecords || []);
     setJournalHistory(d.journalHistory || []);
+    setPendingStoryUnlocks(d.pendingStoryUnlocks || {});
+    setUnlockedStoryChapters(d.unlockedStoryChapters || {});
     setPendingDaySummary(d.pendingDaySummary || null);
     setPendingGuestReflection(d.pendingGuestReflection || null);
     setCurrentGuestTranscript(d.currentGuestTranscript || []);
@@ -1143,6 +1231,7 @@ export default function App() {
           onClose={() => setIsBookOpen(false)}
           characterProgress={characterProgress}
           characterObservations={characterObservations}
+          unlockedStoryChapters={unlockedStoryChapters}
           inventory={inventory}
           unlockedRecipes={unlockedRecipes}
         />

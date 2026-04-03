@@ -7,6 +7,7 @@ interface Props {
   onClose: () => void;
   characterProgress: Record<string, number>;
   characterObservations: Record<string, string[]>;
+  unlockedStoryChapters: Record<string, string[]>;
   inventory: string[];
   unlockedRecipes: string[];
 }
@@ -42,11 +43,20 @@ interface RecipeEntry {
   unlocked: boolean;
 }
 
+interface CharacterStorySection {
+  id: string;
+  subtitle?: string;
+  content: string;
+}
+
 interface CharacterStory {
   id: string;
   title: string;
   summary: string;
   unlocked: boolean;
+  unlockText?: string;
+  content?: string;
+  sections?: CharacterStorySection[];
 }
 
 interface CharacterEntry {
@@ -143,6 +153,34 @@ function uniqueTags(tags: Array<string | undefined>) {
   return [...new Set(tags.filter(Boolean) as string[])];
 }
 
+function normalizeStorySections(rawSections: any, fallbackId: string) {
+  if (!Array.isArray(rawSections)) {
+    return undefined;
+  }
+
+  const sections = rawSections
+    .map((section: any, index: number) => {
+      const content = typeof section?.content === 'string'
+        ? section.content
+        : typeof section === 'string'
+          ? section
+          : '';
+
+      if (!content.trim()) {
+        return null;
+      }
+
+      return {
+        id: section?.id || `${fallbackId}-section-${index + 1}`,
+        subtitle: section?.subtitle || section?.title || undefined,
+        content,
+      };
+    })
+    .filter(Boolean) as CharacterStorySection[];
+
+  return sections.length > 0 ? sections : undefined;
+}
+
 function buildPlaceholderStories(guestName: string): CharacterStory[] {
   return [
     {
@@ -150,18 +188,23 @@ function buildPlaceholderStories(guestName: string): CharacterStory[] {
       title: '故事一',
       summary: `${guestName} 的第一段人物故事待补充。`,
       unlocked: true,
+      content: `${guestName} 的第一段人物故事待补充。`,
     },
     {
       id: 'story-2',
       title: '故事二',
       summary: `${guestName} 的第二段人物故事待补充。`,
       unlocked: false,
+      unlockText: '继续推进剧情后解锁',
+      content: `${guestName} 的第二段人物故事待补充。`,
     },
     {
       id: 'story-3',
       title: '故事三',
       summary: `${guestName} 的第三段人物故事待补充。`,
       unlocked: false,
+      unlockText: '继续推进剧情后解锁',
+      content: `${guestName} 的第三段人物故事待补充。`,
     },
   ];
 }
@@ -170,6 +213,7 @@ export default function BookModal({
   onClose,
   characterProgress,
   characterObservations,
+  unlockedStoryChapters,
   inventory,
   unlockedRecipes,
 }: Props) {
@@ -177,6 +221,7 @@ export default function BookModal({
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [characterPage, setCharacterPage] = useState(0);
+  const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
 
   const items = useMemo<ItemEntry[]>(() => {
     const groups = [
@@ -244,6 +289,7 @@ export default function BookModal({
     () =>
       GUESTS.map(guest => {
         const observedIds = characterObservations[guest.id] || [];
+        const unlockedStoryIds = new Set(unlockedStoryChapters[guest.id] || []);
         const observedNotes = observedIds
           .map(id => guest.features.find(feature => feature.id === id))
           .filter(Boolean)
@@ -254,6 +300,7 @@ export default function BookModal({
           }));
 
         const sourceStories =
+          guest.meta?.story?.chapters ||
           guest.meta?.character_stories ||
           guest.meta?.stories ||
           guest.meta?.story_entries ||
@@ -265,7 +312,8 @@ export default function BookModal({
                 id: story.id || `story-${index + 1}`,
                 title: story.title || story.name || `故事 ${index + 1}`,
                 summary: story.summary || story.desc || story.description || '这段人物故事待补充。',
-                unlocked: story.unlocked !== false,
+                unlocked: story.unlocked !== false || unlockedStoryIds.has(story.id || `story-${index + 1}`),
+                unlockText: story.unlock_text || story.unlockText || undefined,
               }))
             : buildPlaceholderStories(guest.name);
 
@@ -292,8 +340,48 @@ export default function BookModal({
         }
         return a.name.localeCompare(b.name, 'zh-Hans-CN');
       }),
-    [characterObservations, characterProgress]
+    [characterObservations, characterProgress, unlockedStoryChapters]
   );
+
+  const characterStoryDetails = useMemo(() => {
+    const detailMap = new Map<string, CharacterStory[]>();
+
+    GUESTS.forEach(guest => {
+      const unlockedStoryIds = new Set(unlockedStoryChapters[guest.id] || []);
+      const sourceStories =
+        guest.meta?.story?.chapters ||
+        guest.meta?.character_stories ||
+        guest.meta?.stories ||
+        guest.meta?.story_entries ||
+        [];
+
+      if (!Array.isArray(sourceStories) || sourceStories.length === 0) {
+        detailMap.set(guest.id, buildPlaceholderStories(guest.name));
+        return;
+      }
+
+      detailMap.set(
+        guest.id,
+        sourceStories.map((story: any, index: number) => ({
+          id: story.id || `story-${index + 1}`,
+          title: story.title || story.name || `故事 ${index + 1}`,
+          summary: story.summary || story.desc || story.description || '这段人物故事待补充。',
+          unlocked: story.unlocked !== false || unlockedStoryIds.has(story.id || `story-${index + 1}`),
+          unlockText: story.unlock_text || story.unlockText || undefined,
+          content:
+            typeof story.content === 'string' && story.content.trim()
+              ? story.content
+              : undefined,
+          sections: normalizeStorySections(
+            story.sections,
+            story.id || `story-${index + 1}`
+          ),
+        }))
+      );
+    });
+
+    return detailMap;
+  }, [unlockedStoryChapters]);
 
   useEffect(() => {
     if (!selectedItemId || !itemLookup.has(selectedItemId)) {
@@ -314,11 +402,19 @@ export default function BookModal({
     }
   }, [characterPage, characters.length]);
 
+  useEffect(() => {
+    setSelectedStoryId(null);
+  }, [characterPage, activeTab]);
+
   const selectedItem = selectedItemId ? itemLookup.get(selectedItemId) || null : null;
   const selectedRecipe = selectedRecipeId
     ? recipes.find(recipe => recipe.id === selectedRecipeId) || null
     : null;
   const selectedCharacter = characters[characterPage] || null;
+  const selectedStory =
+    (selectedCharacter && selectedStoryId
+      ? characterStoryDetails.get(selectedCharacter.id)?.find(story => story.id === selectedStoryId)
+      : null) || null;
 
   const itemMainTags = selectedItem
     ? uniqueTags([selectedItem.tag1, selectedItem.tag2, selectedItem.emotion_tag])
@@ -629,19 +725,31 @@ export default function BookModal({
                           </div>
                         </div>
                         <div className="mt-3 space-y-3">
-                          {selectedCharacter.stories.map(story => (
-                            <div
-                              key={story.id}
-                              className={`border-2 px-3 py-3 pixel-rounded-lg ${
-                                story.unlocked
-                                  ? 'border-[#4a3f35] bg-[#2c1e16]'
-                                  : 'border-[#3e2723] bg-[#19120e] text-[#7a6f5d]'
-                              }`}
-                            >
-                              <div className="font-bold">{story.title}</div>
-                              <div className="mt-2 text-sm leading-6">{story.summary}</div>
-                            </div>
-                          ))}
+                          {selectedCharacter.stories.map(story => {
+                            const canOpen = story.unlocked;
+
+                            return (
+                              <button
+                                key={story.id}
+                                type="button"
+                                disabled={!canOpen}
+                                onClick={() => canOpen && setSelectedStoryId(story.id)}
+                                className={`flex w-full flex-col gap-2 border-2 px-3 py-3 text-left transition pixel-rounded-lg ${
+                                  canOpen
+                                    ? 'border-[#4a3f35] bg-[#2c1e16] hover:border-[#d0b381] hover:bg-[#34241b]'
+                                    : 'cursor-not-allowed border-[#3e2723] bg-[#19120e] text-[#7a6f5d]'
+                                }`}
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="font-bold">{story.title}</div>
+                                  <div className="shrink-0 text-xs text-[#c7a270]">
+                                    {canOpen ? '点击阅读' : story.unlockText || '尚未解锁'}
+                                  </div>
+                                </div>
+                                <div className="text-sm leading-6">{story.summary}</div>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>
@@ -722,6 +830,60 @@ export default function BookModal({
             </div>
           )}
         </div>
+
+        {selectedStory && selectedCharacter && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm">
+            <div className="relative flex h-[78vh] w-full max-w-3xl flex-col overflow-hidden border-[6px] border-[#1a110c] bg-[#221712] text-[#e8dcc4] shadow-[0_0_40px_rgba(0,0,0,0.65)] pixel-rounded-lg">
+              <PixelButton
+                onClick={() => setSelectedStoryId(null)}
+                title="关闭故事"
+                className="absolute right-5 top-5 z-10 h-11 w-11 px-0 text-[#fff2d7] !bg-[#b86943] !border-[#6a351e] !border-b-[#4d2313]"
+              >
+                <X size={16} />
+              </PixelButton>
+
+              <div className="border-b-[6px] border-[#1a110c] bg-[#2f2118] px-8 py-6 pr-20">
+                <div className="text-xs tracking-[0.3em] text-[#b18859]">STORY</div>
+                <h3 className="mt-3 text-3xl font-bold text-[#fff1d8]">{selectedStory.title}</h3>
+                <div className="mt-2 text-sm text-[#bda98a]">{selectedCharacter.name}</div>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-8 py-7 pr-6 custom-scrollbar">
+                <div className="space-y-6 pr-2">
+                  <section className="border-2 border-[#4a3f35] bg-[#1a110c] p-4 pixel-rounded-lg">
+                    <div className="text-xs tracking-[0.25em] text-[#b18859]">摘要</div>
+                    <p className="mt-3 text-base leading-8 text-[#e4d3b4]">{selectedStory.summary}</p>
+                  </section>
+
+                  {selectedStory.sections && selectedStory.sections.length > 0 ? (
+                    selectedStory.sections.map(section => (
+                      <section
+                        key={section.id}
+                        className="border-2 border-[#4a3f35] bg-[#1a110c] p-4 pixel-rounded-lg"
+                      >
+                        {section.subtitle && (
+                          <div className="border-b border-[#5f4b3c] pb-2 text-lg font-bold text-[#fff1d8]">
+                            {section.subtitle}
+                          </div>
+                        )}
+                        <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-[#e4d3b4]">
+                          {section.content}
+                        </p>
+                      </section>
+                    ))
+                  ) : (
+                    <section className="border-2 border-[#4a3f35] bg-[#1a110c] p-4 pixel-rounded-lg">
+                      <div className="text-xs tracking-[0.25em] text-[#b18859]">正文</div>
+                      <p className="mt-3 whitespace-pre-wrap text-base leading-8 text-[#e4d3b4]">
+                        {selectedStory.content || selectedStory.summary}
+                      </p>
+                    </section>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

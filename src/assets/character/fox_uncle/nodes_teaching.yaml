@@ -555,6 +555,10 @@ nodes:
           - 止痛药...老先生教我的不只是技术，更是做人的道理。这间店的前辈，果然不简单。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: fox_uncle_story_02
+          reason: "第三天的止痛药教学、奖励与日记反思已经完整收束，玩家第一次真正触碰到狐面大叔借酒讲述的旧伤与未尽之事，此时解锁“面具之后”才能与当日情绪闭环。"
     diary_note: "第三天学会了止痛药，关于那些来不及的事。老先生教这杯酒的时候，眼神有些悲伤...他好像在想着谁。"
     reward:
       details:
@@ -840,6 +844,10 @@ nodes:
           - 「记住，调酒是让人开口说话的艺术。」
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: fox_uncle_story_03
+          reason: "第五天关于“流金岁月”的教学与收尾，已经把狐面大叔最私人、最珍视的一层情感推到了台前。整日剧情与夜末日记都围绕他的怀念展开，适合作为第三篇人物故事的正式解锁点。"
     diary_note: "第五天学会了流金岁月。老先生说这是他最珍视的一杯，烈、醇、苦缺一不可。那一瞬间，我觉得他像是在借酒怀念某个人。"
   - event_id: fox_uncle_reward_06
     trigger_condition:

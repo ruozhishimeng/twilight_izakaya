@@ -4,51 +4,42 @@ nodes:
   # Phase 1 Idle - after_generally_liked
   # ========================================
 
-  - id: idle_1
-    event_id: "aqiang_idle_001"
+  - event_id: aqiang_idle_001
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "between_visits"
+      need_time: between_visits
       need_item: []
-    atmosphere_lines:
-      - "他低头看着自己的手指，无意识地摩挲着袖口..."
-    speaker: null
-    content:
-      - "「......」"
-      - "「她等了我很久了。」"
-      - "「......不能再让她等了。」"
+    script_flow:
+      - type: env
+        content:
+          - 他低头看着自己的手指，无意识地摩挲着袖口...
     player_options: []
     next_node: null
 
-  - id: idle_2
-    event_id: "aqiang_idle_002"
+  - event_id: aqiang_idle_002
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "between_visits"
+      need_time: between_visits
       need_item: []
-    atmosphere_lines:
-      - "他望向窗外的雨，眼神有些飘远..."
-    speaker: null
-    content:
-      - "「这雨...什么时候能停。」"
-      - "「......」"
-      - "「小雪最怕打雷了。」"
+    script_flow:
+      - type: env
+        content:
+          - 他望向窗外的雨，眼神有些飘远...
     player_options: []
     next_node: null
 
-  - id: idle_3
-    event_id: "aqiang_idle_003"
+  - event_id: aqiang_idle_003
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "between_visits"
+      need_time: between_visits
       need_item: []
-    atmosphere_lines:
-      - "他下意识地摸了摸胸口的位置..."
-    speaker: null
-    content:
-      - "「你是新来的调酒师？」"
-      - "「......」"
-      - "「之前的那个...走了吗。」"
+    script_flow:
+      - type: env
+        content:
+          - 他下意识地摸了摸胸口的位置...
     player_options: []
     next_node: null
 
@@ -56,34 +47,28 @@ nodes:
   # Phase 2 Idle
   # ========================================
 
-  - id: idle_4
-    event_id: "aqiang_idle_004"
+  - event_id: aqiang_idle_004
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "between_visits"
+      need_time: between_visits
       need_item: []
-    atmosphere_lines:
-      - "他坐在角落的位置，望着门口的方向..."
-    speaker: null
-    content:
-      - "「......」"
-      - "「我得走了。」"
-      - "「路...还很远。」"
+    script_flow:
+      - type: env
+        content:
+          - 他坐在角落的位置，望着门口的方向...
     player_options: []
     next_node: null
 
-  - id: idle_5
-    event_id: "aqiang_idle_005"
+  - event_id: aqiang_idle_005
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "between_visits"
+      need_time: between_visits
       need_item: []
-    atmosphere_lines:
-      - "他看着杯中的液体，手指轻轻敲着吧台..."
-    speaker: null
-    content:
-      - "「她说过...等她工作了，第一件事就是给我做一道菜。」"
-      - "「......」"
-      - "「我等着。」"
+    script_flow:
+      - type: env
+        content:
+          - 他看着杯中的液体，手指轻轻敲着吧台...
     player_options: []
     next_node: null

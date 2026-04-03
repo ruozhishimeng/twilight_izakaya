@@ -137,6 +137,10 @@ nodes:
           - 灵感这种东西...也许就是一杯酒的距离。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: insomniac_writer_story_02
+          reason: "失眠作家的来意、创作困境与当晚的情绪出口已经在这一收尾节点和日记里完成闭环，适合作为第二篇人物故事的解锁时机。"
     diary_note: '一个失眠了三天的作家，说灵感"等不来，要逼到绝境才会出现"。一杯马丁尼下去，他说他想通了...希望他的故事能写完。'
 
   - event_id: insomniac_writer_001_fail
@@ -167,4 +171,8 @@ nodes:
           - 也许...明天会有灵感吧。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: insomniac_writer_story_02
+          reason: "即使这杯酒没有调对，关于灵感、失眠与写不下去的核心困境已经完整表达，并在日记里被重新整理，因此人物故事仍应在这里解锁。"
     diary_note: '今天调的马丁尼不对，那个作家喝完就走了。他说"灵感急不来"...也许他说得对，但下次我会调得更好。'

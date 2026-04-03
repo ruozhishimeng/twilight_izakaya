@@ -35,6 +35,12 @@ export interface SaveData {
   currentGuestChallenges?: string[];
   currentDayRecords?: DailyGuestRecord[];
   journalHistory?: DailySummary[];
+  pendingStoryUnlocks?: Record<string, Array<{
+    chapterId: string;
+    reason?: string;
+    sourceNodeId?: string;
+  }>>;
+  unlockedStoryChapters?: Record<string, string[]>;
   pendingDaySummary?: DailySummary | null;
   pendingGuestReflection?: {
     text: string;

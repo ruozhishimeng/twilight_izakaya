@@ -342,6 +342,10 @@ nodes:
           - 「......我好像听到了什么。」
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: yuki_story_02
+          reason: "第二阶段的小雪已经不再只是等待中的少女，月光、音乐盒与哥哥的记忆在这一天真正聚拢成型。等到整日剧情和日记落下后，再解锁第二篇故事，能和玩家的认知推进保持同步。"
     diary_note: "小雪说这酒有《月光》的味道，是哥哥录音进音乐盒里的那首曲子。她的眼泪终于落下来了...却不知为何。"
     on_success:
       next_phase: 3
@@ -361,6 +365,10 @@ nodes:
           - 「我得走了。雨停了就要天黑了。」
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: yuki_story_02
+          reason: "这一日的小雪剧情已经完整触及她与哥哥、雨夜与音乐盒的核心记忆。即便只是一般成功，人物认知层级也已经推进到足以解锁第二篇故事的程度。"
     diary_note: "小雪说雨停了就要天黑了...可她不知道，对她来说，那天永远不会亮。"
     on_success:
       next_phase: idle
@@ -379,6 +387,10 @@ nodes:
           - 「......」
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: yuki_story_02
+          reason: "第二阶段的关键信息已经在完整收尾与日记中被主角消化下来，故事解锁应随着这一天的情感闭环发生，而不是只绑定最佳结果。"
     diary_note: "她什么都没说，只是沉默地喝酒。有些悲伤，是说不出口的。"
     on_success:
       next_phase: null
@@ -502,6 +514,10 @@ nodes:
           - 「......保重。」
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: yuki_story_03
+          reason: "小雪主线在这一节点完成真正的告别与释放，随后又通过日记完成主角的再理解，把第三篇故事放在这里解锁能够与整条线自然闭环。"
     diary_note: '小雪走了，身影渐渐透明。她说"那场雨，终于停了"...我知道，她不是回家了，是终于解脱了。愿她找到她的哥哥。'
     on_success:
       next_phase: released

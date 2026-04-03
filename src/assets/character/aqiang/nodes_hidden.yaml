@@ -4,96 +4,78 @@ nodes:
   # 隐藏观察点
   # ========================================
 
-  - id: hidden_blue_dye
-    event_id: "aqiang_hidden_blue_dye"
+  - event_id: aqiang_hidden_blue_dye
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "any"
+      need_time: any
       need_item: []
-    atmosphere_lines:
-      - "空气中似乎有一股淡淡的靛青味道......"
-      - "像是染料，又像是雨后的空气。"
-    speaker: null
-    content:
-      - "「......爸是染匠。」"
-      - "「墨田区最好的蓝染。」"
-      - "「他说，要把最好的蓝色染给世界看。」"
-      - "「......我没能继承。」"
+    script_flow:
+      - type: env
+        content:
+          - 空气中似乎有一股淡淡的靛青味道......
+          - 像是染料，又像是雨后的空气。
     player_options: []
     next_node: null
-    unlock_gallery: "family_bond"
+    trigger_event: hidden_blue_dye
 
-  - id: hidden_pink_ribbon
-    event_id: "aqiang_hidden_pink_ribbon"
+  - event_id: aqiang_hidden_pink_ribbon
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "any"
+      need_time: any
       need_item: []
-    atmosphere_lines:
-      - "他低头看了一眼胸口的丝带......"
-      - "粉色的，两边长短差了将近三厘米。"
-    speaker: null
-    content:
-      - "「......在百元店挑了二十分钟。」"
-      - "「太红的像血。」"
-      - "「太浅的像病。」"
-      - "「......只有这个颜色，刚好是雪会喜欢的。」"
+    script_flow:
+      - type: env
+        content:
+          - 他低头看了一眼胸口的丝带......
+          - 粉色的，两边长短差了将近三厘米。
     player_options: []
     next_node: null
-    unlock_gallery: "music_box_revelation"
+    trigger_event: hidden_pink_ribbon
 
-  - id: hidden_167_deliveries
-    event_id: "aqiang_hidden_167_deliveries"
+  - event_id: aqiang_hidden_167_deliveries
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "any"
+      need_time: any
       need_item: []
-    atmosphere_lines:
-      - "他的手指无意识地摩挲着袖口......"
-      - "那里有缝过很多次的痕迹。"
-    speaker: null
-    content:
-      - "「......我算过。」"
-      - "「一百六十七单。」"
-      - "「凌晨四点的闹钟，便利店的饭团，雨夜里湿透的制服。」"
-      - "「......每一单都记着。」"
+    script_flow:
+      - type: env
+        content:
+          - 他的手指无意识地摩挲着袖口......
+          - 那里有缝过很多次的痕迹。
     player_options: []
     next_node: null
-    unlock_gallery: "family_bond"
+    trigger_event: hidden_167_deliveries
 
-  - id: hidden_brother_last_words
-    event_id: "aqiang_hidden_brother_last_words"
+  - event_id: aqiang_hidden_brother_last_words
+    type: dialogue
     trigger_condition:
-      need_event: ["aqiang_phase3_redemption"]
-      need_time: "any"
+      need_event:
+        - aqiang_phase3_success
+      need_time: any
       need_item: []
-    atmosphere_lines:
-      - "他的目光穿过蒙蒙的雨幕......"
-      - "像是看着某个不在这里的人。"
-    speaker: null
-    content:
-      - "「......小雪，对不起，哥食言了。」"
-      - "「......但他不欠我的。」"
-      - "「是我......一直欠着他。」"
+    script_flow:
+      - type: env
+        content:
+          - 他的目光穿过蒙蒙的雨幕......
+          - 像是看着某个不在这里的人。
     player_options: []
     next_node: null
-    unlock_gallery: "final_message"
+    trigger_event: hidden_brother_last_words
 
-  - id: hidden_moonlight
-    event_id: "aqiang_hidden_moonlight"
+  - event_id: aqiang_hidden_moonlight
+    type: dialogue
     trigger_condition:
       need_event: []
-      need_time: "any"
+      need_time: any
       need_item: []
-    atmosphere_lines:
-      - "音乐盒的旋律在昏黄的灯光下响起......"
-      - "德彪西的《月光》，被压扁在窄小的音域里。"
-    speaker: null
-    content:
-      - "「......她最喜欢这首。」"
-      - "「没有钢琴的时候就弹桌子。」"
-      - "「指尖敲着桌面，闭着眼睛......」"
-      - "「像是在听什么只有她能听见的旋律。」"
+    script_flow:
+      - type: env
+        content:
+          - 音乐盒的旋律在昏黄的灯光下响起......
+          - 德彪西的《月光》，被压扁在窄小的音域里。
     player_options: []
     next_node: null
-    unlock_gallery: "music_box_revelation"
+    trigger_event: hidden_moonlight

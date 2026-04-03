@@ -223,6 +223,10 @@ nodes:
           - 与过去的自己和解，与失去的人和解。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: retired_grandpa_story_02
+          reason: "退休老人这一日的完整对话、离席收尾与日记反思，已经把“工作结束后如何继续活着”这个主题讲透，此时解锁第二篇故事能自然承接人物余韵。"
     diary_note: '一个退休的老人，四十年工作问心无愧。他说老婆三年前走了，今晚退休了想"去看看她"...四十年，值了。'
 
   - event_id: retired_grandpa_001_fail
@@ -246,4 +250,8 @@ nodes:
           - 退休第一天，茫然若失。
     player_options: []
     next_node: null
+    story_unlocks:
+      chapters:
+        - id: retired_grandpa_story_02
+          reason: "哪怕这杯酒不够理想，这位老人关于退休、伴侣与余生的核心表达已经完整落地。为了保持人物故事与当日日记闭环，这里同样需要解锁第二篇。"
     diary_note: '今天没调好古典，老人说"反正不是来喝酒的"。退休第一天，他大概只是需要有个地方坐坐吧...下次会更好的。'
