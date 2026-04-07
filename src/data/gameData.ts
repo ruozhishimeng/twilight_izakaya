@@ -8,6 +8,8 @@ export interface Feature {
   group?: string;
 }
 
+import type { NodeAudioConfig } from '../systems/audioCatalog';
+
 export interface DialogueOption {
   option: string;        // 按钮文本
   text: string;          // 显示文本
@@ -46,6 +48,22 @@ export interface GuestPhase {
   drinkRequest?: any; // 保存完整 drink_request 数据
 }
 
+export interface CharacterNode {
+  event_id?: string;
+  id?: string;
+  next_node?: string | null;
+  trigger_condition?: Record<string, any>;
+  script_flow?: { type: string; content: string[] | string }[];
+  player_options?: any[];
+  reward?: any;
+  drink_request?: any;
+  teaching?: any;
+  presentation?: any;
+  audio?: NodeAudioConfig;
+  diary_note?: any;
+  [key: string]: any;
+}
+
 export interface Guest {
   id: string;
   name: string;
@@ -64,7 +82,7 @@ export interface Guest {
   phase3?: any;
   script?: any;
   startNodeIds: string[];
-  nodeMap?: Map<string, any>;
+  nodeMap?: Map<string, CharacterNode>;
 }
 
 import yaml from 'js-yaml';
@@ -188,7 +206,7 @@ export interface ScheduleData {
 }
 export const schedule = scheduleFiles['../assets/schedule.yaml'] as ScheduleData;
 
-const findNode = (ref: string, _charId: string, nodeMap: Map<string, any>) => {
+const findNode = (ref: string, _charId: string, nodeMap: Map<string, CharacterNode>) => {
   if (!ref) return null;
   // 直接用 event_id 查找
   if (nodeMap.has(ref)) return nodeMap.get(ref);
@@ -776,7 +794,7 @@ export const findNodeById = (charId: string, nodeId: string): any => {
 
 export const ADD_ONS = [...MIXERS, ...FLAVORS];
 
-export const findNodeForGuest = (ref: string, _charId: string, nodeMap: Map<string, any>) => {
+export const findNodeForGuest = (ref: string, _charId: string, nodeMap: Map<string, CharacterNode>) => {
   if (!ref) return null;
   if (nodeMap.has(ref)) return nodeMap.get(ref);
   return null;

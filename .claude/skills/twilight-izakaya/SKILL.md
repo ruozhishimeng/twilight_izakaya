@@ -1,4 +1,5 @@
 ---
+
 name: twilight-izakaya
 description: 为《黄昏居酒屋》生成角色剧本。作为首席叙事架构指南，包含所有节点类型的详尽示例，以及与调酒、日志、图鉴系统的深度交互规范。
 ---
@@ -727,3 +728,164 @@ story_unlocks:
 - 不允许前端按 `characterProgress` 直接硬编码某条故事自动解锁
 - 不允许只改 `character_meta.story.chapters[].unlocked` 作为剧情推进解锁方案
 - 不允许新增故事却不在对应剧情尾节点补 `story_unlocks`
+
+---
+
+## Story Unlock Spec
+
+When the project adds `story_unlocks` to a node file, this is a formal schema requirement rather than an optional convention.
+
+### Field Shape
+
+```yaml
+story_unlocks:
+  chapters:
+    - id: "fox_uncle_story_02"
+      reason: "Explain why this exact ending node completes the dramatic progression needed for this story chapter, and why the unlock becomes meaningful after the diary/day-summary stage."
+```
+
+### Required Rules
+
+- `story_unlocks.chapters[].id`
+  - Required
+  - Must match an existing `character_meta.yaml -> story.chapters[].id`
+
+- `story_unlocks.chapters[].reason`
+  - Required
+  - Must explain why this node is the correct unlock point
+  - Must connect the unlock to the day's emotional closure, not just generic progress
+
+### Placement Rules
+
+- Place `story_unlocks` only on end-of-day or end-of-guest closing nodes
+- Prefer nodes that also contain `diary_note`
+- Prefer final success/fail settlement nodes for that day's arc
+- Do not place `story_unlocks` on mid-dialogue nodes, tutorial step nodes, or unfinished gameplay transition nodes
+
+### Runtime Contract
+
+- The ending node queues `story_unlocks` into runtime `pendingStoryUnlocks`
+- The unlock is only committed during diary/day-summary settlement into `unlockedStoryChapters`
+- Encyclopedia UI must read only committed `unlockedStoryChapters`
+- UI must not infer unlocks directly from `characterProgress`
+
+### Authoring Contract
+
+- Every new `story.chapters` entry must have a matching unlock node in the node library
+- Every structural change to story unlock fields must be written back into this SKILL file
+- `reason` must explicitly state:
+  - what the player has learned about the character
+  - what emotional arc has just closed
+  - why this chapter unlocks here rather than earlier
+
+---
+
+## Audio Schema Spec（当前项目强制，覆盖本文件中更早的旧写法）
+
+从现在开始，剧情节点的音频字段统一使用 `audio`，并且采用 **阶段默认音频 + 节点覆盖** 的结构。前端固定音效与节点级音频必须分层，不允许把所有声音都塞进 YAML。
+
+### 核心原则
+
+- 大多数页面和普通剧情沿用阶段默认 BGM
+- 只有关键节点显式写 `audio` 覆盖
+- `bgm` / `ambient` 只允许做节点级切换，不做句级切换
+- 固定 UI 音效由前端共享系统统一播放，不写进剧情 YAML
+- 任何 `audio` 结构修改，必须同步回写本 `SKILL.md` 与根目录剧情规范文档
+
+### 资源目录约定
+
+- `src/assets/music/bgm/`
+  - 存放所有默认背景音乐
+
+- `src/assets/music/sfx/`
+  - 存放按钮、门铃、调酒、奖励等短音效
+
+- `src/assets/music/ambient/`
+  - 存放环境音
+  - 当前可为空目录，不新增占位资源
+
+### 正式字段结构
+
+```yaml
+audio:
+  bgm:
+    action: "switch" | "keep" | "stop" | "resume"
+    tag: "piano_1" | "piano_2" | "jazz_1" | "jazz_2" | "guitar_1" | "guitar_2"
+    fadeIn: 900
+    fadeOut: 400
+  ambient:
+    action: "switch" | "keep" | "stop" | "resume"
+    tag: "ambient_tag"
+    fadeIn: 900
+    fadeOut: 400
+  sfx:
+    onEnter:
+      - "door_bell"
+```
+
+### 字段要求
+
+- `audio.bgm`
+  - 节点级背景音乐控制
+  - 未写时继承当前阶段默认 BGM
+
+- `audio.ambient`
+  - 节点级环境音控制
+  - 当前项目首期可保留 `keep` 或 `stop`
+  - 没有环境音资源时，前端应跳过播放并输出开发告警，不新增占位资源文件
+
+- `audio.sfx.onEnter`
+  - 进入该节点时播放一次的短音效数组
+  - 只在节点首次进入时触发，不得因组件重渲染重复播放
+
+### 当前项目阶段默认音乐
+
+- `start_screen / main_menu / intro_sequence / intro / story / observation / mixing / result / day_summary / guest_reflection`
+  - 统一使用玩家设置中的 `defaultBgmTag`
+- `reward` 不主动切歌，默认继承上一阶段
+- `ambient` 首期默认全部停止，等资源入库后再逐阶段开放
+
+### 当前项目默认 BGM 选择规则
+
+- 运行时设置新增 `AudioSettings.defaultBgmTag`
+- 玩家可在设置中从 `piano_1 / piano_2 / guitar_1 / guitar_2 / jazz_1 / jazz_2` 中选择一首
+- 这首曲子用于所有默认阶段音乐
+- 如果当前节点显式写了 `audio.bgm.switch`，则节点配置优先于 `defaultBgmTag`
+- 当节点覆盖结束并回到默认控制阶段时，再恢复为玩家选择的默认 BGM
+
+### 固定前端音效（不写入剧情 YAML）
+
+以下音效由共享前端系统统一触发，不由剧情作者手写：
+
+- `ui_click`
+- `dialogue_refresh`
+- `mixing_loop`
+- `mix_success`
+- `mix_fail`
+- `reward_reveal`
+
+### 当前项目系统级音效文件映射
+
+- `button.mp3` -> `ui_click`
+- `dialogue_refresh.mp3` -> `dialogue_refresh`
+- `door_bell.mp3` -> `door_bell`
+- `mixing.mp3` -> `mixing_loop`
+- `mixing_success.mp3` -> `mix_success`
+- `mixing_failed.mp3` -> `mix_fail`
+- `reward.mp3` -> `reward_reveal`
+
+### 推荐挂载位置
+
+- `audio.bgm.switch`
+  - 适合挂在教学开场、重大情绪转折、关键真相节点
+
+- `audio.sfx.onEnter`
+  - 适合挂在特殊入场、门铃、强提示节点
+  - 如果该流程本身已有系统级固定音效，就不要在节点里重复声明
+
+### 当前项目禁止写法
+
+- 不允许继续使用旧字段名 `fade_in` / `fade_out`
+- 不允许把 `sfx` 写成对象数组 `{ tag, timing, volume }`
+- 不允许按 `script_flow` 的每一句文本切换 BGM
+- 不允许把按钮点击音、对话刷新音这类固定 UI 音效写入剧情节点

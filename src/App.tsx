@@ -16,6 +16,7 @@ import { BookOpen, Settings, Book, ScrollText, X, BellRing } from 'lucide-react'
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { saveSystem, type SaveData } from './systems/SaveSystem';
 import { DailyGuestRecord, DailySummary, JournalNote, JournalReward } from './types/journal';
+import { useAudioSystem } from './systems/audioSystem';
 
 export type GamePhase = 'start_screen' | 'main_menu' | 'intro_sequence' | 'intro' | 'observation' | 'story' | 'mixing' | 'result' | 'day_summary' | 'guest_reflection';
 
@@ -187,6 +188,7 @@ type ViteImportMeta = ImportMeta & {
 };
 
 export default function App() {
+  const { applyNodeAudio, applyPhaseAudio, playSfx } = useAudioSystem();
   const [phase, setPhase] = useState<GamePhase>('start_screen');
   const [currentWeek, setCurrentWeek] = useState(1);
   const [currentDay, setCurrentDay] = useState(1);
@@ -243,6 +245,29 @@ export default function App() {
   const guest = GUESTS.find(g => g.id === guestId) || GUESTS[0];
   const useMixingBackground = phase === 'mixing' || phase === 'result';
   const isDebugMode = !!(import.meta as ViteImportMeta).env?.DEV;
+  const activeAudioNode = useMemo(() => {
+    if (!guest?.nodeMap) {
+      return null;
+    }
+
+    if ((phase === 'story' || showObservation) && currentNodeId) {
+      return findNodeForGuest(currentNodeId, guest.id, guest.nodeMap);
+    }
+
+    if (phase === 'mixing') {
+      if (mixingNode) {
+        return mixingNode;
+      }
+
+      if (teachingNode?.next_node) {
+        return findNodeForGuest(teachingNode.next_node, guest.id, guest.nodeMap);
+      }
+
+      return teachingNode || null;
+    }
+
+    return null;
+  }, [currentNodeId, guest, mixingNode, phase, showObservation, teachingNode]);
 
   // Do not fall back to a character's first node when the schedule slot is empty.
   const startNodeId = currentGuestData?.start_node || null;
@@ -319,9 +344,9 @@ export default function App() {
     setMixedDrinkName(undefined);
     setIsNewRecipe(false);
     setCurrentNodeId(startNodeId);
-    playSoundEffect('door_bell');
+    playSfx('door_bell');
     transitionTo('story', 1500);
-  }, [startNodeId]);
+  }, [playSfx, startNodeId]);
 
   const jumpToVisit = useCallback((targetVisit: { week: number; day: number; guestInDay: number }) => {
     transitionTo('intro', 300, () => {
@@ -429,12 +454,6 @@ export default function App() {
   }, []);
 
   const { imagesPreloaded } = useImagePreloader(imagesToPreload);
-
-  // 音效占位函数（后续接入音效系统）
-  const playSoundEffect = (sfx: string) => {
-    // TODO: 后续接入真实音效系统
-    console.log(`[SFX] ${sfx}`);
-  };
 
   const transitionTo = (nextPhase: GamePhase, delay = 800, onBeforePhaseChange?: () => void) => {
     setTransitionState('fade-out');
@@ -705,6 +724,27 @@ export default function App() {
     }
   }, [phase, isMixing]);
 
+  useEffect(() => {
+    const nodeId = activeAudioNode?.event_id;
+    if (nodeId) {
+      applyNodeAudio(nodeId, activeAudioNode.audio, phase);
+      return;
+    }
+
+    applyPhaseAudio(phase);
+  }, [activeAudioNode, applyNodeAudio, applyPhaseAudio, phase]);
+
+  const handleGlobalButtonClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest('button');
+
+    if (!button || button.disabled || button.dataset.audioClick === 'off') {
+      return;
+    }
+
+    playSfx('ui_click');
+  }, [playSfx]);
+
   const handleNextGuest = () => {
     const currentNode =
       currentNodeId && guest.nodeMap
@@ -925,7 +965,10 @@ export default function App() {
     (phase === 'story' || phase === 'mixing' || phase === 'result' || showObservation);
 
   return (
-    <div className="min-h-screen bg-[#000] text-gray-200 font-mono flex items-center justify-center p-4 pixel-art-container relative">
+    <div
+      className="min-h-screen bg-[#000] text-gray-200 font-mono flex items-center justify-center p-4 pixel-art-container relative"
+      onClickCapture={handleGlobalButtonClickCapture}
+    >
 
       {/* Transition Overlay */}
       <div

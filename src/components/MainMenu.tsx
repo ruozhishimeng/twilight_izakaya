@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Download, Info, Sparkles, Volume2 } from 'lucide-react';
+import { ChevronLeft, Download, Info, Sparkles } from 'lucide-react';
 import { saveSystem, type SaveSlot } from '../systems/SaveSystem';
+import { getMusicTagLabel } from '../systems/audioCatalog';
+import AudioSettingsPanel from './AudioSettingsPanel';
+import { useAudioSystem } from '../systems/audioSystem';
 
 interface Props {
   onNewGame: () => void;
@@ -11,19 +14,15 @@ interface Props {
 type MenuMode = 'main' | 'load' | 'settings' | 'about';
 type TextSpeed = 'slow' | 'normal' | 'fast';
 
-interface MenuSettings {
-  bgmVolume: number;
-  sfxVolume: number;
+interface DisplaySettings {
   textSpeed: TextSpeed;
   autoPlay: boolean;
   screenShake: boolean;
 }
 
 const SLOT_IDS = ['slot_1', 'slot_2', 'slot_3', 'slot_4', 'slot_5', 'slot_6'];
-const SETTINGS_STORAGE_KEY = 'twilight_izakaya_menu_settings';
-const DEFAULT_SETTINGS: MenuSettings = {
-  bgmVolume: 80,
-  sfxVolume: 85,
+const DISPLAY_SETTINGS_STORAGE_KEY = 'twilight_izakaya_display_settings';
+const DEFAULT_DISPLAY_SETTINGS: DisplaySettings = {
   textSpeed: 'normal',
   autoPlay: false,
   screenShake: true,
@@ -61,37 +60,38 @@ function getSlotDisplayInfo(slot: SaveSlot | null): { name: string; subtitle: st
   };
 }
 
-function loadStoredSettings(): MenuSettings {
+function loadStoredDisplaySettings(): DisplaySettings {
   if (typeof window === 'undefined') {
-    return DEFAULT_SETTINGS;
+    return DEFAULT_DISPLAY_SETTINGS;
   }
 
   try {
-    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    const raw = window.localStorage.getItem(DISPLAY_SETTINGS_STORAGE_KEY);
     if (!raw) {
-      return DEFAULT_SETTINGS;
+      return DEFAULT_DISPLAY_SETTINGS;
     }
 
-    const parsed = JSON.parse(raw) as Partial<MenuSettings>;
+    const parsed = JSON.parse(raw) as Partial<DisplaySettings>;
     return {
-      ...DEFAULT_SETTINGS,
+      ...DEFAULT_DISPLAY_SETTINGS,
       ...parsed,
     };
   } catch (error) {
     console.warn('[MainMenu] Failed to parse stored settings:', error);
-    return DEFAULT_SETTINGS;
+    return DEFAULT_DISPLAY_SETTINGS;
   }
 }
 
 export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
+  const { settings: audioSettings, setSettings: setAudioSettings } = useAudioSystem();
   const [mode, setMode] = useState<MenuMode>('main');
   const [saveSlots, setSaveSlots] = useState<SaveSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [settings, setSettings] = useState<MenuSettings>(DEFAULT_SETTINGS);
+  const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(DEFAULT_DISPLAY_SETTINGS);
 
   useEffect(() => {
-    setSettings(loadStoredSettings());
+    setDisplaySettings(loadStoredDisplaySettings());
   }, []);
 
   useEffect(() => {
@@ -104,19 +104,20 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
     if (typeof window === 'undefined') {
       return;
     }
-    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-  }, [settings]);
+    window.localStorage.setItem(DISPLAY_SETTINGS_STORAGE_KEY, JSON.stringify(displaySettings));
+  }, [displaySettings]);
 
   const settingsSummary = useMemo(() => {
     const speedLabel =
-      settings.textSpeed === 'slow'
+      displaySettings.textSpeed === 'slow'
         ? '慢速'
-        : settings.textSpeed === 'fast'
+        : displaySettings.textSpeed === 'fast'
           ? '快速'
           : '标准';
+    const bgmLabel = getMusicTagLabel(audioSettings.defaultBgmTag);
 
-    return `BGM ${settings.bgmVolume}% / 音效 ${settings.sfxVolume}% / 文字 ${speedLabel}`;
-  }, [settings]);
+    return `${bgmLabel} / BGM ${audioSettings.bgmVolume}% / 环境 ${audioSettings.ambientVolume}% / 音效 ${audioSettings.sfxVolume}% / 文字 ${speedLabel}`;
+  }, [audioSettings, displaySettings]);
 
   const loadAllSaves = async () => {
     try {
@@ -285,42 +286,7 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
       </div>
 
       <div className="grid grid-cols-2 gap-5">
-        <div className="space-y-5 border-4 border-[#8b5a2b] bg-[#241914] p-5 pixel-rounded">
-          <div className="flex items-center gap-3 border-b-2 border-[#4a3f35] pb-3 text-[#f3e5c5]">
-            <Volume2 size={24} />
-            <h3 className="text-2xl font-bold">音量</h3>
-          </div>
-
-          <label className="block">
-            <div className="mb-2 flex items-center justify-between text-lg font-bold text-[#f3e5c5]">
-              <span>BGM 音量</span>
-              <span>{settings.bgmVolume}%</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={settings.bgmVolume}
-              onChange={(event) => setSettings(prev => ({ ...prev, bgmVolume: Number(event.target.value) }))}
-              className="w-full accent-[#e6b87d]"
-            />
-          </label>
-
-          <label className="block">
-            <div className="mb-2 flex items-center justify-between text-lg font-bold text-[#f3e5c5]">
-              <span>音效音量</span>
-              <span>{settings.sfxVolume}%</span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={settings.sfxVolume}
-              onChange={(event) => setSettings(prev => ({ ...prev, sfxVolume: Number(event.target.value) }))}
-              className="w-full accent-[#e6b87d]"
-            />
-          </label>
-        </div>
+        <AudioSettingsPanel settings={audioSettings} onChange={setAudioSettings} />
 
         <div className="space-y-5 border-4 border-[#8b5a2b] bg-[#241914] p-5 pixel-rounded">
           <div className="flex items-center gap-3 border-b-2 border-[#4a3f35] pb-3 text-[#f3e5c5]">
@@ -332,12 +298,12 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
             <div className="mb-3 text-lg font-bold text-[#f3e5c5]">文字速度</div>
             <div className="grid grid-cols-3 gap-3">
               {(['slow', 'normal', 'fast'] as TextSpeed[]).map((speed) => {
-                const selected = settings.textSpeed === speed;
+                const selected = displaySettings.textSpeed === speed;
                 const label = speed === 'slow' ? '慢速' : speed === 'fast' ? '快速' : '标准';
                 return (
                   <button
                     key={speed}
-                    onClick={() => setSettings(prev => ({ ...prev, textSpeed: speed }))}
+                    onClick={() => setDisplaySettings(prev => ({ ...prev, textSpeed: speed }))}
                     className={`border-4 px-3 py-3 text-lg font-bold transition-all pixel-rounded ${
                       selected
                         ? 'border-[#b98c53] bg-[#e6b87d] text-[#3e2723]'
@@ -352,8 +318,8 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
           </div>
 
           <div className="space-y-3">
-            {renderToggle('自动播放文本', settings.autoPlay, (next) => setSettings(prev => ({ ...prev, autoPlay: next })))}
-            {renderToggle('屏幕震动效果', settings.screenShake, (next) => setSettings(prev => ({ ...prev, screenShake: next })))}
+            {renderToggle('自动播放文本', displaySettings.autoPlay, (next) => setDisplaySettings(prev => ({ ...prev, autoPlay: next })))}
+            {renderToggle('屏幕震动效果', displaySettings.screenShake, (next) => setDisplaySettings(prev => ({ ...prev, screenShake: next })))}
           </div>
         </div>
       </div>

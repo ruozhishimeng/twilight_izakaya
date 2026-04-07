@@ -43,6 +43,14 @@ nodes:
         - fox_uncle_teaching_01
       need_time: W1_D1_Dusk
       need_item: []
+    audio:
+      bgm:
+        action: switch
+        tag: guitar_2
+        fadeIn: 700
+        fadeOut: 300
+      ambient:
+        action: keep
     script_flow:
       - type: env
         content:

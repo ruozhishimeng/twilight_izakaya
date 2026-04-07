@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Gift } from 'lucide-react';
 import { getCocktailImage, getIngredientImage } from '../data/gameData';
+import { useAudioSystem } from '../systems/audioSystem';
 
 interface RewardDetails {
   type: 'ingredient' | 'item' | 'recipe';
@@ -17,10 +18,13 @@ interface Props {
 }
 
 export default function RewardPhase({ rewards, newRewardIds = [], onContinue }: Props) {
+  const { playSfx } = useAudioSystem();
   const [show, setShow] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [canContinue, setCanContinue] = useState(false);
+  const lastPlayedRewardPageRef = useRef<string | null>(null);
+  const rewardSequenceKey = rewards.map(rewardItem => `${rewardItem.type}:${rewardItem.id}`).join('|');
 
   const reward = rewards[currentIndex];
   const isNewReward = !!reward?.id && newRewardIds.includes(reward.id);
@@ -40,6 +44,19 @@ export default function RewardPhase({ rewards, newRewardIds = [], onContinue }: 
     const timer = window.setTimeout(() => setShow(true), 100);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    setCurrentIndex(0);
+    lastPlayedRewardPageRef.current = null;
+  }, [rewardSequenceKey]);
+
+  useEffect(() => {
+    const rewardPageKey = show && reward ? `${currentIndex}:${reward.id}` : null;
+    if (rewardPageKey && rewardPageKey !== lastPlayedRewardPageRef.current) {
+      lastPlayedRewardPageRef.current = rewardPageKey;
+      playSfx('reward_reveal');
+    }
+  }, [currentIndex, playSfx, reward, show]);
 
   useEffect(() => {
     setCanContinue(false);

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BASE_LIQUORS, FLAVORS, Guest, MIXERS } from '../data/gameData';
 import PixelDialogueBox from './PixelDialogueBox';
+import { useAudioSystem } from '../systems/audioSystem';
 
 interface MixingRequest {
   player_prompt?: string;
@@ -121,6 +122,7 @@ export default function MixingPhase({
   mixingRequest,
   teaching,
 }: Props) {
+  const { startLoop, stopLoop } = useAudioSystem();
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [teachingStep, setTeachingStep] = useState(0);
   const [isReviewingPrompt, setIsReviewingPrompt] = useState(false);
@@ -135,6 +137,18 @@ export default function MixingPhase({
       setTeachingStep(0);
     }
   }, [startAtServe, teaching, promptOverride]);
+
+  useEffect(() => {
+    if (isMixing) {
+      startLoop('mixing_loop', 'mixing-loop');
+    } else {
+      stopLoop('mixing-loop');
+    }
+
+    return () => {
+      stopLoop('mixing-loop');
+    };
+  }, [isMixing, startLoop, stopLoop]);
 
   const defaultRequestText = buildPlayerPrompt(mixingRequest);
   let guidanceText = defaultRequestText;

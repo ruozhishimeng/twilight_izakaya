@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getCocktailImage } from '../data/gameData';
+import { useAudioSystem } from '../systems/audioSystem';
 
 interface Props {
   isSuccess: boolean;
@@ -9,14 +10,27 @@ interface Props {
 }
 
 export default function ResultPhase({ isSuccess, mixedDrinkName, isNewRecipe, onContinue }: Props) {
+  const { playSfx } = useAudioSystem();
   const [show, setShow] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const hasPlayedResultSfxRef = useRef(false);
   const cocktailImage = isSuccess ? getCocktailImage(undefined, mixedDrinkName) : undefined;
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShow(true), 100);
     return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    hasPlayedResultSfxRef.current = false;
+  }, [isSuccess, mixedDrinkName]);
+
+  useEffect(() => {
+    if (show && !hasPlayedResultSfxRef.current) {
+      hasPlayedResultSfxRef.current = true;
+      playSfx(isSuccess ? 'mix_success' : 'mix_fail');
+    }
+  }, [isSuccess, playSfx, show]);
 
   const handleContinue = () => {
     if (!show || isClosing) {

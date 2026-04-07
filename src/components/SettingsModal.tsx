@@ -3,6 +3,8 @@ import { ChevronLeft, Download, Home, Save, Trash2, Wrench, X } from 'lucide-rea
 import { GUESTS, getGuestsForDay } from '../data/gameData';
 import { saveSystem, type SaveSlot } from '../systems/SaveSystem';
 import type { GamePhase } from '../App';
+import AudioSettingsPanel from './AudioSettingsPanel';
+import { useAudioSystem } from '../systems/audioSystem';
 
 interface Props {
   onClose: () => void;
@@ -57,6 +59,7 @@ export default function SettingsModal({
   currentWeek,
   currentDay,
 }: Props) {
+  const { settings: audioSettings, setSettings: setAudioSettings } = useAudioSystem();
   const [mode, setMode] = useState<ModalMode>('main');
   const [saveSlots, setSaveSlots] = useState<SaveSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -236,6 +239,15 @@ export default function SettingsModal({
           </button>
         </div>
       )}
+
+      <div className="border-t-4 border-[#1a110c] pt-4">
+        <AudioSettingsPanel
+          settings={audioSettings}
+          onChange={setAudioSettings}
+          title="音频设置"
+          className="space-y-5 rounded-lg border-4 border-[#1a110c] bg-[#2c1e16] p-5"
+        />
+      </div>
     </div>
   );
 

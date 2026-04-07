@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useAudioSystem } from '../systems/audioSystem';
 
 interface Option {
   label: string;
@@ -17,13 +18,19 @@ interface Props {
 }
 
 export default function PixelDialogueBox({ speakerName, speakerAvatarColor, speakerAvatarUrl, text, options, onNext }: Props) {
+  const { playSfx } = useAudioSystem();
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastQueuedTextRef = useRef('');
   const typingSpeed = 30; // ms per character
 
   useEffect(() => {
     const safeText = text || '';
+    if (safeText.trim() && safeText !== lastQueuedTextRef.current) {
+      playSfx('dialogue_refresh');
+      lastQueuedTextRef.current = safeText;
+    }
     setDisplayedText('');
     setIsTyping(true);
     let currentIndex = 0;
@@ -45,7 +52,7 @@ export default function PixelDialogueBox({ speakerName, speakerAvatarColor, spea
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [text]);
+  }, [playSfx, text]);
 
   const handleContainerClick = () => {
     const safeText = text || '';
