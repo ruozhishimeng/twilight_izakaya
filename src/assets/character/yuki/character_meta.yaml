@@ -79,6 +79,13 @@ death_cause: "她的身体留在了那个雨夜。真正的死亡，是因为没
 core_item: "音乐盒碎片"
 lingering_regret: "只要我不停止寻找，失去的人就不算真正消失。"
 
+llm_chat:
+  enabled: true
+  max_turns_per_visit: 2
+  entry_status_text: "她闷头喝着酒。"
+  blocked_message: "现在还是不太适合聊天……"
+  exhausted_message: "聊得够多了……"
+
 story:
   summary: >
     小雪的故事是一段被等待、误解与失去层层包裹的青春残响。她的执念不是因为不愿放手，而是因为从来没有人真正把答案交到她手里。

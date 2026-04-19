@@ -10,7 +10,7 @@ import React, {
   type ReactNode,
   type SetStateAction,
 } from 'react';
-import type { GamePhase } from '../App';
+import type { GamePhase } from '../state/gameState';
 import {
   getPersistentTrackSource,
   getPhaseAudioDefaults,
@@ -52,6 +52,10 @@ interface LoopController {
 const AudioSystemContext = createContext<AudioSystemContextValue | null>(null);
 const DEFAULT_DIRECTIVE: PersistentAudioDirective = { action: 'keep' };
 
+function clampVolume(volume: number) {
+  return Math.max(0, Math.min(1, volume));
+}
+
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AudioSettings>(() => loadStoredAudioSettings());
   const unlockedRef = useRef(false);
@@ -67,7 +71,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     bgm: { tag: null, audio: null, fadeRafId: null },
     ambient: { tag: null, audio: null, fadeRafId: null },
   });
-  const loopControllersRef = useRef<Map<string, LoopController>>(new Map());
+  const loopControllersRef = useRef<Map<string, LoopController>>(new Map<string, LoopController>());
   const transientSfxRef = useRef<Set<HTMLAudioElement>>(new Set());
 
   const getTargetVolume = useCallback((channel: PersistentChannelKind) => {
@@ -94,7 +98,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     cancelFade(channel);
 
     if (durationMs <= 0) {
-      audio.volume = to;
+      audio.volume = clampVolume(to);
       onComplete?.();
       return;
     }
@@ -103,7 +107,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const tick = (now: number) => {
       const elapsed = now - startedAt;
       const progress = Math.min(1, elapsed / durationMs);
-      audio.volume = from + (to - from) * progress;
+      audio.volume = clampVolume(from + (to - from) * progress);
 
       if (progress < 1) {
         persistentStateRef.current[channel].fadeRafId = window.requestAnimationFrame(tick);
@@ -124,7 +128,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     onComplete?: () => void,
   ) => {
     if (durationMs <= 0) {
-      audio.volume = to;
+      audio.volume = clampVolume(to);
       onComplete?.();
       return;
     }
@@ -133,7 +137,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const tick = (now: number) => {
       const elapsed = now - startedAt;
       const progress = Math.min(1, elapsed / durationMs);
-      audio.volume = from + (to - from) * progress;
+      audio.volume = clampVolume(from + (to - from) * progress);
 
       if (progress < 1) {
         window.requestAnimationFrame(tick);
@@ -317,7 +321,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const stopAllTransient = useCallback(() => {
-    Array.from(loopControllersRef.current.values()).forEach(controller => controller.stop());
+    loopControllersRef.current.forEach(controller => {
+      controller.stop();
+    });
     loopControllersRef.current.clear();
 
     transientSfxRef.current.forEach(audio => {

@@ -318,36 +318,6 @@ nodes:
         content:
           - 「好，今天自由练习。我来看看你的手艺。」
     next_node: fox_uncle_teaching_free_practice_mixing
-    teaching:
-      recipe:
-        id: R999
-        name: 复习套餐
-        ingredients:
-          - 纯米清酒 (bj01)
-          - 甘酒 (bj02)
-          - 苏打水 (m01)
-          - 柚子酱 (f18)
-          - 蜂蜜 (f17)
-          - 乌龙茶 (m09)
-        formula:
-          - bj01
-          - m01
-        steps:
-          - 「纯米嗨棒：清酒1，苏打水2。」
-          - 「甘酒嗨棒：甘酒1，苏打水1。」
-          - 「止痛药：朗姆酒+椰浆+橙汁。」
-          - 「蜜柚茶：清酒+乌龙茶+蜂蜜。」
-      mixing_steps_display:
-        - 选择你想要练习的酒
-        - 按照配方调制
-        - 我会品尝并给你建议
-      game_action:
-        trigger: on_teaching_start
-        action: ENTER_MIXING_MODE
-        params:
-          recipe_id: R021
-          show_steps: true
-      tip: 「调酒师的成长，就是不断练习的过程。」
   - event_id: fox_uncle_teaching_free_practice_mixing
     trigger_condition:
       need_event:
@@ -366,7 +336,7 @@ nodes:
       retry_on_fail: true
       preferred_drink:
         id: R021
-        name: 绯闻背锅酒
+        name: 纯米嗨棒
         formula:
           - bj01
           - m01
@@ -409,6 +379,7 @@ nodes:
         content:
           - 「小子，这个是给你的，你今天调的真不错。」
           - 「可尔必思，小时候喝的不少吧。它可是日式调酒的重要配角。」
+          - 「先别急着收起来。你要是还有话，现在倒也能说两句。」
     player_options:
       - option: 「谢谢！」
         text: 「谢谢叔！」
@@ -427,6 +398,9 @@ nodes:
               - 「哈哈哈哈小子，栽一棵树最好的时候一是十年前...」
               - 「二是现在。」
         impact_log: 询问详情
+    llm_chat:
+      entry_mode: before_next_node
+      entry_status_text: "酒调得不错，小子，陪老夫聊几句..."
     next_node: fox_uncle_reward_01_end
  
   - event_id: fox_uncle_reward_01_end
@@ -925,7 +899,7 @@ nodes:
   - event_id: fox_uncle_ending_phase1
     trigger_condition:
       need_event:
-        - fox_uncle_reward_04_end
+        - fox_uncle_reward_03_end
       need_time: any
       need_item: []
     script_flow:
@@ -944,7 +918,7 @@ nodes:
   - event_id: fox_uncle_ending_phase2
     trigger_condition:
       need_event:
-        - fox_uncle_reward_review_02_end
+        - fox_uncle_reward_05_end
       need_time: any
       need_item: []
     script_flow:
@@ -962,7 +936,7 @@ nodes:
   - event_id: fox_uncle_ending_phase3
     trigger_condition:
       need_event:
-        - fox_uncle_reward_05_end
+        - fox_uncle_reward_06_end
       need_time: any
       need_item: []
     script_flow:

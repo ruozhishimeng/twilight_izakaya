@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import recipesData from '../assets/recipes/recipes.json';
-import { GUESTS, getCocktailImage, getIngredientImage } from '../data/gameData';
+import { GUESTS, chapterMatchesUnlockId, contentRegistry, getCocktailImage, getIngredientImage } from '../data/gameData';
 
 interface Props {
   onClose: () => void;
@@ -153,60 +152,16 @@ function uniqueTags(tags: Array<string | undefined>) {
   return [...new Set(tags.filter(Boolean) as string[])];
 }
 
-function normalizeStorySections(rawSections: any, fallbackId: string) {
-  if (!Array.isArray(rawSections)) {
-    return undefined;
+function readGuestDescription(guest: (typeof GUESTS)[number]) {
+  if (typeof guest.gallery.baseInfo.description === 'string' && guest.gallery.baseInfo.description.trim()) {
+    return guest.gallery.baseInfo.description;
   }
 
-  const sections = rawSections
-    .map((section: any, index: number) => {
-      const content = typeof section?.content === 'string'
-        ? section.content
-        : typeof section === 'string'
-          ? section
-          : '';
+  if (typeof guest.meta.base_info?.description === 'string' && guest.meta.base_info.description.trim()) {
+    return guest.meta.base_info.description;
+  }
 
-      if (!content.trim()) {
-        return null;
-      }
-
-      return {
-        id: section?.id || `${fallbackId}-section-${index + 1}`,
-        subtitle: section?.subtitle || section?.title || undefined,
-        content,
-      };
-    })
-    .filter(Boolean) as CharacterStorySection[];
-
-  return sections.length > 0 ? sections : undefined;
-}
-
-function buildPlaceholderStories(guestName: string): CharacterStory[] {
-  return [
-    {
-      id: 'story-1',
-      title: '故事一',
-      summary: `${guestName} 的第一段人物故事待补充。`,
-      unlocked: true,
-      content: `${guestName} 的第一段人物故事待补充。`,
-    },
-    {
-      id: 'story-2',
-      title: '故事二',
-      summary: `${guestName} 的第二段人物故事待补充。`,
-      unlocked: false,
-      unlockText: '继续推进剧情后解锁',
-      content: `${guestName} 的第二段人物故事待补充。`,
-    },
-    {
-      id: 'story-3',
-      title: '故事三',
-      summary: `${guestName} 的第三段人物故事待补充。`,
-      unlocked: false,
-      unlockText: '继续推进剧情后解锁',
-      content: `${guestName} 的第三段人物故事待补充。`,
-    },
-  ];
+  return '这位客人的档案记录还不完整。';
 }
 
 export default function BookModal({
@@ -222,13 +177,14 @@ export default function BookModal({
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [characterPage, setCharacterPage] = useState(0);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const recipesCatalog = contentRegistry.recipes;
 
   const items = useMemo<ItemEntry[]>(() => {
     const groups = [
-      { id: 'japanese-bases', label: '日式基底酒', mark: '基', values: recipesData.ingredients.bases.japanese },
-      { id: 'classic-bases', label: '经典基底酒', mark: '典', values: recipesData.ingredients.bases.classic },
-      { id: 'mixers', label: '配酒', mark: '调', values: recipesData.ingredients.mixers },
-      { id: 'flavors', label: '风味剂', mark: '味', values: recipesData.ingredients.flavors },
+      { id: 'japanese-bases', label: '日式基底酒', mark: '基', values: recipesCatalog.ingredients.bases.japanese },
+      { id: 'classic-bases', label: '经典基底酒', mark: '典', values: recipesCatalog.ingredients.bases.classic },
+      { id: 'mixers', label: '配酒', mark: '调', values: recipesCatalog.ingredients.mixers },
+      { id: 'flavors', label: '风味剂', mark: '味', values: recipesCatalog.ingredients.flavors },
     ];
 
     return groups.flatMap(group =>
@@ -248,7 +204,7 @@ export default function BookModal({
           return a.name.localeCompare(b.name, 'zh-Hans-CN');
         })
     );
-  }, [inventory]);
+  }, [inventory, recipesCatalog]);
 
   const itemLookup = useMemo(() => new Map(items.map(item => [item.id, item])), [items]);
 
@@ -268,12 +224,12 @@ export default function BookModal({
 
   const recipes = useMemo<RecipeEntry[]>(() => {
     const unlockedItemIds = new Set(items.filter(item => item.unlocked).map(item => item.id));
-    return [...recipesData.recipes]
+    return [...recipesCatalog.recipes]
       .map(recipe => ({
         ...recipe,
         image: getCocktailImage(recipe.id, recipe.name),
         unlocked:
-          Boolean((recipe as { unlocked?: boolean }).unlocked) ||
+          Boolean(recipe.unlocked) ||
           unlockedRecipes.includes(recipe.id) ||
           (Array.isArray(recipe.formula) && recipe.formula.every(id => unlockedItemIds.has(id))),
       }))
@@ -283,7 +239,7 @@ export default function BookModal({
         }
         return a.name.localeCompare(b.name, 'zh-Hans-CN');
       });
-  }, [items, unlockedRecipes]);
+  }, [items, recipesCatalog, unlockedRecipes]);
 
   const characters = useMemo<CharacterEntry[]>(
     () =>
@@ -299,23 +255,17 @@ export default function BookModal({
             desc: feature!.desc,
           }));
 
-        const sourceStories =
-          guest.meta?.story?.chapters ||
-          guest.meta?.character_stories ||
-          guest.meta?.stories ||
-          guest.meta?.story_entries ||
-          [];
+        const sourceStories = guest.gallery.chapters;
 
-        const stories: CharacterStory[] =
-          Array.isArray(sourceStories) && sourceStories.length > 0
-            ? sourceStories.map((story: any, index: number) => ({
-                id: story.id || `story-${index + 1}`,
-                title: story.title || story.name || `故事 ${index + 1}`,
-                summary: story.summary || story.desc || story.description || '这段人物故事待补充。',
-                unlocked: story.unlocked !== false || unlockedStoryIds.has(story.id || `story-${index + 1}`),
-                unlockText: story.unlock_text || story.unlockText || undefined,
-              }))
-            : buildPlaceholderStories(guest.name);
+        const stories: CharacterStory[] = sourceStories.map(story => ({
+          id: story.id,
+          title: story.title,
+          summary: story.summary,
+          unlocked:
+            story.unlockCondition === 'none' ||
+            Array.from(unlockedStoryIds).some(unlockId => chapterMatchesUnlockId(story, unlockId)),
+          unlockText: story.unlockCondition === 'none' ? undefined : story.unlockCondition || '继续推进剧情后解锁',
+        }));
 
         return {
           id: guest.id,
@@ -325,13 +275,7 @@ export default function BookModal({
           unlocked: characterProgress[guest.id] !== undefined || observedNotes.length > 0,
           observedNotes,
           totalFeatures: guest.features.length,
-          personality:
-            guest.meta?.base_info?.description ||
-            guest.meta?.description ||
-            guest.meta?.personality ||
-            guest.meta?.base_info?.intro ||
-            guest.meta?.base_info?.summary ||
-            '这位客人的性格记录还不完整。',
+          personality: readGuestDescription(guest),
           stories,
         };
       }).sort((a, b) => {
@@ -348,34 +292,18 @@ export default function BookModal({
 
     GUESTS.forEach(guest => {
       const unlockedStoryIds = new Set(unlockedStoryChapters[guest.id] || []);
-      const sourceStories =
-        guest.meta?.story?.chapters ||
-        guest.meta?.character_stories ||
-        guest.meta?.stories ||
-        guest.meta?.story_entries ||
-        [];
-
-      if (!Array.isArray(sourceStories) || sourceStories.length === 0) {
-        detailMap.set(guest.id, buildPlaceholderStories(guest.name));
-        return;
-      }
-
       detailMap.set(
         guest.id,
-        sourceStories.map((story: any, index: number) => ({
-          id: story.id || `story-${index + 1}`,
-          title: story.title || story.name || `故事 ${index + 1}`,
-          summary: story.summary || story.desc || story.description || '这段人物故事待补充。',
-          unlocked: story.unlocked !== false || unlockedStoryIds.has(story.id || `story-${index + 1}`),
-          unlockText: story.unlock_text || story.unlockText || undefined,
-          content:
-            typeof story.content === 'string' && story.content.trim()
-              ? story.content
-              : undefined,
-          sections: normalizeStorySections(
-            story.sections,
-            story.id || `story-${index + 1}`
-          ),
+        guest.gallery.chapters.map(story => ({
+          id: story.id,
+          title: story.title,
+          summary: story.summary,
+          unlocked:
+            story.unlockCondition === 'none' ||
+            Array.from(unlockedStoryIds).some(unlockId => chapterMatchesUnlockId(story, unlockId)),
+          unlockText: story.unlockCondition === 'none' ? undefined : story.unlockCondition || '继续推进剧情后解锁',
+          content: story.content,
+          sections: story.sections as CharacterStorySection[] | undefined,
         }))
       );
     });
@@ -725,31 +653,37 @@ export default function BookModal({
                           </div>
                         </div>
                         <div className="mt-3 space-y-3">
-                          {selectedCharacter.stories.map(story => {
-                            const canOpen = story.unlocked;
+                          {selectedCharacter.stories.length > 0 ? (
+                            selectedCharacter.stories.map(story => {
+                              const canOpen = story.unlocked;
 
-                            return (
-                              <button
-                                key={story.id}
-                                type="button"
-                                disabled={!canOpen}
-                                onClick={() => canOpen && setSelectedStoryId(story.id)}
-                                className={`flex w-full flex-col gap-2 border-2 px-3 py-3 text-left transition pixel-rounded-lg ${
-                                  canOpen
-                                    ? 'border-[#4a3f35] bg-[#2c1e16] hover:border-[#d0b381] hover:bg-[#34241b]'
-                                    : 'cursor-not-allowed border-[#3e2723] bg-[#19120e] text-[#7a6f5d]'
-                                }`}
-                              >
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="font-bold">{story.title}</div>
-                                  <div className="shrink-0 text-xs text-[#c7a270]">
-                                    {canOpen ? '点击阅读' : story.unlockText || '尚未解锁'}
+                              return (
+                                <button
+                                  key={story.id}
+                                  type="button"
+                                  disabled={!canOpen}
+                                  onClick={() => canOpen && setSelectedStoryId(story.id)}
+                                  className={`flex w-full flex-col gap-2 border-2 px-3 py-3 text-left transition pixel-rounded-lg ${
+                                    canOpen
+                                      ? 'border-[#4a3f35] bg-[#2c1e16] hover:border-[#d0b381] hover:bg-[#34241b]'
+                                      : 'cursor-not-allowed border-[#3e2723] bg-[#19120e] text-[#7a6f5d]'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    <div className="font-bold">{story.title}</div>
+                                    <div className="shrink-0 text-xs text-[#c7a270]">
+                                      {canOpen ? '点击阅读' : story.unlockText || '尚未解锁'}
+                                    </div>
                                   </div>
-                                </div>
-                                <div className="text-sm leading-6">{story.summary}</div>
-                              </button>
-                            );
-                          })}
+                                  <div className="text-sm leading-6">{story.summary}</div>
+                                </button>
+                              );
+                            })
+                          ) : (
+                            <div className="border-2 border-dashed border-[#c7a270] bg-[#f7ebcc] p-4 text-sm italic text-[#8d7250] pixel-rounded-lg">
+                              该角色暂无档案内容。
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

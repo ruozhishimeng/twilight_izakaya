@@ -49,8 +49,8 @@ function getSlotDisplayInfo(slot: SaveSlot | null): { name: string; subtitle: st
     return { name: '空存档位', subtitle: '暂未记录营业进度', empty: true };
   }
 
-  const weekNum = slot.data.currentWeek;
-  const dayNum = slot.data.currentDay;
+  const weekNum = slot.data.context.week;
+  const dayNum = slot.data.context.day;
   const weekdayLabels = ['一', '二', '三', '四', '五', '六', '日'];
 
   return {

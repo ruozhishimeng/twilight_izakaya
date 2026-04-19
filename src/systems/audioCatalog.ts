@@ -11,7 +11,7 @@ import mixingLoop from '../assets/music/sfx/mixing.mp3';
 import mixingFailed from '../assets/music/sfx/mixing_failed.mp3';
 import mixingSuccess from '../assets/music/sfx/mixing_success.mp3';
 import rewardReveal from '../assets/music/sfx/reward.mp3';
-import type { GamePhase } from '../App';
+import type { GamePhase } from '../state/gameState';
 
 export type MusicTag =
   | 'guitar_1'

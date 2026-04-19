@@ -1,4 +1,8 @@
+import dotenv from 'dotenv';
 import express from 'express';
+import { registerNpcDialogueRoute } from './server/npcDialogue/route.mjs';
+
+dotenv.config();
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
@@ -21,6 +25,8 @@ app.get('/api/ping', (_req, res) => {
     service: 'twilight-izakaya-backend',
   });
 });
+
+registerNpcDialogueRoute(app);
 
 app.listen(port, host, () => {
   console.log(`[twilight-izakaya-backend] listening on http://${host}:${port}`);

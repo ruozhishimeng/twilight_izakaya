@@ -144,8 +144,14 @@ nodes:
     player_options: []
     next_node: null
     drink_request:
+      request_text: "给我一杯......能让我想起哥哥的酒。"
       keywords: ["想起", "重要的人", "哥哥"]
       hint: 她的手指在空气中弹动，像是在演奏一首无声的曲子。
+      preferred_drink:
+        id: "R001"
+        name: "未竟的生诞"
+        formula: ["bc01", "m04", "f03"]
+    on_mixing_fail: yuki_phase1_regular_success
 
   # ========================================
   # Phase 1 - 调酒结果
@@ -317,8 +323,14 @@ nodes:
     player_options: []
     next_node: null
     drink_request:
+      request_text: "如果《月光》有味道......就替我把它调出来。"
       keywords: ["月光", "哥哥", "音乐盒"]
       hint: 她的手指在空气中弹奏《月光》的旋律。
+      preferred_drink:
+        id: "R001"
+        name: "未竟的生诞"
+        formula: ["bc01", "m04", "f03"]
+    on_mixing_fail: yuki_phase2_regular_success
 
   # ========================================
   # Phase 2 - 调酒结果
@@ -514,6 +526,9 @@ nodes:
           - 「......保重。」
     player_options: []
     next_node: null
+    llm_chat:
+      enabled: false
+      blocked_message: "她的身影已经开始散去，现在不适合继续聊天了。"
     story_unlocks:
       chapters:
         - id: yuki_story_03

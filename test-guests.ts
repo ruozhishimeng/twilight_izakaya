@@ -4,5 +4,5 @@ console.log(GUESTS.map(g => ({
   name: g.name,
   phasesCount: g.phases.length,
   firstPhaseTurns: g.phases[0]?.turns.length,
-  firstPhaseIdealDrink: g.phases[0]?.idealDrink
+  firstPhaseIntro: g.phases[0]?.intro
 })));

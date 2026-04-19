@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, Download, Home, Save, Trash2, Wrench, X } from 'lucide-react';
 import { GUESTS, getGuestsForDay } from '../data/gameData';
 import { saveSystem, type SaveSlot } from '../systems/SaveSystem';
-import type { GamePhase } from '../App';
+import type { GamePhase } from '../state/gameState';
 import AudioSettingsPanel from './AudioSettingsPanel';
 import { useAudioSystem } from '../systems/audioSystem';
 
@@ -37,8 +37,8 @@ function getSlotDisplayInfo(slot: SaveSlot | null): { name: string; subtitle: st
     return { name: '空存档位', subtitle: '尚未记录任何营业进度', empty: true };
   }
 
-  const weekNum = slot.data.currentWeek;
-  const dayNum = slot.data.currentDay;
+  const weekNum = slot.data.context.week;
+  const dayNum = slot.data.context.day;
   const dayStr = WEEKDAY_LABELS[dayNum - 1] || `第${dayNum}天`;
 
   return {

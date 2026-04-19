@@ -15,9 +15,20 @@ interface Props {
   text: string;
   options?: Option[];
   onNext?: () => void;
+  onTypingStateChange?: (isTyping: boolean) => void;
+  footer?: React.ReactNode;
 }
 
-export default function PixelDialogueBox({ speakerName, speakerAvatarColor, speakerAvatarUrl, text, options, onNext }: Props) {
+export default function PixelDialogueBox({
+  speakerName,
+  speakerAvatarColor,
+  speakerAvatarUrl,
+  text,
+  options,
+  onNext,
+  onTypingStateChange,
+  footer,
+}: Props) {
   const { playSfx } = useAudioSystem();
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -54,6 +65,10 @@ export default function PixelDialogueBox({ speakerName, speakerAvatarColor, spea
     };
   }, [playSfx, text]);
 
+  useEffect(() => {
+    onTypingStateChange?.(isTyping);
+  }, [isTyping, onTypingStateChange]);
+
   const handleContainerClick = () => {
     const safeText = text || '';
     if (isTyping) {
@@ -85,6 +100,8 @@ export default function PixelDialogueBox({ speakerName, speakerAvatarColor, spea
         </div>
 
         {/* Options / Next Button */}
+        {footer && <div className="mt-4">{footer}</div>}
+
         <div className="flex gap-4 justify-end mt-4">
           {!isTyping && (
             options ? (

@@ -32,8 +32,6 @@ interface TeachingData {
 interface Props {
   guest: Guest;
   onServe: (ingredients: string[]) => void;
-  isMixing: boolean;
-  setIsMixing: (isMixing: boolean) => void;
   inventory: string[];
   promptOverride?: string;
   startAtServe?: boolean;
@@ -114,8 +112,6 @@ function sortUnlockedFirst<T extends { unlocked?: boolean }>(items: T[]) {
 export default function MixingPhase({
   guest,
   onServe,
-  isMixing,
-  setIsMixing,
   inventory,
   promptOverride,
   startAtServe = false,
@@ -126,11 +122,13 @@ export default function MixingPhase({
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [teachingStep, setTeachingStep] = useState(0);
   const [isReviewingPrompt, setIsReviewingPrompt] = useState(false);
+  const [isServing, setIsServing] = useState(false);
 
   const isReady = selectedIngredients.length > 0;
 
   useEffect(() => {
     setIsReviewingPrompt(false);
+    setIsServing(false);
     if (startAtServe) {
       setTeachingStep((teaching?.recipe?.steps?.length || 0) + 1);
     } else {
@@ -139,7 +137,7 @@ export default function MixingPhase({
   }, [startAtServe, teaching, promptOverride]);
 
   useEffect(() => {
-    if (isMixing) {
+    if (isServing) {
       startLoop('mixing_loop', 'mixing-loop');
     } else {
       stopLoop('mixing-loop');
@@ -148,7 +146,7 @@ export default function MixingPhase({
     return () => {
       stopLoop('mixing-loop');
     };
-  }, [isMixing, startLoop, stopLoop]);
+  }, [isServing, startLoop, stopLoop]);
 
   const defaultRequestText = buildPlayerPrompt(mixingRequest);
   let guidanceText = defaultRequestText;
@@ -171,8 +169,8 @@ export default function MixingPhase({
   };
 
   const handleServeClick = () => {
-    setIsMixing(true);
-    setTimeout(() => {
+    setIsServing(true);
+    window.setTimeout(() => {
       onServe(selectedIngredients);
     }, 1500);
   };
@@ -274,7 +272,7 @@ export default function MixingPhase({
 
       <div
         className={`relative z-20 flex h-full w-full max-w-[1400px] gap-4 px-4 transition-transform duration-700 ${
-          isMixing ? '-translate-y-[150%]' : 'translate-y-0'
+          isServing ? '-translate-y-[150%]' : 'translate-y-0'
         }`}
       >
         <div className="flex h-full flex-[3] gap-4">
@@ -441,7 +439,7 @@ export default function MixingPhase({
         </div>
       </div>
 
-      <div className={`pointer-events-none absolute inset-0 transition-transform duration-700 ${isMixing ? 'translate-y-[150%]' : 'translate-y-0'}`}>
+      <div className={`pointer-events-none absolute inset-0 transition-transform duration-700 ${isServing ? 'translate-y-[150%]' : 'translate-y-0'}`}>
         <div className="pointer-events-auto">
           <PixelDialogueBox
             speakerName={promptOverride && !isReviewingPrompt ? '\u7cfb\u7edf' : teaching ? '\u8001\u5e08' : '\u6211'}
@@ -475,6 +473,13 @@ export default function MixingPhase({
           />
         </div>
       </div>
+
+      {isServing && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="mb-8 text-8xl animate-shake">🍸</div>
+          <div className="text-3xl font-bold text-amber-200 animate-pulse">调配中...</div>
+        </div>
+      )}
     </div>
   );
 }

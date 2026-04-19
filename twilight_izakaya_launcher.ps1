@@ -11,6 +11,8 @@ $ErrorActionPreference = 'Stop'
 
 $projectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $projectRoot
+$envScriptPath = Join-Path $projectRoot 'scripts\ensure-node-env.ps1'
+. $envScriptPath
 
 $frontendHost = '127.0.0.1'
 $backendHost = '127.0.0.1'
@@ -91,8 +93,9 @@ Write-Host "[Twilight Izakaya] Frontend: $frontendUrl"
 Write-Host "[Twilight Izakaya] Backend : $backendUrl"
 Write-Host ''
 
-$backendCommand = "Set-Location '$projectRoot'; `$env:PORT='$backendPort'; `$env:HOST='$backendHost'; node local-backend.mjs"
-$frontendCommand = "Set-Location '$projectRoot'; npm.cmd run dev -- --host $frontendHost --port $frontendPort"
+$bootstrapCommand = ". '$envScriptPath'; Set-Location '$projectRoot';"
+$backendCommand = "$bootstrapCommand `$env:PORT='$backendPort'; `$env:HOST='$backendHost'; node local-backend.mjs"
+$frontendCommand = "$bootstrapCommand npm.cmd run dev -- --host $frontendHost --port $frontendPort"
 
 Start-Process powershell.exe -WorkingDirectory $projectRoot -ArgumentList @(
   '-NoExit',

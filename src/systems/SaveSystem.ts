@@ -1,68 +1,18 @@
-// Save System using IndexedDB for multiple save slots
-import type { GamePhase } from '../App';
-import type { DailyGuestRecord, DailySummary, JournalReward } from '../types/journal';
+import {
+  PERSISTED_GAME_SNAPSHOT_VERSION,
+  type PersistedGameSnapshot,
+} from '../state/gameState';
+import { normalizePersistedSnapshotData } from '../state/gamePersistence';
 
 const DB_NAME = 'izakaya_saves';
 const DB_VERSION = 1;
 const STORE_NAME = 'saves';
 
-export interface SaveData {
-  phase: GamePhase;
-  currentWeek: number;
-  currentDay: number;
-  currentGuestInDay: number;
-  characterProgress: Record<string, number>;
-  characterObservations?: Record<string, string[]>;
-  discoveredFeatures: string[];
-  unlockedRecipes: string[];
-  inventory: string[];
-  isSuccess: boolean;
-  currentNodeId: string | null;
-  // Observation state
-  showObservation: boolean;
-  observationPrompt: string;
-  observationContinueNode: string | null;
-  availableFeatureGroups: string[] | undefined;
-  // Mixing state
-  isMixing: boolean;
-  mixedDrinkName: string | undefined;
-  // Teaching/Mixing node IDs for re-derivation on load
-  teachingNodeId: string | null;
-  mixingNodeId: string | null;
-  // Journal state
-  currentGuestRewards?: JournalReward[];
-  currentGuestDrinkLabel?: string;
-  currentGuestChallenges?: string[];
-  currentDayRecords?: DailyGuestRecord[];
-  journalHistory?: DailySummary[];
-  pendingStoryUnlocks?: Record<string, Array<{
-    chapterId: string;
-    reason?: string;
-    sourceNodeId?: string;
-  }>>;
-  unlockedStoryChapters?: Record<string, string[]>;
-  pendingDaySummary?: DailySummary | null;
-  pendingGuestReflection?: {
-    text: string;
-    sameDay: boolean;
-    nextWeek: number;
-    nextDay: number;
-    nextGuestInDay: number;
-    daySummary: DailySummary | null;
-    nextDayRecords: DailyGuestRecord[];
-  } | null;
-  currentGuestTranscript?: Array<{
-    key: string;
-    speaker: string;
-    text: string;
-  }>;
-}
-
 export interface SaveSlot {
   id: string;
   name: string;
   timestamp: number;
-  data: SaveData;
+  data: PersistedGameSnapshot;
 }
 
 class SaveSystem {
@@ -83,7 +33,6 @@ class SaveSystem {
 
       request.onsuccess = () => {
         this.db = request.result;
-        console.log('[SaveSystem] IndexedDB initialized');
         resolve(this.db);
       };
 
@@ -92,7 +41,6 @@ class SaveSystem {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
           store.createIndex('timestamp', 'timestamp', { unique: false });
-          console.log('[SaveSystem] Created object store:', STORE_NAME);
         }
       };
     });
@@ -108,14 +56,16 @@ class SaveSystem {
       const request = store.getAll();
 
       request.onsuccess = () => {
-        const saves = request.result as SaveSlot[];
-        // Sort by timestamp descending (newest first)
-        saves.sort((a, b) => b.timestamp - a.timestamp);
+        const saves = (request.result as Array<Omit<SaveSlot, 'data'> & { data: unknown }>)
+          .map(slot => ({
+            ...slot,
+            data: normalizePersistedSnapshotData(slot.data),
+          }))
+          .sort((a, b) => b.timestamp - a.timestamp);
         resolve(saves);
       };
 
       request.onerror = () => {
-        console.error('[SaveSystem] Failed to get all saves:', request.error);
         reject(request.error);
       };
     });
@@ -129,17 +79,17 @@ class SaveSystem {
       const request = store.get(id);
 
       request.onsuccess = () => {
-        resolve(request.result as SaveSlot || null);
+        const raw = request.result as (Omit<SaveSlot, 'data'> & { data: unknown }) | undefined;
+        resolve(raw ? { ...raw, data: normalizePersistedSnapshotData(raw.data) } : null);
       };
 
       request.onerror = () => {
-        console.error('[SaveSystem] Failed to get save:', id, request.error);
         reject(request.error);
       };
     });
   }
 
-  async saveGame(id: string, name: string, data: SaveData): Promise<void> {
+  async saveGame(id: string, name: string, data: PersistedGameSnapshot): Promise<void> {
     const db = await this.init();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
@@ -149,20 +99,16 @@ class SaveSystem {
         id,
         name,
         timestamp: Date.now(),
-        data,
+        data: {
+          ...data,
+          version: PERSISTED_GAME_SNAPSHOT_VERSION,
+        },
       };
 
       const request = store.put(slot);
 
-      request.onsuccess = () => {
-        console.log('[SaveSystem] Saved game to slot:', id, name);
-        resolve();
-      };
-
-      request.onerror = () => {
-        console.error('[SaveSystem] Failed to save game:', id, request.error);
-        reject(request.error);
-      };
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -173,15 +119,8 @@ class SaveSystem {
       const store = transaction.objectStore(STORE_NAME);
       const request = store.delete(id);
 
-      request.onsuccess = () => {
-        console.log('[SaveSystem] Deleted save slot:', id);
-        resolve();
-      };
-
-      request.onerror = () => {
-        console.error('[SaveSystem] Failed to delete save:', id, request.error);
-        reject(request.error);
-      };
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 

@@ -1,185 +1,30 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import StartScreen from './components/StartScreen';
-import MainMenu from './components/MainMenu';
-import IntroSequence from './components/IntroSequence';
-import ObservationPhase from './components/ObservationPhase';
-import StoryPhase from './components/StoryPhase';
-import MixingPhase from './components/MixingPhase';
-import ResultPhase from './components/ResultPhase';
-import RewardPhase from './components/RewardPhase';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { BellRing, Book, BookOpen, ScrollText, Settings, X } from 'lucide-react';
+import BookModal from './components/BookModal';
 import DaySummaryPhase from './components/DaySummaryPhase';
 import Diary from './components/Diary';
-import BookModal from './components/BookModal';
+import IntroSequence from './components/IntroSequence';
+import MainMenu from './components/MainMenu';
+import MixingPhase from './components/MixingPhase';
+import ObservationPhase from './components/ObservationPhase';
+import ResultPhase from './components/ResultPhase';
+import RewardPhase from './components/RewardPhase';
 import SettingsModal from './components/SettingsModal';
-import { BASE_LIQUORS, FLAVORS, GUESTS, getGuestsForDay, findNodeForGuest, MIXERS } from './data/gameData';
-import { BookOpen, Settings, Book, ScrollText, X, BellRing } from 'lucide-react';
+import StartScreen from './components/StartScreen';
+import StoryPhase from './components/StoryPhase';
+import TailChatPhase from './components/TailChatPhase';
+import {
+  GUESTS,
+} from './data/gameData';
+import { useGameFlowController } from './hooks/useGameFlowController';
 import { useImagePreloader } from './hooks/useImagePreloader';
-import { saveSystem, type SaveData } from './systems/SaveSystem';
-import { DailyGuestRecord, DailySummary, JournalNote, JournalReward } from './types/journal';
+import { useGameMachine } from './hooks/useGameMachine';
+import {
+  createPersistedSnapshot,
+  type GuestReflectionState,
+} from './state/gameState';
+import { saveSystem } from './systems/SaveSystem';
 import { useAudioSystem } from './systems/audioSystem';
-
-export type GamePhase = 'start_screen' | 'main_menu' | 'intro_sequence' | 'intro' | 'observation' | 'story' | 'mixing' | 'result' | 'day_summary' | 'guest_reflection';
-
-const DAYS_PER_WEEK = 7;
-const MAX_SCHEDULE_LOOKAHEAD = 365;
-
-function findScheduledVisit(week: number, day: number, guestInDay: number, includeCurrentSlot: boolean) {
-  let scanWeek = week;
-  let scanDay = day;
-  let scanGuestInDay = includeCurrentSlot ? guestInDay : guestInDay + 1;
-
-  for (let i = 0; i < MAX_SCHEDULE_LOOKAHEAD; i++) {
-    const guests = getGuestsForDay(scanWeek, scanDay);
-    if (scanGuestInDay >= 1 && scanGuestInDay <= guests.length) {
-      return {
-        week: scanWeek,
-        day: scanDay,
-        guestInDay: scanGuestInDay,
-      };
-    }
-
-    scanDay += 1;
-    if (scanDay > DAYS_PER_WEEK) {
-      scanDay = 1;
-      scanWeek += 1;
-    }
-    scanGuestInDay = 1;
-  }
-
-  return null;
-}
-
-function getDependentOutcomeNodes(nodeMap: Map<string, any>, sourceNodeId: string) {
-  return Array.from(nodeMap.values()).filter(node => {
-    const needEvent = node?.trigger_condition?.need_event;
-    return Array.isArray(needEvent) && needEvent.includes(sourceNodeId);
-  });
-}
-
-function resolveMixingOutcomeNode(
-  guest: { nodeMap?: Map<string, any> },
-  mixingNode: any,
-  success: boolean
-) {
-  const explicitNodeId = success
-    ? (mixingNode?.on_mixing_complete || mixingNode?.next_node)
-    : (mixingNode?.on_mixing_fail || mixingNode?.drink_request?.eval_branches?.fail);
-
-  if (explicitNodeId) {
-    return explicitNodeId;
-  }
-
-  const nodeMap = guest.nodeMap;
-  const sourceNodeId = mixingNode?.event_id || mixingNode?.id;
-  if (!nodeMap || !sourceNodeId) {
-    return null;
-  }
-
-  const outcomeNodes = getDependentOutcomeNodes(nodeMap, sourceNodeId);
-  const priorityPatterns = success
-    ? ['most_loved_success', 'generally_liked_success', 'regular_success']
-    : ['fail', 'regular_success', 'generally_liked_success'];
-
-  for (const pattern of priorityPatterns) {
-    const match = outcomeNodes.find(node => typeof node?.event_id === 'string' && node.event_id.includes(pattern));
-    if (match?.event_id) {
-      return match.event_id;
-    }
-  }
-
-  return null;
-}
-
-function findTeachingNodeForMixing(
-  guest: { nodeMap?: Map<string, any> },
-  teachingCandidate: any,
-  mixingCandidate: any
-) {
-  if (teachingCandidate?.teaching) {
-    return teachingCandidate;
-  }
-
-  if (mixingCandidate?.teaching) {
-    return mixingCandidate;
-  }
-
-  const nodeMap = guest.nodeMap;
-  if (!nodeMap) {
-    return null;
-  }
-
-  const upstreamIds = [
-    ...(Array.isArray(mixingCandidate?.trigger_condition?.need_event) ? mixingCandidate.trigger_condition.need_event : []),
-    ...(Array.isArray(teachingCandidate?.trigger_condition?.need_event) ? teachingCandidate.trigger_condition.need_event : []),
-  ];
-
-  for (const upstreamId of upstreamIds) {
-    const upstreamNode = nodeMap.get(upstreamId);
-    if (upstreamNode?.teaching) {
-      return upstreamNode;
-    }
-  }
-
-  return null;
-}
-
-function formatMixedDrinkLabel(ingredients: string[]) {
-  const itemMap = new Map(
-    [...BASE_LIQUORS, ...MIXERS, ...FLAVORS].map(item => [item.id, item.name])
-  );
-  const names = ingredients.filter(Boolean).map(id => itemMap.get(id) || id);
-  return names.length > 0 ? names.join(' + ') : '未命名的调配';
-}
-
-function normalizeStoryUnlockEntries(node: any): StoryUnlockEntry[] {
-  const rawChapters = node?.story_unlocks?.chapters;
-  if (!Array.isArray(rawChapters)) {
-    return [];
-  }
-
-  return rawChapters
-    .map((entry: any) => {
-      if (typeof entry === 'string' && entry.trim()) {
-        return {
-          chapterId: entry.trim(),
-          sourceNodeId: node?.event_id,
-        };
-      }
-
-      if (entry && typeof entry === 'object' && typeof entry.id === 'string' && entry.id.trim()) {
-        return {
-          chapterId: entry.id.trim(),
-          reason: typeof entry.reason === 'string' ? entry.reason.trim() : undefined,
-          sourceNodeId: node?.event_id,
-        };
-      }
-
-      return null;
-    })
-    .filter(Boolean) as StoryUnlockEntry[];
-}
-
-interface GuestReflectionState {
-  text: string;
-  sameDay: boolean;
-  nextWeek: number;
-  nextDay: number;
-  nextGuestInDay: number;
-  daySummary: DailySummary | null;
-  nextDayRecords: DailyGuestRecord[];
-}
-
-interface GuestTranscriptEntry {
-  key: string;
-  speaker: string;
-  text: string;
-}
-
-interface StoryUnlockEntry {
-  chapterId: string;
-  reason?: string;
-  sourceNodeId?: string;
-}
 
 type ViteImportMeta = ImportMeta & {
   env?: {
@@ -187,552 +32,229 @@ type ViteImportMeta = ImportMeta & {
   };
 };
 
+function weekdayLabel(day: number) {
+  return ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'][day - 1] || `第 ${day} 天`;
+}
+
+type TailChatPlaybackState =
+  | {
+      stage: 'input';
+      playerText: '';
+      npcLines: string[];
+      npcIndex: 0;
+    }
+  | {
+      stage: 'player';
+      playerText: string;
+      npcLines: string[];
+      npcIndex: 0;
+    }
+  | {
+      stage: 'npc';
+      playerText: string;
+      npcLines: string[];
+      npcIndex: number;
+    };
+
+const INITIAL_TAIL_CHAT_PLAYBACK: TailChatPlaybackState = {
+  stage: 'input',
+  playerText: '',
+  npcLines: [],
+  npcIndex: 0,
+};
+
+function GuestReflectionOverlay({
+  reflection,
+  onContinue,
+}: {
+  reflection: GuestReflectionState;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 px-8 backdrop-blur-sm">
+      <div className="w-full max-w-3xl border-[6px] border-[#1a110c] bg-[#2c1e16] p-8 text-[#e8dcc4] shadow-[0_0_60px_rgba(0,0,0,0.72)] pixel-rounded-lg animate-scale-up">
+        <div className="border-b-2 border-[#8b5a2b] pb-4">
+          <div className="text-sm tracking-[0.3em] text-[#8b5a2b]">REFLECTION</div>
+          <h2 className="mt-2 text-3xl font-bold">营业后的片刻回想</h2>
+        </div>
+        <div className="mt-6 rounded-xl border-2 border-[#4a3f35] bg-[#1a110c] px-5 py-6 leading-8 text-[#e8dcc4]">
+          {reflection.text || '今晚的这一页，还没有留下新的字句。'}
+        </div>
+        <div className="mt-6 text-sm text-[#bda98a]">
+          {reflection.sameDay
+            ? '整理好杯具后，下一位客人很快就会推门而入。'
+            : '合上这页手记，今晚的营业就先到这里。'}
+        </div>
+        <button
+          type="button"
+          onClick={onContinue}
+          className="pixel-button mt-8 px-10 py-3 text-xl font-bold"
+        >
+          继续
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { applyNodeAudio, applyPhaseAudio, playSfx } = useAudioSystem();
-  const [phase, setPhase] = useState<GamePhase>('start_screen');
-  const [currentWeek, setCurrentWeek] = useState(1);
-  const [currentDay, setCurrentDay] = useState(1);
-  const [currentGuestInDay, setCurrentGuestInDay] = useState(1); // 1 or 2
-  const [characterProgress, setCharacterProgress] = useState<Record<string, number>>({});
-  const [characterObservations, setCharacterObservations] = useState<Record<string, string[]>>({});
-  const [pendingStoryUnlocks, setPendingStoryUnlocks] = useState<Record<string, StoryUnlockEntry[]>>({});
-  const [unlockedStoryChapters, setUnlockedStoryChapters] = useState<Record<string, string[]>>({});
-  const [discoveredFeatures, setDiscoveredFeatures] = useState<string[]>([]);
-  const [isMixing, setIsMixing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [mixedDrinkName, setMixedDrinkName] = useState<string | undefined>();
-  const [isNewRecipe, setIsNewRecipe] = useState(false);
-  const [unlockedRecipes, setUnlockedRecipes] = useState<string[]>([]);
-  const [inventory, setInventory] = useState<string[]>([]);
-
+  const {
+    snapshot,
+    transition: transitionTo,
+    reset,
+    loadSnapshot,
+    patchContext,
+    patchCurrentGuest,
+    patchNpcDialogue,
+    resetCurrentGuest,
+  } = useGameMachine();
   const [isDiaryOpen, setIsDiaryOpen] = useState(false);
   const [isBookOpen, setIsBookOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [transitionState, setTransitionState] = useState<'idle' | 'fade-out' | 'fade-in'>('idle');
-
-  // Story state
-  const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
-  const [teachingNode, setTeachingNode] = useState<any>(null);
-  const [mixingNode, setMixingNode] = useState<any>(null);
-
-  // Observation state (triggered by nodes)
-  const [showObservation, setShowObservation] = useState(false);
-  const [observationPrompt, setObservationPrompt] = useState<string>('');
-  const [observationContinueNode, setObservationContinueNode] = useState<string | null>(null);
-  const [availableFeatureGroups, setAvailableFeatureGroups] = useState<string[] | undefined>();
-
-  // Reward state
-  const [showReward, setShowReward] = useState(false);
-  const [pendingRewards, setPendingRewards] = useState<JournalReward[]>([]);
-  const [pendingRewardNewIds, setPendingRewardNewIds] = useState<string[]>([]);
-  const [pendingMixingRetry, setPendingMixingRetry] = useState(false);
-  const [mixingPromptOverride, setMixingPromptOverride] = useState<string | undefined>();
-  const [guestInterludeText, setGuestInterludeText] = useState<string | undefined>();
-  const [currentGuestRewards, setCurrentGuestRewards] = useState<JournalReward[]>([]);
-  const [currentGuestDrinkLabel, setCurrentGuestDrinkLabel] = useState<string | undefined>();
-  const [currentGuestChallenges, setCurrentGuestChallenges] = useState<string[]>([]);
-  const [currentDayRecords, setCurrentDayRecords] = useState<DailyGuestRecord[]>([]);
-  const [journalHistory, setJournalHistory] = useState<DailySummary[]>([]);
-  const [pendingDaySummary, setPendingDaySummary] = useState<DailySummary | null>(null);
-  const [pendingGuestReflection, setPendingGuestReflection] = useState<GuestReflectionState | null>(null);
-  const [currentGuestTranscript, setCurrentGuestTranscript] = useState<GuestTranscriptEntry[]>([]);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
+  const [isChatEntryEnabled, setIsChatEntryEnabled] = useState(false);
+  const [tailChatInput, setTailChatInput] = useState('');
+  const [tailChatPlayback, setTailChatPlayback] = useState<TailChatPlaybackState>(INITIAL_TAIL_CHAT_PLAYBACK);
 
-  // Determine current guest based on new schedule system
-  const todayGuests = getGuestsForDay(currentWeek, currentDay);
-  const currentGuestData = todayGuests[currentGuestInDay - 1] || null;
-  const guestId = currentGuestData?.character_id || 'fox_uncle';
-  const guest = GUESTS.find(g => g.id === guestId) || GUESTS[0];
-  const useMixingBackground = phase === 'mixing' || phase === 'result';
   const isDebugMode = !!(import.meta as ViteImportMeta).env?.DEV;
-  const activeAudioNode = useMemo(() => {
-    if (!guest?.nodeMap) {
-      return null;
-    }
+  const {
+    game,
+    currentPhase,
+    guest,
+    currentGuestData,
+    startNodeId,
+    teachingNode,
+    mixingNode,
+    availableChatNodes,
+    canShowTranscriptButton,
+    activeAudioNode,
+    appendCurrentGuestTranscript,
+    debugJump,
+    beginGuestArrival,
+    openChat,
+    enterMixing,
+    enterObservation,
+    completeObservation,
+    rewardGuest,
+    serveDrink,
+    enterTailChatBeforeNodeEnd,
+    finishTailChatLobby,
+    openTailChatSession,
+    leaveTailChatSession,
+    sendTailChatMessage,
+    completeConversation,
+    continueReward,
+    continueResult,
+    continueReflection,
+    continueDaySummary,
+  } = useGameFlowController(
+    {
+      snapshot,
+      transition: transitionTo,
+      patchContext,
+      patchCurrentGuest,
+      patchNpcDialogue,
+      resetCurrentGuest,
+    },
+    {
+      closeTranscript: () => setIsTranscriptOpen(false),
+      playSfx,
+    },
+  );
 
-    if ((phase === 'story' || showObservation) && currentNodeId) {
-      return findNodeForGuest(currentNodeId, guest.id, guest.nodeMap);
-    }
+  const handleSave = useCallback(async (slotId: string, slotName: string) => {
+    await saveSystem.saveGame(slotId, slotName, createPersistedSnapshot(snapshot));
+  }, [snapshot]);
 
-    if (phase === 'mixing') {
-      if (mixingNode) {
-        return mixingNode;
-      }
-
-      if (teachingNode?.next_node) {
-        return findNodeForGuest(teachingNode.next_node, guest.id, guest.nodeMap);
-      }
-
-      return teachingNode || null;
-    }
-
-    return null;
-  }, [currentNodeId, guest, mixingNode, phase, showObservation, teachingNode]);
-
-  // Do not fall back to a character's first node when the schedule slot is empty.
-  const startNodeId = currentGuestData?.start_node || null;
-
-  const appendCurrentGuestChallenge = (challenge?: string) => {
-    const normalized = challenge?.trim();
-    if (!normalized) {
+  const handleLoad = useCallback(async (slotId: string) => {
+    const slot = await saveSystem.getSave(slotId);
+    if (!slot) {
       return;
     }
 
-    setCurrentGuestChallenges(prev => (prev.includes(normalized) ? prev : [...prev, normalized]));
-  };
-
-  const queueStoryUnlocks = useCallback((guestIdToUnlock: string, entries: StoryUnlockEntry[]) => {
-    if (entries.length === 0) {
-      return;
-    }
-
-    setPendingStoryUnlocks(prev => {
-      const existing = prev[guestIdToUnlock] || [];
-      const next = [...existing];
-
-      entries.forEach(entry => {
-        if (!next.some(item => item.chapterId === entry.chapterId)) {
-          next.push(entry);
-        }
-      });
-
-      return {
-        ...prev,
-        [guestIdToUnlock]: next,
-      };
-    });
-  }, []);
-
-  const commitPendingStoryUnlocks = useCallback(() => {
-    setUnlockedStoryChapters(prev => {
-      const next = { ...prev };
-
-      Object.entries(pendingStoryUnlocks).forEach(([guestIdToUnlock, entries]) => {
-        const existing = new Set(next[guestIdToUnlock] || []);
-        entries.forEach(entry => existing.add(entry.chapterId));
-        next[guestIdToUnlock] = [...existing];
-      });
-
-      return next;
-    });
-    setPendingStoryUnlocks({});
-  }, [pendingStoryUnlocks]);
-
-  const appendCurrentGuestTranscript = (entry: GuestTranscriptEntry) => {
-    if (!entry.text.trim()) {
-      return;
-    }
-
-    setCurrentGuestTranscript(prev => (
-      prev.some(item => item.key === entry.key) ? prev : [...prev, entry]
-    ));
-  };
-
-  const beginGuestArrival = useCallback(() => {
-    if (!startNodeId) {
-      return;
-    }
-
-    setGuestInterludeText(undefined);
-    setDiscoveredFeatures([]);
-    setCurrentGuestRewards([]);
-    setCurrentGuestDrinkLabel(undefined);
-    setCurrentGuestChallenges([]);
-    setCurrentGuestTranscript([]);
+    loadSnapshot(slot.data);
+    setIsDiaryOpen(false);
+    setIsBookOpen(false);
+    setIsSettingsOpen(false);
     setIsTranscriptOpen(false);
-    setIsSuccess(false);
-    setMixedDrinkName(undefined);
-    setIsNewRecipe(false);
-    setCurrentNodeId(startNodeId);
-    playSfx('door_bell');
-    transitionTo('story', 1500);
-  }, [playSfx, startNodeId]);
-
-  const jumpToVisit = useCallback((targetVisit: { week: number; day: number; guestInDay: number }) => {
-    transitionTo('intro', 300, () => {
-      setCurrentNodeId(null);
-      setTeachingNode(null);
-      setMixingNode(null);
-      setShowObservation(false);
-      setObservationPrompt('');
-      setObservationContinueNode(null);
-      setAvailableFeatureGroups(undefined);
-      setShowReward(false);
-      setPendingRewards([]);
-      setPendingRewardNewIds([]);
-      setPendingMixingRetry(false);
-      setMixingPromptOverride(undefined);
-      setGuestInterludeText(undefined);
-      setCurrentGuestRewards([]);
-      setCurrentGuestDrinkLabel(undefined);
-      setCurrentGuestChallenges([]);
-      setCurrentGuestTranscript([]);
-      setIsTranscriptOpen(false);
-      setDiscoveredFeatures([]);
-      setCurrentDayRecords([]);
-      setPendingDaySummary(null);
-      setPendingGuestReflection(null);
-      setIsMixing(false);
-      setIsSuccess(false);
-      setMixedDrinkName(undefined);
-      setIsNewRecipe(false);
-      setCurrentWeek(targetVisit.week);
-      setCurrentDay(targetVisit.day);
-      setCurrentGuestInDay(targetVisit.guestInDay);
-      setPendingStoryUnlocks({});
-    });
-  }, []);
-
-  const handleDebugJump = useCallback(async (week: number, day: number, guestInDay = 1) => {
-    const normalizedWeek = Math.max(1, Math.floor(week) || 1);
-    const normalizedDay = Math.min(DAYS_PER_WEEK, Math.max(1, Math.floor(day) || 1));
-    const normalizedGuestInDay = Math.max(1, Math.floor(guestInDay) || 1);
-
-    const guestsOnTargetDay = getGuestsForDay(normalizedWeek, normalizedDay);
-    const targetVisit =
-      guestsOnTargetDay.length > 0
-        ? {
-            week: normalizedWeek,
-            day: normalizedDay,
-            guestInDay: Math.min(normalizedGuestInDay, guestsOnTargetDay.length),
-            exact: true,
-          }
-        : (() => {
-            const nextVisit = findScheduledVisit(normalizedWeek, normalizedDay, 1, true);
-            return nextVisit
-              ? {
-                  ...nextVisit,
-                  exact: nextVisit.week === normalizedWeek && nextVisit.day === normalizedDay,
-                }
-              : null;
-          })();
-
-    if (!targetVisit) {
-      return '未找到可跳转的剧情日期。';
-    }
-
-    jumpToVisit(targetVisit);
-
-    if (targetVisit.exact) {
-      return `已跳转到第 ${targetVisit.week} 周 星期${['一', '二', '三', '四', '五', '六', '日'][targetVisit.day - 1]}。`;
-    }
-
-    return `指定日期没有客人，已跳转到最近的第 ${targetVisit.week} 周 星期${['一', '二', '三', '四', '五', '六', '日'][targetVisit.day - 1]}。`;
-  }, [jumpToVisit]);
-
-  const buildCurrentGuestRecord = (diaryEntry?: string): DailyGuestRecord => {
-    const notes: JournalNote[] = discoveredFeatures
-      .map(id => guest.features.find(feature => feature.id === id))
-      .filter(Boolean)
-      .map(feature => ({
-        id: feature!.id,
-        name: feature!.name,
-        desc: feature!.desc,
-      }));
-
-    return {
-      guestId: guest.id,
-      guestName: guest.name,
-      servedDrink: currentGuestDrinkLabel || (isSuccess ? mixedDrinkName || '完成了一次调配' : '未能调出合适的酒'),
-      success: isSuccess,
-      rewards: currentGuestRewards,
-      challenges: currentGuestChallenges,
-      notes,
-      diaryEntry,
-    };
-  };
+  }, [loadSnapshot]);
 
   const imagesToPreload = useMemo(() => {
-    const urls = [
-      '/assets/back_grounds/main_page.png',
-      '/assets/back_grounds/table.png',
-    ];
-    GUESTS.forEach(g => {
-      urls.push(g.image);
+    const urls = ['/assets/back_grounds/main_page.png', '/assets/back_grounds/table.png'];
+    GUESTS.forEach(item => {
+      urls.push(item.image);
     });
     return urls;
   }, []);
 
   const { imagesPreloaded } = useImagePreloader(imagesToPreload);
-
-  const transitionTo = (nextPhase: GamePhase, delay = 800, onBeforePhaseChange?: () => void) => {
-    setTransitionState('fade-out');
-    setTimeout(() => {
-      onBeforePhaseChange?.();
-      setPhase(nextPhase);
-      setTransitionState('fade-in');
-      setTimeout(() => {
-        setTransitionState('idle');
-      }, delay);
-    }, delay);
-  };
-
-  const transitionWithCleanup = (nextPhase: GamePhase, cleanup: () => void, delay = 800) => {
-    transitionTo(nextPhase, delay, cleanup);
-  };
-
-  const enterFromMenuWithBlackScreen = (enter: () => void, holdMs = 2000) => {
-    setTransitionState('fade-out');
-    window.setTimeout(() => {
-      enter();
-      setTransitionState('fade-in');
-      window.setTimeout(() => {
-        setTransitionState('idle');
-      }, 800);
-    }, holdMs);
-  };
-
-  const resetGameState = () => {
-    setCurrentWeek(1);
-    setCurrentDay(1);
-    setCurrentGuestInDay(1);
-    setCharacterProgress({});
-    setCharacterObservations({});
-    setPendingStoryUnlocks({});
-    setUnlockedStoryChapters({});
-    setDiscoveredFeatures([]);
-    setIsMixing(false);
-    setIsSuccess(false);
-    setMixedDrinkName(undefined);
-    setIsNewRecipe(false);
-    setUnlockedRecipes([]);
-    setInventory([]);
-    setIsDiaryOpen(false);
-    setIsBookOpen(false);
-    setIsSettingsOpen(false);
-    setTransitionState('idle');
-    setCurrentNodeId(null);
-    setTeachingNode(null);
-    setMixingNode(null);
-    setShowObservation(false);
-    setObservationPrompt('');
-    setObservationContinueNode(null);
-    setAvailableFeatureGroups(undefined);
-    setShowReward(false);
-    setPendingRewards([]);
-    setPendingRewardNewIds([]);
-    setPendingMixingRetry(false);
-    setMixingPromptOverride(undefined);
-    setGuestInterludeText(undefined);
-    setCurrentGuestRewards([]);
-    setCurrentGuestDrinkLabel(undefined);
-    setCurrentGuestChallenges([]);
-    setCurrentDayRecords([]);
-    setJournalHistory([]);
-    setPendingDaySummary(null);
-    setPendingGuestReflection(null);
-    setCurrentGuestTranscript([]);
-    setIsTranscriptOpen(false);
-  };
-
-  const finalizeGuestAdvance = (payload: GuestReflectionState) => {
-    setCurrentNodeId(null);
-    setTeachingNode(null);
-    setMixingNode(null);
-    setPendingMixingRetry(false);
-    setMixingPromptOverride(undefined);
-    setCurrentGuestRewards([]);
-    setCurrentGuestDrinkLabel(undefined);
-    setCurrentGuestChallenges([]);
-    setIsSuccess(false);
-    setMixedDrinkName(undefined);
-    setIsNewRecipe(false);
-    setCurrentGuestTranscript([]);
-    setIsTranscriptOpen(false);
-    if (payload.daySummary) {
-      commitPendingStoryUnlocks();
-      setPendingDaySummary(payload.daySummary);
-      setJournalHistory(prev => [...prev, payload.daySummary!]);
-      setCurrentDayRecords([]);
-    } else {
-      setCurrentDayRecords(payload.nextDayRecords);
+  const tailChatDisplayText = useMemo(() => {
+    if (snapshot.value !== 'dayLoop.guest.llmChatSession') {
+      return game.npcDialogue.lastReplyLines.length > 0
+        ? game.npcDialogue.lastReplyLines.join('\n')
+        : game.currentGuest.tailChat.entryStatusText;
     }
 
-    setGuestInterludeText(
-      payload.sameDay
-        ? '\u5c45\u9152\u5c4b\u4ecd\u706f\u706b\u901a\u660e\u3002\u4e0b\u4e00\u4f4d\u5ba2\u4eba\u5373\u5c06\u5230\u8bbf...'
-        : undefined
-    );
-    setCurrentWeek(payload.nextWeek);
-    setCurrentDay(payload.nextDay);
-    setCurrentGuestInDay(payload.nextGuestInDay);
-    transitionTo(payload.sameDay ? 'intro' : 'day_summary', 800, () => {
-      setPendingGuestReflection(null);
-    });
-  };
-
-  const handleEnterMixing = (tNode: any, mNode: any) => {
-    setPendingMixingRetry(false);
-    setMixingPromptOverride(undefined);
-    const normalizedMixingNode =
-      ((mNode?.drink_request || mNode?.on_mixing_complete || mNode?.on_mixing_fail) ? mNode : null) ||
-      (tNode?.next_node
-        ? findNodeForGuest(tNode.next_node, guest.id, guest.nodeMap!)
-        : null) ||
-      ((tNode?.drink_request || tNode?.on_mixing_complete || tNode?.on_mixing_fail) ? tNode : null) ||
-      null;
-    const normalizedTeachingNode = findTeachingNodeForMixing(guest, tNode, normalizedMixingNode || mNode);
-    const taughtRecipeId = normalizedTeachingNode?.teaching?.recipe?.id;
-    if (taughtRecipeId) {
-      setUnlockedRecipes(prev => (prev.includes(taughtRecipeId) ? prev : [...prev, taughtRecipeId]));
-    }
-    appendCurrentGuestChallenge(
-      normalizedTeachingNode?.teaching?.recipe?.name
-        ? `向${guest.name}学习「${normalizedTeachingNode.teaching.recipe.name}」`
-        : normalizedMixingNode?.drink_request?.request_text || normalizedMixingNode?.drink_request?.hint
-    );
-    setTeachingNode(normalizedTeachingNode);
-    setMixingNode(normalizedMixingNode);
-    transitionTo('mixing');
-  };
-
-  const handleEnterObservation = (trigger: { prompt: string; continue_node: string; feature_groups?: string[] }) => {
-    setObservationPrompt(trigger.prompt);
-    setObservationContinueNode(trigger.continue_node);
-    setAvailableFeatureGroups(trigger.feature_groups);
-    setShowObservation(true);
-    appendCurrentGuestChallenge(trigger.prompt);
-  };
-
-  const handleObservationComplete = (features: string[]) => {
-    const normalizedFeatures = [...new Set(features)];
-    setDiscoveredFeatures(prev => [...new Set([...prev, ...normalizedFeatures])]);
-    setCharacterObservations(prev => {
-      const existing = prev[guest.id] || [];
-      return {
-        ...prev,
-        [guest.id]: [...new Set([...existing, ...normalizedFeatures])],
-      };
-    });
-    setShowObservation(false);
-    if (observationContinueNode) {
-      setCurrentNodeId(observationContinueNode);
-    }
-    setObservationContinueNode(null);
-  };
-
-  const handleServe = (ingredients: string[]) => {
-    let success = false;
-    const activeMixingNode =
-      mixingNode ||
-      (teachingNode?.next_node ? findNodeForGuest(teachingNode.next_node, guest.id, guest.nodeMap!) : null) ||
-      ((teachingNode?.drink_request || teachingNode?.on_mixing_complete || teachingNode?.on_mixing_fail) ? teachingNode : null);
-
-    let idealFormula: string[] | null = null;
-    if (activeMixingNode?.drink_request?.preferred_drink?.formula) {
-      idealFormula = activeMixingNode.drink_request.preferred_drink.formula;
-    } else if (teachingNode?.teaching?.recipe?.formula) {
-      idealFormula = teachingNode.teaching.recipe.formula;
+    if (tailChatPlayback.stage === 'player') {
+      return tailChatPlayback.playerText;
     }
 
-    if (!idealFormula) {
-      success = true;
-    } else {
-      const expectedFormula = [...idealFormula].filter(Boolean).sort();
-      const actualFormula = [...ingredients].filter(Boolean).sort();
-      success =
-        expectedFormula.length === actualFormula.length &&
-        expectedFormula.every((id, index) => id === actualFormula[index]);
+    if (tailChatPlayback.stage === 'npc') {
+      return tailChatPlayback.npcLines[tailChatPlayback.npcIndex] || game.currentGuest.tailChat.entryStatusText;
     }
 
-    setIsSuccess(success);
-
-    const nextNodeId = resolveMixingOutcomeNode(guest, activeMixingNode, success);
-    const shouldRetryMixing = !success && !!(
-      activeMixingNode?.drink_request?.retry_on_fail ||
-      (!nextNodeId && teachingNode?.teaching)
-    );
-    setPendingMixingRetry(shouldRetryMixing);
-    setMixingPromptOverride(
-      shouldRetryMixing
-        ? '这杯还不对。再想想客人想要的味道，重新调配一次吧。'
-        : undefined
-    );
-    setCurrentNodeId(nextNodeId || null);
-
-    // Find if it matches a known recipe
-    import('./assets/recipes/recipes.json').then(recipesData => {
-      const mixedFormula = [...ingredients].filter(Boolean).sort();
-      const fallbackDrinkLabel = formatMixedDrinkLabel(ingredients);
-      const matchedRecipe = recipesData.recipes.find(r => {
-        if (!r.formula) return false;
-        const rFormula = [...r.formula].sort();
-        return rFormula.length === mixedFormula.length && rFormula.every((id, i) => id === mixedFormula[i]);
-      });
-
-      if (matchedRecipe) {
-        setMixedDrinkName(matchedRecipe.name);
-        setCurrentGuestDrinkLabel(matchedRecipe.name);
-        if (!unlockedRecipes.includes(matchedRecipe.id)) {
-          setIsNewRecipe(true);
-          setUnlockedRecipes(prev => [...prev, matchedRecipe.id]);
-        } else {
-          setIsNewRecipe(false);
-        }
-      } else {
-        setMixedDrinkName(undefined);
-        setIsNewRecipe(false);
-        setCurrentGuestDrinkLabel(fallbackDrinkLabel);
-      }
-
-      setTimeout(() => {
-        transitionTo('result', 1000);
-      }, 700);
-    });
-  };
-
-  // Initialize progress for current guest if not exists
-  useEffect(() => {
-    if (guest && characterProgress[guest.id] === undefined) {
-      setCharacterProgress(prev => ({
-        ...prev,
-        [guest.id]: 0
-      }));
-    }
-  }, [guest, characterProgress]);
+    const latestReply = game.npcDialogue.lastReplyLines[game.npcDialogue.lastReplyLines.length - 1];
+    return latestReply || game.currentGuest.tailChat.entryStatusText;
+  }, [
+    game.currentGuest.tailChat.entryStatusText,
+    game.npcDialogue.lastReplyLines,
+    snapshot.value,
+    tailChatPlayback,
+  ]);
+  const tailChatPortraitUrl = guest.expressions.dialogue || guest.image;
+  const tailChatSpeakerName =
+    snapshot.value === 'dayLoop.guest.llmChatSession' && tailChatPlayback.stage === 'player'
+      ? '我'
+      : guest.name;
 
   useEffect(() => {
-    if (phase === 'start_screen' || phase === 'main_menu' || phase === 'intro_sequence') {
-      return;
+    if (imagesPreloaded && snapshot.value === 'boot') {
+      transitionTo('startScreen');
     }
-
-    if (currentGuestData) {
-      return;
-    }
-
-    const nextVisit = findScheduledVisit(currentWeek, currentDay, currentGuestInDay, true);
-    if (!nextVisit) {
-      return;
-    }
-
-    if (
-      nextVisit.week === currentWeek &&
-      nextVisit.day === currentDay &&
-      nextVisit.guestInDay === currentGuestInDay
-    ) {
-      return;
-    }
-
-    setCurrentWeek(nextVisit.week);
-    setCurrentDay(nextVisit.day);
-    setCurrentGuestInDay(nextVisit.guestInDay);
-  }, [phase, currentWeek, currentDay, currentGuestInDay, currentGuestData]);
+  }, [imagesPreloaded, snapshot.value, transitionTo]);
 
   useEffect(() => {
-    if (phase !== 'mixing' && isMixing) {
-      setIsMixing(false);
-    }
-  }, [phase, isMixing]);
-
-  useEffect(() => {
-    const nodeId = activeAudioNode?.event_id;
+    const nodeId = activeAudioNode?.event_id || activeAudioNode?.id;
     if (nodeId) {
-      applyNodeAudio(nodeId, activeAudioNode.audio, phase);
+      applyNodeAudio(nodeId, activeAudioNode.audio, currentPhase);
       return;
     }
 
-    applyPhaseAudio(phase);
-  }, [activeAudioNode, applyNodeAudio, applyPhaseAudio, phase]);
+    applyPhaseAudio(currentPhase);
+  }, [activeAudioNode, applyNodeAudio, applyPhaseAudio, currentPhase]);
+
+  useEffect(() => {
+    if (snapshot.value !== 'dayLoop.guest.story') {
+      setIsChatEntryEnabled(false);
+    }
+  }, [snapshot.value]);
+
+  useEffect(() => {
+    if (snapshot.value !== 'dayLoop.guest.llmChatSession') {
+      setTailChatInput('');
+      setTailChatPlayback(INITIAL_TAIL_CHAT_PLAYBACK);
+    }
+  }, [snapshot.value]);
+
+  const handleChatAvailabilityChange = useCallback((canOpen: boolean) => {
+    setIsChatEntryEnabled(canOpen);
+  }, []);
+
+  const handleStoryNodeChange = useCallback((nodeId: string) => {
+    setIsChatEntryEnabled(false);
+    patchCurrentGuest({ nodeId });
+  }, [patchCurrentGuest]);
 
   const handleGlobalButtonClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement | null;
@@ -745,549 +267,335 @@ export default function App() {
     playSfx('ui_click');
   }, [playSfx]);
 
-  const handleNextGuest = () => {
-    const currentNode =
-      currentNodeId && guest.nodeMap
-        ? findNodeForGuest(currentNodeId, guest.id, guest.nodeMap)
-        : null;
-    const currentDiaryNote = currentNode?.diary_note;
-    const currentStoryUnlocks = currentNode ? normalizeStoryUnlockEntries(currentNode) : [];
-
-    if (currentStoryUnlocks.length > 0) {
-      queueStoryUnlocks(guest.id, currentStoryUnlocks);
-    }
-
-    const completedGuestRecord = buildCurrentGuestRecord(currentDiaryNote);
-    const nextDayRecords = [...currentDayRecords, completedGuestRecord];
-
-    if (isSuccess) {
-      setCharacterProgress(prev => ({
-        ...prev,
-        [guest.id]: (prev[guest.id] || 0) + 1
-      }));
-    }
-
-    const nextVisit = findScheduledVisit(currentWeek, currentDay, currentGuestInDay, false);
-    if (nextVisit) {
-      const isSameDay = nextVisit.week === currentWeek && nextVisit.day === currentDay;
-      const payload: GuestReflectionState = {
-        text: currentDiaryNote || '',
-        sameDay: isSameDay,
-        nextWeek: nextVisit.week,
-        nextDay: nextVisit.day,
-        nextGuestInDay: nextVisit.guestInDay,
-        nextDayRecords,
-        daySummary: isSameDay
-          ? null
-          : {
-              week: currentWeek,
-              day: currentDay,
-              guests: nextDayRecords,
-            },
-      };
-
-      if (currentDiaryNote) {
-        setPendingGuestReflection(payload);
-        transitionTo('guest_reflection');
-      } else {
-        finalizeGuestAdvance(payload);
-      }
-    } else {
-      let nextDay = currentDay + 1;
-      let nextWeek = currentWeek;
-      if (nextDay > DAYS_PER_WEEK) {
-        nextDay = 1;
-        nextWeek++;
-      }
-
-      const payload: GuestReflectionState = {
-        text: currentDiaryNote || '',
-        sameDay: false,
-        nextWeek,
-        nextDay,
-        nextGuestInDay: 1,
-        nextDayRecords,
-        daySummary: {
-          week: currentWeek,
-          day: currentDay,
-          guests: nextDayRecords,
-        },
-      };
-
-      if (currentDiaryNote) {
-        setPendingGuestReflection(payload);
-        transitionTo('guest_reflection');
-      } else {
-        finalizeGuestAdvance(payload);
-      }
-    }
-  };
-
-  const handleReward = (reward: any) => {
-    const rewardDetails = reward?.details
-      ? (Array.isArray(reward.details) ? reward.details : [reward.details])
-      : [];
-
-    if (rewardDetails.length > 0) {
-      const normalizedRewardDetails = rewardDetails as JournalReward[];
-      const newRewardIds = normalizedRewardDetails
-        .filter(detail => {
-          if (detail.type === 'recipe') {
-            return detail.id && !unlockedRecipes.includes(detail.id);
-          }
-          return detail.id && !inventory.includes(detail.id);
-        })
-        .map(detail => detail.id);
-
-      setPendingRewards(normalizedRewardDetails);
-      setPendingRewardNewIds(newRewardIds);
-      setShowReward(true);
-      setCurrentGuestRewards(prev => [...prev, ...normalizedRewardDetails]);
-      setInventory(prev => {
-        const nextInventory = [...prev];
-        for (const detail of normalizedRewardDetails) {
-          if ((detail.type === 'ingredient' || detail.type === 'item') && detail.id && !nextInventory.includes(detail.id)) {
-            nextInventory.push(detail.id);
-          }
-        }
-        return nextInventory;
-      });
-      setUnlockedRecipes(prev => {
-        const nextRecipes = [...prev];
-        for (const detail of normalizedRewardDetails) {
-          if (detail.type === 'recipe' && detail.id && !nextRecipes.includes(detail.id)) {
-            nextRecipes.push(detail.id);
-          }
-        }
-        return nextRecipes;
-      });
-    }
-  };
-
-  const handleSave = async (slotId: string, slotName: string) => {
-    const saveData: SaveData = {
-      phase,
-      currentWeek,
-      currentDay,
-      currentGuestInDay,
-      characterProgress,
-      characterObservations,
-      discoveredFeatures,
-      unlockedRecipes,
-      inventory,
-      isSuccess,
-      currentNodeId,
-      showObservation,
-      observationPrompt,
-      observationContinueNode,
-      availableFeatureGroups,
-      isMixing,
-      mixedDrinkName,
-      teachingNodeId: teachingNode?.event_id || null,
-      mixingNodeId: mixingNode?.event_id || null,
-      currentGuestRewards,
-      currentGuestDrinkLabel,
-      currentGuestChallenges,
-      currentDayRecords,
-      journalHistory,
-      pendingStoryUnlocks,
-      unlockedStoryChapters,
-      pendingDaySummary,
-      pendingGuestReflection,
-      currentGuestTranscript,
-    };
-    await saveSystem.saveGame(slotId, slotName, saveData);
-  };
-
-  const handleLoad = async (slotId: string) => {
-    const slot = await saveSystem.getSave(slotId);
-    if (!slot) return;
-
-    const d = slot.data;
-    setPhase(d.phase);
-    setCurrentWeek(d.currentWeek);
-    setCurrentDay(d.currentDay);
-    setCurrentGuestInDay(d.currentGuestInDay);
-    setCharacterProgress(d.characterProgress);
-    setCharacterObservations(d.characterObservations || {});
-    setDiscoveredFeatures(d.discoveredFeatures || []);
-    setUnlockedRecipes(d.unlockedRecipes || []);
-    setInventory(d.inventory || []);
-    setIsSuccess(d.isSuccess || false);
-    setCurrentNodeId(d.currentNodeId);
-    setShowObservation(d.showObservation || false);
-    setObservationPrompt(d.observationPrompt || '');
-    setObservationContinueNode(d.observationContinueNode || null);
-    setAvailableFeatureGroups(d.availableFeatureGroups);
-    setIsMixing(d.isMixing || false);
-    setMixedDrinkName(d.mixedDrinkName);
-    setPendingMixingRetry(false);
-    setMixingPromptOverride(undefined);
-    setCurrentGuestRewards(d.currentGuestRewards || []);
-    setCurrentGuestDrinkLabel(d.currentGuestDrinkLabel);
-    setCurrentGuestChallenges(d.currentGuestChallenges || []);
-    setCurrentDayRecords(d.currentDayRecords || []);
-    setJournalHistory(d.journalHistory || []);
-    setPendingStoryUnlocks(d.pendingStoryUnlocks || {});
-    setUnlockedStoryChapters(d.unlockedStoryChapters || {});
-    setPendingDaySummary(d.pendingDaySummary || null);
-    setPendingGuestReflection(d.pendingGuestReflection || null);
-    setCurrentGuestTranscript(d.currentGuestTranscript || []);
+  const handleNewGame = useCallback(() => {
+    reset('introSequence');
+    setIsDiaryOpen(false);
+    setIsBookOpen(false);
+    setIsSettingsOpen(false);
     setIsTranscriptOpen(false);
-    // Re-derive teachingNode and mixingNode from nodeMap
-    if (d.teachingNodeId) {
-      setTeachingNode(findNodeForGuest(d.teachingNodeId, guest.id, guest.nodeMap!));
-    }
-    if (d.mixingNodeId) {
-      setMixingNode(findNodeForGuest(d.mixingNodeId, guest.id, guest.nodeMap!));
-    }
-  };
+  }, [reset]);
 
-  const handleMenuLoad = async (slotId: string) => {
-    const slot = await saveSystem.getSave(slotId);
-    if (!slot) return;
+  const handleReturnToMenu = useCallback(() => {
+    reset('mainMenu');
+    setIsDiaryOpen(false);
+    setIsBookOpen(false);
+    setIsSettingsOpen(false);
+    setIsTranscriptOpen(false);
+  }, [reset]);
 
-    enterFromMenuWithBlackScreen(() => {
-      void handleLoad(slotId);
+  const handleTailChatSend = useCallback(async () => {
+    const result = await sendTailChatMessage(tailChatInput);
+    if (result.ok) {
+      setTailChatInput('');
+      setTailChatPlayback({
+        stage: 'player',
+        playerText: result.playerText,
+        npcLines: result.replyLines,
+        npcIndex: 0,
+      });
+    }
+  }, [sendTailChatMessage, tailChatInput]);
+
+  const handleTailChatAdvance = useCallback(() => {
+    setTailChatPlayback(previous => {
+      if (previous.stage === 'player') {
+        return {
+          stage: 'npc',
+          playerText: previous.playerText,
+          npcLines: previous.npcLines,
+          npcIndex: 0,
+        };
+      }
+
+      if (previous.stage === 'npc' && previous.npcIndex < previous.npcLines.length - 1) {
+        return {
+          ...previous,
+          npcIndex: previous.npcIndex + 1,
+        };
+      }
+
+      return INITIAL_TAIL_CHAT_PLAYBACK;
     });
-  };
+  }, []);
 
   if (!imagesPreloaded) {
     return (
-      <div className="min-h-screen bg-[#000] text-gray-200 font-mono flex items-center justify-center p-4 pixel-art-container">
+      <div className="min-h-screen bg-[#000] text-gray-200 font-sans flex items-center justify-center p-4 pixel-art-container">
         <div className="text-2xl animate-pulse">加载中...</div>
       </div>
     );
   }
 
-  const canShowTranscriptButton =
-    currentGuestTranscript.length > 0 &&
-    (phase === 'story' || phase === 'mixing' || phase === 'result' || showObservation);
-
   return (
     <div
-      className="min-h-screen bg-[#000] text-gray-200 font-mono flex items-center justify-center p-4 pixel-art-container relative"
+      className="min-h-screen bg-[#000] text-gray-200 font-sans flex items-center justify-center p-4 pixel-art-container relative"
       onClickCapture={handleGlobalButtonClickCapture}
     >
+      {snapshot.value === 'startScreen' && <StartScreen onStart={() => transitionTo('mainMenu')} />}
 
-      {/* Transition Overlay */}
-      <div
-        className={`absolute inset-0 bg-black z-[100] pointer-events-none transition-opacity duration-[800ms] ${
-          transitionState === 'fade-out' ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
-
-      {/* Start Screen - rendered outside main container */}
-      {phase === 'start_screen' && (
-        <StartScreen onStart={() => setPhase('main_menu')} />
-      )}
-
-      {/* Main Menu - rendered outside main container */}
-      {phase === 'main_menu' && (
+      {snapshot.value === 'mainMenu' && (
         <MainMenu
-          onNewGame={() => {
-            enterFromMenuWithBlackScreen(() => {
-              resetGameState();
-              setPhase('intro_sequence');
-            });
-          }}
-          onLoadGame={async (slotId) => {
-            await handleMenuLoad(slotId);
-          }}
-          onBack={() => transitionTo('start_screen')}
+          onNewGame={handleNewGame}
+          onLoadGame={handleLoad}
+          onBack={() => transitionTo('startScreen')}
         />
       )}
 
-      {/* Intro Sequence - rendered outside main container */}
-      {phase === 'intro_sequence' && (
-        <IntroSequence onComplete={() => transitionTo('intro')} />
+      {snapshot.value === 'introSequence' && (
+        <IntroSequence onComplete={() => transitionTo('dayLoop.intro')} />
       )}
 
-      {/* Main Game Container */}
-      <div className="w-full max-w-7xl h-[850px] border-8 border-[#3e2723] rounded-lg shadow-2xl flex relative overflow-hidden bg-[#1c1411]">
+      {snapshot.value !== 'boot' &&
+        snapshot.value !== 'startScreen' &&
+        snapshot.value !== 'mainMenu' &&
+        snapshot.value !== 'introSequence' && (
+          <div className="relative h-[86vh] w-[92vw] max-w-7xl overflow-hidden border-[6px] border-[#1a110c] bg-[#120c09] shadow-[0_0_60px_rgba(0,0,0,0.78)] pixel-rounded-lg">
+            <div className="absolute inset-0 bg-table" />
+            <div className="absolute inset-0 bg-black/35" />
 
-        {/* Background Layers for Cross-fading */}
-        <div
-          className={`absolute inset-0 transition-opacity duration-1000 opacity-100 bg-center bg-cover bg-no-repeat ${useMixingBackground ? '' : 'bg-table'}`}
-          style={useMixingBackground ? { backgroundImage: "url('/assets/back_grounds/mixing.png')" } : undefined}
-        />
+            <div className="absolute left-6 top-6 z-20 rounded-lg border-4 border-[#1a110c] bg-[#2c1e16]/90 px-4 py-3 text-[#e8dcc4] shadow-lg">
+              <div className="text-xs tracking-[0.22em] text-[#b18859]">SHIFT</div>
+              <div className="mt-1 text-lg font-bold">
+                第 {game.week} 周 · {weekdayLabel(game.day)}
+              </div>
+              <div className="mt-1 text-sm text-[#cbb89a]">
+                {currentGuestData ? `今夜第 ${game.guestInDay} 位客人` : '等待下一位客人'}
+              </div>
+            </div>
 
-        {/* UI Overlay (Time, Settings, Book) */}
-        {phase !== 'start_screen' && phase !== 'main_menu' && (
-          <>
-            {/* Time Indicator */}
-            {phase !== 'mixing' && (
-              <div className="absolute top-4 left-4 z-40 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] px-6 py-3 shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded flex items-center gap-4">
-                <div className="text-[#3e2723] font-bold text-2xl">
-                  第{['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][currentWeek - 1]}周
+            <div className="absolute right-6 top-6 z-20 flex items-center gap-3">
+              {snapshot.value === 'dayLoop.guest.story' && availableChatNodes.length > 0 && isChatEntryEnabled && (
+                <button
+                  type="button"
+                  onClick={openChat}
+                  className="pixel-button px-4 py-3 text-sm font-bold"
+                >
+                  闲聊
+                </button>
+              )}
+
+              {canShowTranscriptButton && (
+                <button
+                  type="button"
+                  onClick={() => setIsTranscriptOpen(open => !open)}
+                  className="pixel-button flex items-center gap-2 px-4 py-3 text-sm font-bold"
+                >
+                  {isTranscriptOpen ? <X size={16} /> : <ScrollText size={16} />}
+                  对话记录
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsDiaryOpen(true)}
+                className="pixel-button flex items-center gap-2 px-4 py-3 text-sm font-bold"
+              >
+                <BookOpen size={16} />
+                手记
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsBookOpen(true)}
+                className="pixel-button flex items-center gap-2 px-4 py-3 text-sm font-bold"
+              >
+                <Book size={16} />
+                图鉴
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(true)}
+                className="pixel-button flex items-center gap-2 px-4 py-3 text-sm font-bold"
+              >
+                <Settings size={16} />
+                设置
+              </button>
+            </div>
+
+            {isTranscriptOpen && (
+              <aside className="absolute right-6 top-24 z-20 h-[60vh] w-[22rem] overflow-hidden border-[6px] border-[#1a110c] bg-[#2c1e16]/95 text-[#e8dcc4] shadow-[0_0_30px_rgba(0,0,0,0.5)] pixel-rounded-lg">
+                <div className="border-b-4 border-[#1a110c] bg-[#1c1411] px-4 py-3">
+                  <div className="text-xs tracking-[0.25em] text-[#b18859]">TRANSCRIPT</div>
+                  <div className="mt-1 text-lg font-bold">对话记录</div>
                 </div>
-                <div className="w-1 h-8 bg-[#8b5a2b] rounded-full"></div>
-                <div className="text-[#3e2723] font-bold text-2xl">
-                  星期{['一', '二', '三', '四', '五', '六', '日'][currentDay - 1]}
+                <div className="h-[calc(60vh-74px)] overflow-y-auto px-4 py-4 custom-scrollbar">
+                  <div className="space-y-3">
+                    {game.currentGuest.transcript.map(entry => (
+                      <article
+                        key={entry.key}
+                        className="rounded-lg border-2 border-[#4a3f35] bg-[#1a110c] px-3 py-3"
+                      >
+                        <div className="text-xs tracking-[0.2em] text-[#b18859]">{entry.speaker}</div>
+                        <div className="mt-2 whitespace-pre-wrap leading-7 text-[#e8dcc4]">
+                          {entry.text}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+            )}
+
+            {snapshot.value === 'dayLoop.intro' && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center px-8">
+                <div className="w-full max-w-3xl border-[6px] border-[#1a110c] bg-[#2c1e16]/92 p-8 text-center text-[#e8dcc4] shadow-[0_0_60px_rgba(0,0,0,0.72)] pixel-rounded-lg animate-scale-up">
+                  <BellRing size={48} className="mx-auto text-[#efc786]" />
+                  <div className="mt-6 text-sm tracking-[0.35em] text-[#b18859]">ARRIVAL</div>
+                  <h2 className="mt-3 text-4xl font-bold">
+                    {game.guestInterludeText ? '门外的脚步声再度响起' : '门铃轻轻一响'}
+                  </h2>
+                  <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-[#d7c7a9]">
+                    {game.guestInterludeText ||
+                      (currentGuestData
+                        ? `${guest.name} 即将推门而入。整理好吧台，准备迎接这一位新的来客。`
+                        : '今晚暂时没有新的来客。')}
+                  </p>
+                  {currentGuestData && (
+                    <button
+                      type="button"
+                      onClick={beginGuestArrival}
+                      className="pixel-button mt-8 px-10 py-3 text-xl font-bold"
+                    >
+                      迎接客人
+                    </button>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* Top Right Buttons */}
-            <div className="absolute top-4 right-4 z-40 flex gap-4">
-              {canShowTranscriptButton && (
-                <button
-                  onClick={() => setIsTranscriptOpen(prev => !prev)}
-                  className="w-16 h-16 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded flex items-center justify-center hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all group"
-                  title={isTranscriptOpen ? '收起已过剧情' : '查看已过剧情'}
-                >
-                  <ScrollText size={30} className="text-[#3e2723] pixel-icon" />
-                </button>
-              )}
-              <button
-                onClick={() => setIsDiaryOpen(true)}
-                className="w-16 h-16 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded flex items-center justify-center hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all group"
-                title="日记"
-              >
-                <BookOpen size={32} className="text-[#3e2723] pixel-icon" />
-              </button>
-              <button
-                onClick={() => setIsBookOpen(true)}
-                className="w-16 h-16 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded flex items-center justify-center hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all group"
-                title="图鉴与配方"
-              >
-                <Book size={32} className="text-[#3e2723] pixel-icon" />
-              </button>
-              <button
-                onClick={() => setIsSettingsOpen(true)}
-                className="w-16 h-16 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded flex items-center justify-center hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all group"
-                title="系统设置"
-              >
-                <Settings size={32} className="text-[#3e2723] pixel-icon" />
-              </button>
-            </div>
-          </>
+            {(snapshot.value === 'dayLoop.guest.story' ||
+              snapshot.value === 'dayLoop.guest.chat' ||
+              snapshot.value === 'dayLoop.guest.reward') && currentGuestData && (
+              <StoryPhase
+                guest={guest}
+                startNodeId={startNodeId || game.currentGuest.nodeId || ''}
+                currentNodeId={game.currentGuest.nodeId}
+                chatAvailabilityEnabled={snapshot.value === 'dayLoop.guest.story'}
+                discoveredFeatures={game.currentGuest.discoveredFeatures}
+                onNodeChange={handleStoryNodeChange}
+                onEnterMixing={enterMixing}
+                onEnterObservation={enterObservation}
+                onEnterTailChatBeforeNextNode={enterTailChatBeforeNodeEnd}
+                onComplete={completeConversation}
+                onReward={rewardGuest}
+                showReward={snapshot.value === 'dayLoop.guest.reward'}
+                onChatAvailabilityChange={handleChatAvailabilityChange}
+                onTranscriptLine={appendCurrentGuestTranscript}
+              />
+            )}
+
+            {snapshot.value === 'dayLoop.guest.observation' && (
+              <ObservationPhase
+                guest={guest}
+                availableGroups={game.currentGuest.observationRequest?.featureGroups}
+                prompt={game.currentGuest.observationRequest?.prompt}
+                onComplete={completeObservation}
+              />
+            )}
+
+            {snapshot.value === 'dayLoop.guest.mixing' && (
+              <MixingPhase
+                guest={guest}
+                onServe={serveDrink}
+                inventory={game.inventory}
+                promptOverride={game.currentGuest.mixingPromptOverride}
+                mixingRequest={mixingNode?.drink_request}
+                teaching={teachingNode?.teaching}
+              />
+            )}
+
+            {snapshot.value === 'dayLoop.guest.result' && (
+              <ResultPhase
+                isSuccess={game.currentGuest.isSuccess}
+                mixedDrinkName={game.currentGuest.mixedDrinkName}
+                isNewRecipe={game.currentGuest.isNewRecipe}
+                onContinue={continueResult}
+              />
+            )}
+
+            {snapshot.value === 'dayLoop.guest.reward' && (
+              <RewardPhase
+                rewards={game.currentGuest.pendingRewards}
+                newRewardIds={game.currentGuest.pendingRewardNewIds}
+                onContinue={continueReward}
+              />
+            )}
+
+            {(snapshot.value === 'dayLoop.guest.llmChatLobby' ||
+              snapshot.value === 'dayLoop.guest.llmChatSession') && (
+              <TailChatPhase
+                mode={snapshot.value === 'dayLoop.guest.llmChatSession' ? 'session' : 'lobby'}
+                guestName={guest.name}
+                speakerName={tailChatSpeakerName}
+                portraitUrl={tailChatPortraitUrl}
+                turnsUsed={game.currentGuest.tailChat.turnsUsed}
+                maxTurns={game.currentGuest.tailChat.maxTurns}
+                displayText={tailChatDisplayText}
+                inputValue={tailChatInput}
+                sessionStage={tailChatPlayback.stage}
+                isRequesting={game.npcDialogue.status === 'requesting'}
+                errorMessage={game.npcDialogue.errorMessage}
+                onInputChange={setTailChatInput}
+                onStartChat={openTailChatSession}
+                onBackToLobby={leaveTailChatSession}
+                onAdvance={handleTailChatAdvance}
+                onSend={handleTailChatSend}
+                onFinish={finishTailChatLobby}
+              />
+            )}
+
+            {snapshot.value === 'dayLoop.guest.reflection' && game.pendingGuestReflection && (
+              <GuestReflectionOverlay
+                reflection={game.pendingGuestReflection}
+                onContinue={continueReflection}
+              />
+            )}
+
+            {snapshot.value === 'dayLoop.daySummary' && game.pendingDaySummary && (
+              <DaySummaryPhase
+                summary={game.pendingDaySummary}
+                onContinue={continueDaySummary}
+              />
+            )}
+          </div>
         )}
 
-        {/* Main Content Area */}
-        <div className="relative w-full h-full">
-
-          {canShowTranscriptButton && isTranscriptOpen && (
-            <div className="absolute right-4 top-24 z-50 w-[420px] overflow-hidden border-4 border-[#8b5a2b] bg-[#140e0bd9] text-[#f3e5c5] shadow-[0_18px_40px_rgba(0,0,0,0.45)] backdrop-blur-sm pixel-rounded">
-              <div className="flex items-center justify-between border-b-4 border-[#5a3a1a] bg-[#2c1e16]/90 px-4 py-3">
-                <div>
-                  <div className="text-xs tracking-[0.28em] text-[#c79c63]">TRANSCRIPT</div>
-                  <div className="mt-1 text-lg font-bold text-[#f6e7c7]">当前客人已过剧情</div>
-                </div>
-                <button
-                  onClick={() => setIsTranscriptOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center border-2 border-[#8b5a2b] bg-[#4a3123] text-[#f6e7c7] hover:bg-[#5d3d2b] transition-colors pixel-rounded"
-                  title="关闭剧情记录"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="max-h-[360px] overflow-y-auto px-4 py-4 custom-scrollbar">
-                <div className="space-y-3">
-                  {currentGuestTranscript.map(entry => (
-                    <div key={entry.key} className="bg-black/15 px-3 py-3 pixel-rounded">
-                      <div className="text-xs tracking-[0.18em] text-[#c79c63]">{entry.speaker}</div>
-                      <p className="mt-2 whitespace-pre-wrap leading-relaxed text-[#f3e5c5]">{entry.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {phase === 'day_summary' && pendingDaySummary && (
-            <DaySummaryPhase
-              summary={pendingDaySummary}
-              onContinue={() => {
-                transitionWithCleanup('intro', () => {
-                  setPendingDaySummary(null);
-                });
-              }}
-            />
-          )}
-
-          {phase === 'guest_reflection' && pendingGuestReflection && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/90">
-              <div className="max-w-4xl px-10 text-center animate-fade-in">
-                <div className="text-sm tracking-[0.35em] text-[#8b7355]">INNER NOTE</div>
-                <p className="mt-8 text-3xl leading-relaxed text-[#e8dcc4] italic">
-                  {pendingGuestReflection.text}
-                </p>
-                <button
-                  type="button"
-                  onClick={beginGuestArrival}
-                  className="hidden"
-                >
-                  准备接待
-                </button>
-                <button
-                  onClick={() => finalizeGuestAdvance(pendingGuestReflection)}
-                  className="mt-10 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
-                >
-                  记下这一页
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Guest Interlude */}
-          {phase === 'intro' && guestInterludeText && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-              <div className="text-center animate-fade-in max-w-3xl px-8">
-                <h2 className="text-4xl font-bold text-amber-200 mb-6">
-                  {'\u534a\u6b65\u4eba\u95f4\uff0c\u4f59\u5149\u5f7c\u5cb8\u3002'}
-                </h2>
-                <p className="text-2xl text-amber-100 mb-10 leading-relaxed">
-                  {guestInterludeText}
-                </p>
-                <button
-                  onClick={() => setGuestInterludeText(undefined)}
-                  className="px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
-                >
-                  {'\u7ee7\u7eed\u8425\u4e1a'}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Intro Phase */}
-          {phase === 'intro' && currentGuestData && startNodeId && !guestInterludeText && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/80">
-              <div className="text-center animate-fade-in">
-                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full bg-[radial-gradient(circle,rgba(230,184,125,0.18)_0%,rgba(230,184,125,0.08)_45%,rgba(230,184,125,0)_72%)]">
-                  <BellRing size={84} className="animate-shake text-amber-200 drop-shadow-[0_0_24px_rgba(251,191,36,0.55)]" />
-                </div>
-                <p className="hidden">
-                  门铃轻响
-                </p>
-                <p className="mt-8 text-xl tracking-[0.35em] text-amber-100/80">
-                  门铃轻响
-                </p>
-                <button
-                  type="button"
-                  onClick={beginGuestArrival}
-                  className="mt-10 px-8 py-3 bg-[#e6b87d] border-4 border-[#8b5a2b] border-b-8 border-b-[#5a3a1a] shadow-[inset_-4px_-4px_0px_0px_rgba(0,0,0,0.15),inset_4px_4px_0px_0px_rgba(255,255,255,0.4),0_4px_0_0_#5a3a1a] pixel-rounded text-[#3e2723] font-bold hover:bg-[#fcd3a1] hover:scale-105 active:scale-95 transition-all"
-                >
-                  准备接待
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Story Phase */}
-          {phase === 'story' && currentGuestData && startNodeId && !showObservation && (
-            <StoryPhase
-              guest={guest}
-              startNodeId={startNodeId}
-              currentNodeId={currentNodeId}
-              discoveredFeatures={discoveredFeatures}
-              onNodeChange={setCurrentNodeId}
-              onEnterMixing={handleEnterMixing}
-              onEnterObservation={handleEnterObservation}
-              onComplete={handleNextGuest}
-              onReward={handleReward}
-              showReward={showReward}
-              onTranscriptLine={appendCurrentGuestTranscript}
-            />
-          )}
-
-          {/* Observation Phase (triggered by nodes) */}
-          {showObservation && (
-            <ObservationPhase
-              guest={guest}
-              availableGroups={availableFeatureGroups}
-              prompt={observationPrompt}
-              onComplete={handleObservationComplete}
-            />
-          )}
-
-          {/* Mixing Phase */}
-          {phase === 'mixing' && currentGuestData && (
-            <MixingPhase
-              guest={guest}
-              onServe={handleServe}
-              isMixing={isMixing}
-              setIsMixing={setIsMixing}
-              inventory={inventory}
-              promptOverride={mixingPromptOverride}
-              startAtServe={pendingMixingRetry}
-              mixingRequest={mixingNode?.drink_request}
-              teaching={teachingNode?.teaching}
-            />
-          )}
-
-          {/* Mixing Animation Overlay */}
-          {phase === 'mixing' && isMixing && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-50 animate-fade-in bg-black/80 backdrop-blur-sm">
-              <div className="text-8xl animate-shake mb-8">🍸</div>
-              <div className="text-3xl font-bold text-amber-200 animate-pulse">调配中...</div>
-            </div>
-          )}
-
-          {/* Result Phase (Cocktail Display) */}
-          {phase === 'result' && (
-            <ResultPhase
-              isSuccess={isSuccess}
-              mixedDrinkName={mixedDrinkName}
-              isNewRecipe={isNewRecipe}
-              onContinue={() => {
-                if (pendingMixingRetry) {
-                  transitionTo('mixing');
-                } else if (currentNodeId) {
-                  transitionTo('story');
-                } else {
-                  handleNextGuest();
-                }
-              }}
-            />
-          )}
-
-          {/* Reward Phase */}
-          {showReward && pendingRewards.length > 0 && (
-            <RewardPhase
-              rewards={pendingRewards}
-              newRewardIds={pendingRewardNewIds}
-              onContinue={() => {
-                setShowReward(false);
-                setPendingRewards([]);
-                setPendingRewardNewIds([]);
-              }}
-            />
-          )}
-
-        </div>
-      </div>
-
-      {/* Modals - rendered outside main container to cover full viewport */}
       {isDiaryOpen && (
         <Diary
           guest={guest}
-          discoveredFeatures={discoveredFeatures}
-          journalHistory={journalHistory}
-          currentWeek={currentWeek}
-          currentDay={currentDay}
+          discoveredFeatures={game.currentGuest.discoveredFeatures}
+          journalHistory={game.journalHistory}
+          currentWeek={game.week}
+          currentDay={game.day}
           onClose={() => setIsDiaryOpen(false)}
         />
       )}
+
       {isBookOpen && (
         <BookModal
           onClose={() => setIsBookOpen(false)}
-          characterProgress={characterProgress}
-          characterObservations={characterObservations}
-          unlockedStoryChapters={unlockedStoryChapters}
-          inventory={inventory}
-          unlockedRecipes={unlockedRecipes}
+          characterProgress={game.characterProgress}
+          characterObservations={game.characterObservations}
+          unlockedStoryChapters={game.unlockedStoryChapters}
+          inventory={game.inventory}
+          unlockedRecipes={game.unlockedRecipes}
         />
       )}
-      {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} onReturnToMenu={() => {
-        transitionWithCleanup('main_menu', () => {
-          setIsSettingsOpen(false);
-        });
-      }} onSave={handleSave} onLoad={handleLoad} currentPhase={phase} currentWeek={currentWeek} currentDay={currentDay} enableDebugTools={isDebugMode} onDebugJump={async (week, day, guestInDay) => {
-        const message = await handleDebugJump(week, day, guestInDay);
-        setIsSettingsOpen(false);
-        return message;
-      }} />}
+
+      {isSettingsOpen && (
+        <SettingsModal
+          onClose={() => setIsSettingsOpen(false)}
+          onReturnToMenu={handleReturnToMenu}
+          onSave={handleSave}
+          onLoad={handleLoad}
+          onDebugJump={isDebugMode ? debugJump : undefined}
+          enableDebugTools={isDebugMode}
+          currentPhase={currentPhase}
+          currentWeek={game.week}
+          currentDay={game.day}
+        />
+      )}
     </div>
   );
 }

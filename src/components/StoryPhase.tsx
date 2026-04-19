@@ -1,41 +1,130 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import type { CharacterReward, NodePlayerOption, NodePresentation, ObservationTriggerSource, ScriptFlowStep } from '../data/content/types';
+import type { Guest, CharacterNode } from '../data/gameData';
+import type { GuestTranscriptEntry } from '../state/gameState';
 import PixelDialogueBox from './PixelDialogueBox';
-import { Guest, findNodeForGuest } from '../data/gameData';
+import { findNodeForGuest } from '../data/gameData';
 
-interface ObservationTrigger {
-  prompt: string;
-  continue_node: string;
-  feature_groups?: string[];
-}
-
-interface ScriptFlowItem {
+interface DialogueLine {
   type: 'env' | 'npc' | 'inner';
-  content: string;
+  text: string;
 }
 
-interface NodePresentation {
-  portrait?: 'show' | 'hide' | 'keep';
-  expression?: string;
-  speaker?: 'npc' | 'system' | 'player';
+interface MixingTransition {
+  teachingNode: CharacterNode | null;
+  mixingNode: CharacterNode;
+}
+
+type CompleteObservationTrigger = Required<Pick<ObservationTriggerSource, 'prompt' | 'continue_node'>> & {
+  feature_groups?: string[];
+};
+
+function buildScriptFlowLines(scriptFlow: ScriptFlowStep[] | undefined): DialogueLine[] {
+  if (!Array.isArray(scriptFlow)) {
+    return [];
+  }
+
+  return scriptFlow.flatMap(item => {
+    if (item.type !== 'env' && item.type !== 'npc' && item.type !== 'inner') {
+      return [];
+    }
+
+    const lines = Array.isArray(item.content) ? item.content : [item.content];
+    return lines
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(text => ({
+        type: item.type,
+        text,
+      }));
+  });
+}
+
+function buildAmbientLines(node: CharacterNode): DialogueLine[] {
+  const atmosphereLines = Array.isArray(node.atmosphere_lines)
+    ? node.atmosphere_lines
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(text => ({ type: 'env' as const, text }))
+    : [];
+
+  const contentLines = Array.isArray(node.content)
+    ? node.content
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(text => ({ type: 'npc' as const, text }))
+    : [];
+
+  return [...atmosphereLines, ...contentLines];
+}
+
+function buildNodeDialogueLines(node: CharacterNode): DialogueLine[] {
+  const scriptLines = buildScriptFlowLines(node.script_flow);
+  if (scriptLines.length > 0) {
+    return scriptLines;
+  }
+
+  return buildAmbientLines(node);
+}
+
+function getOptionBranchType(option: NodePlayerOption) {
+  return option.branchType ?? option.branch_type ?? null;
+}
+
+function getOptionLabel(option: NodePlayerOption) {
+  return option.option || option.text;
+}
+
+function buildOptionReply(option: NodePlayerOption) {
+  const rawText = getOptionLabel(option).replace(/^[「」]+|[「」]+$/g, '');
+  return `「${rawText}」`;
+}
+
+function buildOptionLines(option: NodePlayerOption): DialogueLine[] {
+  return buildScriptFlowLines(option.script_flow);
+}
+
+function hasCompleteObservationTrigger(
+  trigger: ObservationTriggerSource | undefined,
+): trigger is CompleteObservationTrigger {
+  return !!trigger?.prompt && !!trigger.continue_node;
 }
 
 interface Props {
   guest: Guest;
   startNodeId: string;
   currentNodeId: string | null;
+  chatAvailabilityEnabled?: boolean;
   discoveredFeatures: string[];
   onNodeChange: (nodeId: string) => void;
-  onEnterMixing: (teachingNode: any, mixingNode: any) => void;
-  onEnterObservation: (trigger: ObservationTrigger) => void;
+  onEnterMixing: (teachingNode: CharacterNode | null, mixingNode: CharacterNode) => void;
+  onEnterObservation: (trigger: CompleteObservationTrigger) => void;
+  onEnterTailChatBeforeNextNode?: (node: CharacterNode) => void;
   onComplete: () => void;
-  onReward: (reward: any) => void;
+  onReward: (reward: CharacterReward) => void;
   showReward?: boolean;
-  onTranscriptLine: (entry: { key: string; speaker: string; text: string }) => void;
+  onChatAvailabilityChange?: (canOpen: boolean) => void;
+  onTranscriptLine: (entry: GuestTranscriptEntry) => void;
 }
 
-export default function StoryPhase({ guest, startNodeId, currentNodeId, discoveredFeatures, onNodeChange, onEnterMixing, onEnterObservation, onComplete, onReward, showReward, onTranscriptLine }: Props) {
+export default function StoryPhase({
+  guest,
+  startNodeId,
+  currentNodeId,
+  chatAvailabilityEnabled = false,
+  discoveredFeatures,
+  onNodeChange,
+  onEnterMixing,
+  onEnterObservation,
+  onEnterTailChatBeforeNextNode,
+  onComplete,
+  onReward,
+  showReward,
+  onChatAvailabilityChange,
+  onTranscriptLine,
+}: Props) {
   const [sentences, setSentences] = useState<string[]>([]);
-  const [sentenceTypes, setSentenceTypes] = useState<ScriptFlowItem['type'][]>([]);
+  const [sentenceTypes, setSentenceTypes] = useState<DialogueLine['type'][]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
   const [pendingNextNode, setPendingNextNode] = useState<string | null>(null);
@@ -44,11 +133,12 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
   const [rewardShownNodeId, setRewardShownNodeId] = useState<string | null>(null);
   const [portraitVisible, setPortraitVisible] = useState(false);
   const [portraitExpression, setPortraitExpression] = useState('dialogue');
+  const [isDialogueTyping, setIsDialogueTyping] = useState(false);
   const emittedTranscriptKeysRef = useRef<Set<string>>(new Set());
 
   const activeNodeId = currentNodeId;
-  const currentNode = activeNodeId ? findNodeForGuest(activeNodeId, guest.id, guest.nodeMap!) : null;
-  const currentPresentation = (currentNode?.presentation || {}) as NodePresentation;
+  const currentNode = activeNodeId ? findNodeForGuest(activeNodeId, guest.id, guest.nodeMap) : null;
+  const currentPresentation: NodePresentation = currentNode?.presentation || {};
 
   useEffect(() => {
     setPortraitVisible(false);
@@ -66,30 +156,9 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
       return;
     }
 
-    const combined: string[] = [];
-    const combinedTypes: ScriptFlowItem['type'][] = [];
-
-    if (currentNode.script_flow) {
-      for (const item of currentNode.script_flow) {
-        if (item.type === 'env' || item.type === 'npc' || item.type === 'inner') {
-          const lines = Array.isArray(item.content) ? item.content : [item.content || ''];
-          for (const line of lines) {
-            if (line.trim()) {
-              combined.push(line);
-              combinedTypes.push(item.type);
-            }
-          }
-        }
-      }
-    } else {
-      if (currentNode.atmosphere_lines) combined.push(...currentNode.atmosphere_lines);
-      const content = currentNode.content || currentNode.npc_talking;
-      if (content) combined.push(...content);
-      if (currentNode.player_inner) combined.push(...currentNode.player_inner);
-      if (currentNode.bartender_reflection) combined.push(currentNode.bartender_reflection);
-      if (currentNode.bartender_inner) combined.push(currentNode.bartender_inner);
-      for (let i = 0; i < combined.length; i++) combinedTypes.push('npc');
-    }
+    const dialogueLines = buildNodeDialogueLines(currentNode);
+    const combined = dialogueLines.map(line => line.text);
+    const combinedTypes = dialogueLines.map(line => line.type);
 
     setSentences(combined.length > 0 ? combined : ["..."]);
     setSentenceTypes(combinedTypes);
@@ -122,7 +191,13 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
     }
   }, [currentIdx, portraitVisible, sentenceTypes]);
 
-  const resolveSpeakerName = useCallback((sentenceType: ScriptFlowItem['type']) => {
+  useEffect(() => {
+    return () => {
+      onChatAvailabilityChange?.(false);
+    };
+  }, [onChatAvailabilityChange]);
+
+  const resolveSpeakerName = useCallback((sentenceType: DialogueLine['type']) => {
     if (sentenceType === 'env') {
       return '\u7cfb\u7edf';
     }
@@ -157,7 +232,7 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
     });
   }, [activeNodeId, currentIdx, onTranscriptLine, resolveSpeakerName, sentenceTypes, sentences]);
 
-  const isMixingNode = useCallback((node: any) => {
+  const isMixingNode = useCallback((node: CharacterNode | null | undefined) => {
     if (!node) {
       return false;
     }
@@ -172,9 +247,9 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
     );
   }, []);
 
-  const resolveMixingTransition = useCallback((sourceNode: any, targetNodeId?: string | null) => {
+  const resolveMixingTransition = useCallback((sourceNode: CharacterNode | null, targetNodeId?: string | null): MixingTransition | null => {
     const targetNode = targetNodeId
-      ? findNodeForGuest(targetNodeId, guest.id, guest.nodeMap!)
+      ? findNodeForGuest(targetNodeId, guest.id, guest.nodeMap)
       : null;
 
     if (targetNode && isMixingNode(targetNode)) {
@@ -185,7 +260,7 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
     }
 
     if (sourceNode?.teaching && sourceNode?.next_node) {
-      const nextNode = findNodeForGuest(sourceNode.next_node, guest.id, guest.nodeMap!);
+      const nextNode = findNodeForGuest(sourceNode.next_node, guest.id, guest.nodeMap);
       if (isMixingNode(nextNode)) {
         return {
           teachingNode: sourceNode,
@@ -216,6 +291,16 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
     if (pendingNextNode) {
       const next = pendingNextNode;
       setPendingNextNode(null);
+
+      if (
+        currentNode?.llm_chat?.entry_mode === 'before_next_node' &&
+        currentNode.next_node &&
+        next === currentNode.next_node
+      ) {
+        onEnterTailChatBeforeNextNode?.(currentNode);
+        return;
+      }
+
       enterNodeOrMixing(next);
       return;
     }
@@ -226,14 +311,14 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
       return;
     }
 
-    if (currentNode?.trigger_observation) {
+    if (hasCompleteObservationTrigger(currentNode?.trigger_observation)) {
       onEnterObservation(currentNode.trigger_observation);
       return;
     }
 
     if (currentNode?.player_options && currentNode.player_options.length > 0) {
       const hasChoiceOptions = currentNode.player_options.some(
-        (opt: any) => (opt.branchType || opt.branch_type) === 'choice'
+        opt => getOptionBranchType(opt) === 'choice'
       );
 
       if (hasChoiceOptions) {
@@ -246,12 +331,63 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
       } else {
         setShowOptions(true);
       }
+    } else if (
+      currentNode?.llm_chat?.entry_mode === 'before_next_node' &&
+      currentNode.next_node
+    ) {
+      onEnterTailChatBeforeNextNode?.(currentNode);
     } else if (currentNode?.next_node) {
       enterNodeOrMixing(currentNode.next_node);
     } else {
       onComplete();
     }
-  }, [completedOptions, currentNode, enterNodeOrMixing, onComplete, onEnterMixing, onEnterObservation, pendingNextNode, resolveMixingTransition]);
+  }, [
+    completedOptions,
+    currentNode,
+    enterNodeOrMixing,
+    onComplete,
+    onEnterMixing,
+    onEnterObservation,
+    onEnterTailChatBeforeNextNode,
+    pendingNextNode,
+    resolveMixingTransition,
+  ]);
+
+  useEffect(() => {
+    const hasChoiceStep = Array.isArray(currentNode?.player_options) && currentNode.player_options.length > 0;
+    const hasObservationExit = hasCompleteObservationTrigger(currentNode?.trigger_observation);
+    const hasMixingExit = !!resolveMixingTransition(currentNode, currentNode?.next_node);
+    const canOpenChat = Boolean(
+      chatAvailabilityEnabled &&
+      currentNode &&
+      sentences.length > 0 &&
+      currentIdx === sentences.length - 1 &&
+      !isDialogueTyping &&
+      !showOptions &&
+      !pendingNextNode &&
+      !rewardPending &&
+      !showReward &&
+      !hasChoiceStep &&
+      !hasObservationExit &&
+      !hasMixingExit &&
+      !currentNode.reward &&
+      currentNode.next_node,
+    );
+
+    onChatAvailabilityChange?.(canOpenChat);
+  }, [
+    chatAvailabilityEnabled,
+    currentIdx,
+    currentNode,
+    isDialogueTyping,
+    onChatAvailabilityChange,
+    pendingNextNode,
+    resolveMixingTransition,
+    rewardPending,
+    sentences.length,
+    showOptions,
+    showReward,
+  ]);
 
   useEffect(() => {
     if (!rewardPending || showReward) {
@@ -282,61 +418,22 @@ export default function StoryPhase({ guest, startNodeId, currentNodeId, discover
 
       continueFromNodeEnd();
       return;
-
-      /*
-      if (currentNode?.player_options && currentNode.player_options.length > 0) {
-        // 检查是否有 choice 类型的选项
-        const hasChoiceOptions = currentNode.player_options.some(
-          (opt: any) => (opt.branchType || opt.branch_type) === 'choice'
-        );
-
-        if (hasChoiceOptions) {
-          // 有 choice 类型：检查是否都完成
-          const totalOptions = currentNode.player_options.length;
-          if (completedOptions.size === totalOptions && currentNode.next_node) {
-            onNodeChange(currentNode.next_node);
-          } else {
-            setShowOptions(true);
-          }
-        } else {
-          // 纯 flavor 类型：直接显示选项
-          setShowOptions(true);
-        }
-      } else if (currentNode?.next_node) {
-        onNodeChange(currentNode.next_node);
-      } else {
-        onComplete();
-      }
-      */
     }
   };
 
-  const handleOptionClick = (opt: any, idx: number) => {
-    const branchType = opt.branchType || opt.branch_type;
+  const handleOptionClick = (opt: NodePlayerOption, idx: number) => {
+    const branchType = getOptionBranchType(opt);
 
     // choice 类型：标记完成，不跳转，继续显示选项
     if (branchType === 'choice') {
       setCompletedOptions(prev => new Set([...prev, idx]));
 
       if (opt.script_flow) {
-        const optionSentences: string[] = [];
-        const optionSentenceTypes: ScriptFlowItem['type'][] = [];
-
-        for (const item of opt.script_flow) {
-          if (item.type === 'env' || item.type === 'npc' || item.type === 'inner') {
-            const lines = Array.isArray(item.content) ? item.content : [item.content || ''];
-            for (const line of lines) {
-              if (line.trim()) {
-                optionSentences.push(line);
-                optionSentenceTypes.push(item.type);
-              }
-            }
-          }
-        }
-
+        const optionLines = buildOptionLines(opt);
+        const optionSentences = optionLines.map(line => line.text);
+        const optionSentenceTypes = optionLines.map(line => line.type);
         if (optionSentences.length > 0) {
-          const rawText = (opt.text || opt.option).replace(/^[「」]+|[「」]+$/g, '');
-const playerReply = `「${rawText}」`;
+          const playerReply = buildOptionReply(opt);
           setSentences([playerReply, ...optionSentences]);
           setSentenceTypes(['inner' as const, ...optionSentenceTypes]);
           setCurrentIdx(0);
@@ -357,24 +454,11 @@ const playerReply = `「${rawText}」`;
 
     // flavor 类型（默认行为）：直接跳转
     if (opt.script_flow) {
-      const optionSentences: string[] = [];
-      const optionSentenceTypes: ScriptFlowItem['type'][] = [];
-
-      for (const item of opt.script_flow) {
-        if (item.type === 'env' || item.type === 'npc' || item.type === 'inner') {
-          const lines = Array.isArray(item.content) ? item.content : [item.content || ''];
-          for (const line of lines) {
-            if (line.trim()) {
-              optionSentences.push(line);
-              optionSentenceTypes.push(item.type);
-            }
-          }
-        }
-      }
-
+      const optionLines = buildOptionLines(opt);
+      const optionSentences = optionLines.map(line => line.text);
+      const optionSentenceTypes = optionLines.map(line => line.type);
       if (optionSentences.length > 0) {
-        const rawText = (opt.text || opt.option).replace(/^[「」]+|[「」]+$/g, '');
-const playerReply = `「${rawText}」`;
+        const playerReply = buildOptionReply(opt);
         setSentences([playerReply, ...optionSentences]);
         setSentenceTypes(['inner' as const, ...optionSentenceTypes]);
         setCurrentIdx(0);
@@ -401,11 +485,11 @@ const playerReply = `「${rawText}」`;
 
   if (!currentNode) return null;
 
-  const options = currentNode.player_options?.map((opt: any, idx: number) => {
-    const branchType = opt.branchType || opt.branch_type;
+  const options = currentNode.player_options?.map((opt, idx: number) => {
+    const branchType = getOptionBranchType(opt);
     const isChoice = branchType === 'choice';
     return {
-      label: opt.option || opt.text,
+      label: getOptionLabel(opt),
       onClick: () => handleOptionClick(opt, idx),
       disabled: (isChoice && completedOptions.has(idx)) || (opt.condition?.need_item ? !discoveredFeatures.includes(opt.condition.need_item) : false),
       disabledReason: (isChoice && completedOptions.has(idx)) ? "已选择" : (opt.condition?.locked_text || "缺少相关线索")
@@ -474,6 +558,7 @@ const playerReply = `「${rawText}」`;
         text={sentences[currentIdx] || (showOptions ? "（请选择你的回应...）" : "")}
         onNext={!showOptions ? handleNext : undefined}
         options={showOptions ? options : undefined}
+        onTypingStateChange={setIsDialogueTyping}
       />
     </div>
   );

@@ -14,7 +14,9 @@ nodes:
       - "灯光微微闪烁。"
       - "她的身影变得有些透明。"
     speaker: null
-    content: []
+    content:
+      - "「......原来我一直等的人，早就回不来了。」"
+      - "「可那首曲子......终于替他说完了。」"
     player_options: []
     next_node: null
     unlock_gallery: "the_truth"
@@ -79,7 +81,7 @@ nodes:
   - id: hidden_brother_last_words
     event_id: "yuki_hidden_brother_last_words"
     trigger_condition:
-      need_event: ["yuki_phase3_redemption"]
+      need_event: ["yuki_010_redemption_end"]
       need_time: "any"
       need_item: []
     atmosphere_lines:
@@ -98,7 +100,7 @@ nodes:
   - id: hidden_cat_return
     event_id: "yuki_hidden_cat_return"
     trigger_condition:
-      need_event: ["yuki_phase3_redemption"]
+      need_event: ["yuki_010_redemption_end"]
       need_time: "any"
       need_item: []
     atmosphere_lines:

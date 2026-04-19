@@ -4,10 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev:backend": "node local-backend.mjs",
+    "content:check": "tsx scripts/validate-content.ts",
+    "predev": "npm run content:check",
     "dev": "vite --port=3000 --host=0.0.0.0",
+    "prebuild": "npm run content:check",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
+    "prelint": "npm run content:check",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
