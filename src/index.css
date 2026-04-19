@@ -18,6 +18,8 @@
   body,
   #root {
     font-family: 'Zpix', 'DotGothic16', sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   button,
@@ -25,6 +27,13 @@
   textarea,
   select {
     font: inherit;
+  }
+
+  input,
+  textarea,
+  [contenteditable='true'] {
+    user-select: text;
+    -webkit-user-select: text;
   }
 }
 
