@@ -27,7 +27,7 @@ function extractJsonCandidate(content) {
 function fallbackPlainDialogue(content) {
   const stripped = stripCodeFence(content);
 
-  if (!stripped || stripped.length > 90) {
+  if (!stripped || stripped.length > 120) {
     return null;
   }
 
@@ -100,11 +100,11 @@ function validateNpcDialogueResponse(value) {
       )
     : null;
 
-  if (!replyLines || replyLines.length < 1 || replyLines.length > 2) {
+  if (!replyLines || replyLines.length < 1 || replyLines.length > 5) {
     return { ok: false, error: '模型返回的 replyLines 数量无效。' };
   }
 
-  if (replyLines.join('').length > 90) {
+  if (replyLines.join('').length > 120) {
     return { ok: false, error: '模型返回内容过长。' };
   }
 

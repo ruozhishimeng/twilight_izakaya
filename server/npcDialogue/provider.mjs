@@ -1,6 +1,6 @@
 const DEFAULT_BASE_URL = 'https://api.minimaxi.com';
-const DEFAULT_MODEL = 'M2-her';
-const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_MODEL = 'MiniMax-M2.5';
+const DEFAULT_TIMEOUT_MS = 20000;
 
 function normalizeBaseUrl(baseUrl) {
   return baseUrl.replace(/\/+$/, '');
@@ -13,6 +13,10 @@ function parseTimeout(rawTimeout) {
   }
 
   return timeout;
+}
+
+function stripThinkTags(content) {
+  return content.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
 }
 
 function mapMiniMaxStatusError(statusCode, statusMessage) {
@@ -59,12 +63,6 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars }) {
   }
 
   const configuredModel = process.env.MINIMAX_MODEL?.trim() || DEFAULT_MODEL;
-  if (configuredModel !== DEFAULT_MODEL) {
-    throw new MiniMaxProviderError(`当前仅支持 MiniMax 模型 ${DEFAULT_MODEL}。`, {
-      status: 500,
-      code: 'invalid_model',
-    });
-  }
 
   const baseUrl = normalizeBaseUrl(process.env.MINIMAX_BASE_URL?.trim() || DEFAULT_BASE_URL);
   const timeoutMs = parseTimeout(process.env.MINIMAX_TIMEOUT_MS);
@@ -84,7 +82,6 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars }) {
         stream: false,
         temperature: 0.5,
         top_p: 0.9,
-        max_completion_tokens: 120,
         messages,
       }),
       signal: controller.signal,
@@ -143,23 +140,25 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars }) {
     });
   }
 
-  const content = payload?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string' || !content.trim()) {
+  const rawContent = payload?.choices?.[0]?.message?.content;
+  if (typeof rawContent !== 'string' || !rawContent.trim()) {
     throw new MiniMaxProviderError('MiniMax 没有返回可用的对话内容。', {
       status: 502,
       code: 'missing_content',
     });
   }
 
+  const content = stripThinkTags(rawContent);
+
   return {
-    content: content.trim(),
+    content,
     usage: {
       provider: `minimax:${configuredModel}`,
       promptTokens: payload?.usage?.prompt_tokens,
       completionTokens: payload?.usage?.completion_tokens,
       totalTokens: payload?.usage?.total_tokens,
       promptChars,
-      completionChars: content.trim().length,
+      completionChars: content.length,
     },
   };
 }
