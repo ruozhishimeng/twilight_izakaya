@@ -2,9 +2,10 @@ import React from 'react';
 
 interface Props {
   onStart: () => void;
+  isStarting?: boolean;
 }
 
-export default function StartScreen({ onStart }: Props) {
+export default function StartScreen({ onStart, isStarting = false }: Props) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-main-page z-50">
       <div className="absolute inset-0 bg-black/60 z-0"></div>
@@ -18,9 +19,10 @@ export default function StartScreen({ onStart }: Props) {
         
         <button 
           onClick={onStart}
+          disabled={isStarting}
           className="pixel-button pixel-rounded mt-16 px-12 py-4 text-2xl font-bold hover:scale-105 active:scale-95 transition-all"
         >
-          开始游戏
+          {isStarting ? '检查中...' : '开始游戏'}
         </button>
       </div>
     </div>

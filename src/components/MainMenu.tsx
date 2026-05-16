@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Download, Info, Sparkles } from 'lucide-react';
+import { ChevronLeft, Download, Info, KeyRound, Sparkles } from 'lucide-react';
 import { saveSystem, type SaveSlot } from '../systems/SaveSystem';
 import { getMusicTagLabel } from '../systems/audioCatalog';
+import ApiSettingsPanel from './ApiSettingsPanel';
 import AudioSettingsPanel from './AudioSettingsPanel';
 import { useAudioSystem } from '../systems/audioSystem';
 
@@ -9,9 +10,11 @@ interface Props {
   onNewGame: () => void;
   onLoadGame: (slotId: string) => void;
   onBack: () => void;
+  initialMode?: MainMenuMode;
+  onInitialModeConsumed?: () => void;
 }
 
-type MenuMode = 'main' | 'load' | 'settings' | 'about';
+export type MainMenuMode = 'main' | 'load' | 'settings' | 'apiSettings' | 'about';
 type TextSpeed = 'slow' | 'normal' | 'fast';
 
 interface DisplaySettings {
@@ -82,9 +85,15 @@ function loadStoredDisplaySettings(): DisplaySettings {
   }
 }
 
-export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
+export default function MainMenu({
+  onNewGame,
+  onLoadGame,
+  onBack,
+  initialMode,
+  onInitialModeConsumed,
+}: Props) {
   const { settings: audioSettings, setSettings: setAudioSettings } = useAudioSystem();
-  const [mode, setMode] = useState<MenuMode>('main');
+  const [mode, setMode] = useState<MainMenuMode>('main');
   const [saveSlots, setSaveSlots] = useState<SaveSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -93,6 +102,15 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
   useEffect(() => {
     setDisplaySettings(loadStoredDisplaySettings());
   }, []);
+
+  useEffect(() => {
+    if (!initialMode) {
+      return;
+    }
+
+    setMode(initialMode);
+    onInitialModeConsumed?.();
+  }, [initialMode, onInitialModeConsumed]);
 
   useEffect(() => {
     if (mode === 'load') {
@@ -322,7 +340,45 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
             {renderToggle('屏幕震动效果', displaySettings.screenShake, (next) => setDisplaySettings(prev => ({ ...prev, screenShake: next })))}
           </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setMode('apiSettings')}
+          className="col-span-2 flex items-center justify-between gap-4 border-4 border-[#8b5a2b] bg-[#241914] p-5 text-left transition-all hover:bg-[#2c1e16] pixel-rounded"
+        >
+          <span className="flex items-center gap-3 text-[#f3e5c5]">
+            <KeyRound size={24} />
+            <span>
+              <span className="block text-2xl font-bold">API 设置</span>
+              <span className="mt-1 block text-sm leading-6 text-[#cbb89a]">
+                当前仅支持 MiniMax 密钥，可填写自己的 KEY 或使用作者 KEY。
+              </span>
+            </span>
+          </span>
+          <span className="text-2xl text-amber-300">&gt;</span>
+        </button>
       </div>
+    </div>
+  );
+
+  const renderApiSettingsMenu = () => (
+    <div className="animate-fade-in">
+      <button
+        onClick={() => setMode('settings')}
+        className="mb-6 inline-flex items-center gap-2 border-4 border-[#8b5a2b] bg-[#4a3f35] px-4 py-2 text-lg font-bold text-[#f3e5c5] transition-all hover:bg-[#5d4a3c] pixel-rounded"
+      >
+        <ChevronLeft size={20} />
+        返回设置
+      </button>
+
+      <div className="text-center mb-8">
+        <h2 className="text-4xl font-bold text-amber-300 tracking-[0.25em]">API 设置</h2>
+        <p className="mt-3 text-base leading-7 text-[#cbb89a]">
+          用于 NPC 尾声 AI 对话。当前版本只接入 MiniMax。
+        </p>
+      </div>
+
+      <ApiSettingsPanel />
     </div>
   );
 
@@ -382,6 +438,7 @@ export default function MainMenu({ onNewGame, onLoadGame, onBack }: Props) {
         {mode === 'main' && renderMainMenu()}
         {mode === 'load' && renderLoadMenu()}
         {mode === 'settings' && renderSettingsMenu()}
+        {mode === 'apiSettings' && renderApiSettingsMenu()}
         {mode === 'about' && renderAboutMenu()}
       </div>
     </div>

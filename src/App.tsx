@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BellRing, Book, BookOpen, ScrollText, Settings, X } from 'lucide-react';
+import { BellRing, Book, BookOpen, KeyRound, ScrollText, Settings, X } from 'lucide-react';
 import BookModal from './components/BookModal';
 import DaySummaryPhase from './components/DaySummaryPhase';
 import Diary from './components/Diary';
 import IntroSequence from './components/IntroSequence';
-import MainMenu from './components/MainMenu';
+import MainMenu, { type MainMenuMode } from './components/MainMenu';
 import MixingPhase from './components/MixingPhase';
 import ObservationPhase from './components/ObservationPhase';
 import ResultPhase from './components/ResultPhase';
@@ -25,6 +25,7 @@ import {
 } from './state/gameState';
 import { saveSystem } from './systems/SaveSystem';
 import { useAudioSystem } from './systems/audioSystem';
+import { fetchApiKeyStatus, isApiKeyConfiguredForGameStart } from './services/apiSettings';
 
 type ViteImportMeta = ImportMeta & {
   env?: {
@@ -97,6 +98,50 @@ function GuestReflectionOverlay({
   );
 }
 
+function ApiKeyRequiredDialog({
+  message,
+  onOpenSettings,
+  onClose,
+}: {
+  message: string;
+  onOpenSettings: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 px-6 backdrop-blur-sm">
+      <div className="w-full max-w-xl border-[6px] border-[#1a110c] bg-[#2c1e16] p-7 text-[#e8dcc4] shadow-[0_0_60px_rgba(0,0,0,0.72)] pixel-rounded-lg animate-scale-up">
+        <div className="flex items-center gap-3 border-b-2 border-[#8b5a2b] pb-4">
+          <KeyRound size={28} className="text-amber-300" />
+          <div>
+            <div className="text-xs tracking-[0.3em] text-[#b18859]">MINIMAX</div>
+            <h2 className="mt-1 text-3xl font-bold text-amber-300">需要设置 API KEY</h2>
+          </div>
+        </div>
+        <div className="mt-5 space-y-3 text-base leading-7 text-[#d8c7a8]">
+          <p>{message}</p>
+          <p>当前对话模块仅支持 MiniMax。你可以填写自己的 KEY，也可以在设置中选择“使用作者的KEY”。</p>
+        </div>
+        <div className="mt-7 flex gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-3 text-lg font-bold text-[#e8dcc4] transition-colors hover:bg-[#5c4a3d]"
+          >
+            返回
+          </button>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="flex-1 rounded-lg border-4 border-[#1a110c] bg-[#5c8a4a] py-3 text-lg font-bold text-amber-100 transition-colors hover:bg-[#6c9a5a]"
+          >
+            进入 API 设置
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { applyNodeAudio, applyPhaseAudio, playSfx } = useAudioSystem();
   const {
@@ -114,6 +159,9 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [isChatEntryEnabled, setIsChatEntryEnabled] = useState(false);
+  const [apiKeyPromptMessage, setApiKeyPromptMessage] = useState<string | null>(null);
+  const [isCheckingApiKey, setIsCheckingApiKey] = useState(false);
+  const [mainMenuInitialMode, setMainMenuInitialMode] = useState<MainMenuMode | undefined>();
   const [tailChatInput, setTailChatInput] = useState('');
   const [tailChatPlayback, setTailChatPlayback] = useState<TailChatPlaybackState>(INITIAL_TAIL_CHAT_PLAYBACK);
 
@@ -267,13 +315,52 @@ export default function App() {
     playSfx('ui_click');
   }, [playSfx]);
 
-  const handleNewGame = useCallback(() => {
+  const verifyApiKeyBeforeStart = useCallback(async () => {
+    setIsCheckingApiKey(true);
+
+    try {
+      const status = await fetchApiKeyStatus();
+      if (isApiKeyConfiguredForGameStart(status)) {
+        return true;
+      }
+
+      setApiKeyPromptMessage('尚未配置 MiniMax API KEY。开始游戏前请先进入 API 设置。');
+      return false;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '无法读取 API KEY 状态。';
+      setApiKeyPromptMessage(`${detail} 请先进入 API 设置确认本地后端与 KEY 配置。`);
+      return false;
+    } finally {
+      setIsCheckingApiKey(false);
+    }
+  }, []);
+
+  const handleOpenApiSettingsFromPrompt = useCallback(() => {
+    setApiKeyPromptMessage(null);
+    setMainMenuInitialMode('apiSettings');
+
+    if (snapshot.value !== 'mainMenu') {
+      transitionTo('mainMenu');
+    }
+  }, [snapshot.value, transitionTo]);
+
+  const handleStartScreenStart = useCallback(async () => {
+    if (await verifyApiKeyBeforeStart()) {
+      transitionTo('mainMenu');
+    }
+  }, [transitionTo, verifyApiKeyBeforeStart]);
+
+  const handleNewGame = useCallback(async () => {
+    if (!(await verifyApiKeyBeforeStart())) {
+      return;
+    }
+
     reset('introSequence');
     setIsDiaryOpen(false);
     setIsBookOpen(false);
     setIsSettingsOpen(false);
     setIsTranscriptOpen(false);
-  }, [reset]);
+  }, [reset, verifyApiKeyBeforeStart]);
 
   const handleReturnToMenu = useCallback(() => {
     reset('mainMenu');
@@ -331,13 +418,17 @@ export default function App() {
       className="min-h-screen bg-[#000] text-gray-200 font-sans flex items-center justify-center p-4 pixel-art-container relative"
       onClickCapture={handleGlobalButtonClickCapture}
     >
-      {snapshot.value === 'startScreen' && <StartScreen onStart={() => transitionTo('mainMenu')} />}
+      {snapshot.value === 'startScreen' && (
+        <StartScreen onStart={() => void handleStartScreenStart()} isStarting={isCheckingApiKey} />
+      )}
 
       {snapshot.value === 'mainMenu' && (
         <MainMenu
           onNewGame={handleNewGame}
           onLoadGame={handleLoad}
           onBack={() => transitionTo('startScreen')}
+          initialMode={mainMenuInitialMode}
+          onInitialModeConsumed={() => setMainMenuInitialMode(undefined)}
         />
       )}
 
@@ -594,6 +685,14 @@ export default function App() {
           currentPhase={currentPhase}
           currentWeek={game.week}
           currentDay={game.day}
+        />
+      )}
+
+      {apiKeyPromptMessage && (
+        <ApiKeyRequiredDialog
+          message={apiKeyPromptMessage}
+          onOpenSettings={handleOpenApiSettingsFromPrompt}
+          onClose={() => setApiKeyPromptMessage(null)}
         />
       )}
     </div>

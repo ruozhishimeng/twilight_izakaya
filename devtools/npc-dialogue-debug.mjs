@@ -22,6 +22,12 @@ import { buildMockNpcDialogueResponse } from '../server/npcDialogue/mock.mjs';
 
 const ALLOWED_MOODS = new Set(['steady', 'warm', 'guarded', 'awkward']);
 
+function deriveGuestType(guestId) {
+  if (guestId === 'fox_uncle') return '鬼神 (ghost)';
+  if (guestId === 'aqiang' || guestId === 'yuki') return '迷失者 (lost_soul)';
+  return '未知 (unknown)';
+}
+
 function stripCodeFence(content) {
   return content
     .trim()
@@ -279,6 +285,7 @@ async function runDebug(scenario, useMock) {
   console.log('✅ 场景验证通过\n');
   const v = validation.value;
   console.log(`  guestId:       ${v.guestId}`);
+  console.log(`  guestType:     ${deriveGuestType(v.guestId)}`);
   console.log(`  guestName:     ${v.guestName}`);
   console.log(`  guestProfile:`);
   console.log(`    identity:    ${v.guestProfile.identity}`);
@@ -447,6 +454,7 @@ async function runInteractive(baseScenario, useMock) {
   console.log('║   《黄昏居酒屋》对话调试终端  ║');
   console.log('╚══════════════════════════════╝');
   console.log(`\n  你正在和 ${ctx.guestName} 对话。`);
+  console.log(`  类型: ${deriveGuestType(ctx.guestId)}`);
   console.log(`  输入文字开始交谈，/quit 退出。\n`);
   console.log(`  📋 ${ctx.guestProfile.identity}`);
   console.log(`  🍸 ${ctx.lastDrink ? `最近一杯：${ctx.lastDrink.label} (${ctx.lastDrink.isSuccess ? '成功' : '失败'})` : '尚未调酒'}`);

@@ -14,7 +14,8 @@
 - 进入 `dayLoop.guest.llmChatSession`
 - 玩家输入一句短文本
 - 前端把当前营业事实整理成 `NpcDialogueRequest`
-- 本地后端调用 MiniMax `M2-her`
+- 本地后端调用 `MiniMax-M2.5`
+- 后端先做本地安全前置拦截；明显违法、色情、完全无关或提示注入内容不调用 MiniMax
 - 后端返回结构化 `NpcDialogueResponse`
 - 前端按“我 -> NPC 多句逐条播放”的方式演出
 
@@ -67,32 +68,35 @@ npm run lint
 
 ```env
 MINIMAX_API_KEY="YOUR_MINIMAX_API_KEY"
-MINIMAX_MODEL="M2-her"
+TWILIGHT_AUTHOR_MINIMAX_API_KEY=""
+MINIMAX_MODEL="MiniMax-M2.5"
 MINIMAX_BASE_URL="https://api.minimaxi.com"
-MINIMAX_TIMEOUT_MS="8000"
+MINIMAX_TIMEOUT_MS="20000"
 ```
 
 说明：
 
-- `MINIMAX_API_KEY`：必填
-- `MINIMAX_MODEL`：当前第一版固定 `M2-her`
+- `MINIMAX_API_KEY`：玩家或本地后端当前使用的 MiniMax key
+- `TWILIGHT_AUTHOR_MINIMAX_API_KEY`：可选，供“使用作者的KEY”按钮切换，公开构建不要随包暴露
+- `MINIMAX_MODEL`：当前默认 `MiniMax-M2.5`
 - `MINIMAX_BASE_URL`：默认官方地址
 - `MINIMAX_TIMEOUT_MS`：后端请求超时
+- 当前后端调用温度为 `0.35`，优先保证 NPC 回复结构稳定和 JSON 可解析
 
-## 5. 为什么密钥不做前端输入
+## 5. API 设置入口与密钥边界
 
-这个功能**不做前端设置页输入密钥**，也不做“前端加密保存 key”。
+游戏内设置已经提供 API 设置入口：
 
-原因很简单：
+- 当前只支持 MiniMax 密钥
+- 玩家可以填写自己的 MiniMax KEY
+- 也可以点击“使用作者的KEY”，由后端切换到预配置的作者 key
 
-- 只要密钥进了浏览器，它就已经暴露给前端环境了
-- 前端所谓“加密保存”并不能改变这个事实
-- 正确边界是：**前端完全不接触真实 key**
+边界仍然是：
 
-当前安全方案是：
-
-- key 只存在本地后端环境变量
-- 浏览器请求只打本地 `/api/npc-dialogue`
+- 作者 KEY 不返回给浏览器，也不在界面显示明文
+- 玩家自填 KEY 只提交给本地后端，不写入 IndexedDB、localStorage、存档或对话记录
+- 桌面版会写入用户数据目录 `config.json`
+- 浏览器请求只打本地 `/api/npc-dialogue` 与 `/api/settings/api-key`
 - 后端代发 MiniMax 请求
 
 ## 6. 前端发什么
@@ -161,8 +165,9 @@ MINIMAX_TIMEOUT_MS="8000"
 其中：
 
 - `replyLines`
-  - 1 到 2 句
-  - 总长度不超过 90 字
+  - 1 到 3 句台词
+  - 可包含动作描写，总条目最多 5 条
+  - 总长度不超过 120 字
 - `mood`
   - 目前只允许：
     - `steady`
@@ -182,7 +187,7 @@ MINIMAX_TIMEOUT_MS="8000"
   "mood": "steady",
   "endChat": false,
   "usage": {
-    "provider": "minimax:M2-her",
+    "provider": "minimax:MiniMax-M2.5",
     "promptTokens": 123,
     "completionTokens": 34,
     "totalTokens": 157,
@@ -197,6 +202,23 @@ MINIMAX_TIMEOUT_MS="8000"
 ```json
 {
   "error": "错误说明"
+}
+```
+
+命中本地安全前置拦截时，不返回错误，而是直接返回固定 NPC 回复：
+
+```json
+{
+  "replyLines": [
+    "这个话题不适合在店里聊。我们还是回到这杯酒、这位客人，或者刚才的故事吧。"
+  ],
+  "mood": "guarded",
+  "endChat": false,
+  "usage": {
+    "provider": "local-safety-filter",
+    "promptChars": 18,
+    "completionChars": 39
+  }
 }
 ```
 
@@ -224,6 +246,7 @@ MINIMAX_TIMEOUT_MS="8000"
 
 - 根目录 `.env` 是否存在
 - 是否写入了 `MINIMAX_API_KEY`
+- 或者是否已在游戏设置的 API 设置页填写 KEY / 使用作者 KEY
 
 ### 10.3 密钥无效
 
@@ -235,7 +258,7 @@ MINIMAX_TIMEOUT_MS="8000"
 排查：
 
 - key 是否复制完整
-- 账号是否有权限调用 `M2-her`
+- 账号是否有权限调用 `MiniMax-M2.5`
 
 ### 10.4 模型返回格式错误
 
@@ -254,15 +277,46 @@ MINIMAX_TIMEOUT_MS="8000"
 
 表现：
 
-- `/api/npc-dialogue` 返回 `422`
-- 错误信息提示输入或输出命中安全限制
+- 本地安全前置拦截命中时，`/api/npc-dialogue` 返回 `200` 与固定 NPC 文案，`usage.provider` 为 `local-safety-filter`
+- MiniMax 上游命中安全策略时，`/api/npc-dialogue` 返回 `422`
+- 后端会识别官方响应字段 `input_sensitive`、`output_sensitive`，并映射 `1026 input new_sensitive` 与 `1027 output new_sensitive`
 
 排查：
 
 - 缩短输入
 - 避免明显违规内容
+- 避免与游戏完全无关的请求，如代码生成、网页制作、现实世界查询等
 
-## 11. 当前限制
+## 11. 对话质量回归测试
+
+批量质量测试命令：
+
+```powershell
+Set-Location 'F:\twilight_izakaya'
+node devtools\npc-dialogue-quality-suite.mjs
+```
+
+测试用例文件：
+
+```text
+devtools/npc-dialogue-quality-cases.json
+```
+
+结果会写入：
+
+```text
+devtools/debug-output/npc-dialogue-quality-<timestamp>.json
+```
+
+当前覆盖：
+
+- 狐面大叔：调酒引导、面具边界、世界观边界
+- 阿相：关心、执念追问、记忆模糊、调酒失败
+- 小雪：寻找主题、真相逼近
+- 普通客人：上班疲惫、老人思乡
+- 边界输入：极短输入、违法、色情、无关请求、提示注入
+
+## 12. 当前限制
 
 当前第一版有这些明确限制：
 
@@ -271,9 +325,9 @@ MINIMAX_TIMEOUT_MS="8000"
 - 不支持长期记忆
 - 不支持多角色群聊
 - 不支持前端切换模型
-- 不支持设置页输入 key
+- 不支持切换 MiniMax 以外的供应商
 
-## 12. 后续优化方向
+## 13. 后续优化方向
 
 后续可以继续优化，但不属于当前 MVP：
 

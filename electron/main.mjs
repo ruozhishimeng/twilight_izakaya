@@ -1,15 +1,16 @@
 import { app, BrowserWindow, dialog } from 'electron';
 import fs from 'fs';
 import path from 'path';
+import { createApiSettingsState } from '../server/apiSettings/state.mjs';
 import { startBackendServer } from '../server/backendApp.mjs';
 
 const DESKTOP_HOST = '127.0.0.1';
 const DESKTOP_PORT = 37621;
 const DEFAULT_CONFIG = {
   MINIMAX_API_KEY: '',
-  MINIMAX_MODEL: 'M2-her',
+  MINIMAX_MODEL: 'MiniMax-M2.5',
   MINIMAX_BASE_URL: 'https://api.minimaxi.com',
-  MINIMAX_TIMEOUT_MS: '8000',
+  MINIMAX_TIMEOUT_MS: '20000',
 };
 
 let mainWindow = null;
@@ -60,6 +61,19 @@ function applyDesktopConfig(config) {
   process.env.TWILIGHT_DESKTOP = 'true';
 }
 
+function persistDesktopConfig(configPath, patch) {
+  const current = fs.existsSync(configPath)
+    ? JSON.parse(fs.readFileSync(configPath, 'utf8'))
+    : {};
+  const next = {
+    ...DEFAULT_CONFIG,
+    ...current,
+    ...patch,
+  };
+
+  fs.writeFileSync(configPath, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+}
+
 async function startDesktopBackend() {
   const appRoot = app.getAppPath();
   const staticDir = path.join(appRoot, 'dist');
@@ -68,14 +82,22 @@ async function startDesktopBackend() {
     throw new Error(`未找到桌面前端构建产物：${staticDir}`);
   }
 
-  const { config } = ensureDesktopConfig();
+  const { config, configPath } = ensureDesktopConfig();
   applyDesktopConfig(config);
+  const apiSettingsState = createApiSettingsState({
+    authorApiKey:
+      process.env.TWILIGHT_AUTHOR_MINIMAX_API_KEY ||
+      process.env.AUTHOR_MINIMAX_API_KEY ||
+      '',
+    persistConfig: patch => persistDesktopConfig(configPath, patch),
+  });
 
   const backend = await startBackendServer({
     host: DESKTOP_HOST,
     port: DESKTOP_PORT,
     staticDir,
     serviceName: 'twilight-izakaya-desktop',
+    apiSettingsState,
   });
 
   backendServer = backend.server;

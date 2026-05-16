@@ -642,10 +642,10 @@ MVP 完成后至少满足：
 - 本地后端 `POST /api/npc-dialogue` 已负责：
   - 请求校验
   - 组装 MiniMax `messages`
-  - 调用 `M2-her`
+  - 调用 `MiniMax-M2.5`
   - 解析 `choices[0].message.content`
   - 校验 JSON 输出结构
-- 前端不持有 API key，也没有设置页输入框
+- 设置页已提供 API Key 入口，玩家自填 KEY 只提交给本地后端；作者 KEY 不返回前端明文
 - MiniMax key 只存在本地后端环境变量：
   - `MINIMAX_API_KEY`
   - `MINIMAX_MODEL`

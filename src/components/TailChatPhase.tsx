@@ -106,7 +106,7 @@ export default function TailChatPhase({
               onChange={event => onInputChange(event.target.value)}
               disabled={isRequesting || !canStillChat}
               maxLength={60}
-              placeholder={canStillChat ? '说点什么吧……（最多 60 字）' : '今天已经聊得够多了。'}
+              placeholder={canStillChat ? '我是这家店的调酒师...该问些什么呢' : '今天已经聊得够多了。'}
               className="h-24 w-full resize-none bg-transparent text-lg leading-8 text-[#e8dcc4] outline-none placeholder:text-[#8c7760]"
             />
             <div className="mt-3 flex items-center justify-between gap-4">

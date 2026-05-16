@@ -31,6 +31,11 @@ function mapMiniMaxStatusError(statusCode, statusMessage) {
         status: 500,
         code: 'minimax_auth_failed',
       });
+    case 1026:
+      return new MiniMaxProviderError('当前输入触发了内容安全限制。', {
+        status: 422,
+        code: 'minimax_input_blocked',
+      });
     case 1027:
       return new MiniMaxProviderError('MiniMax 返回内容触发了安全限制。', {
         status: 422,
@@ -80,7 +85,7 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars }) {
       body: JSON.stringify({
         model: configuredModel,
         stream: false,
-        temperature: 0.5,
+        temperature: 0.35,
         top_p: 0.9,
         messages,
       }),

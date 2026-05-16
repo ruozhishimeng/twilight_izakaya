@@ -1,5 +1,7 @@
 import express from 'express';
 import path from 'path';
+import { registerApiSettingsRoute } from './apiSettings/route.mjs';
+import { createApiSettingsState } from './apiSettings/state.mjs';
 import { registerNpcDialogueRoute } from './npcDialogue/route.mjs';
 
 export const DEFAULT_BACKEND_HOST = '127.0.0.1';
@@ -9,6 +11,7 @@ export function createBackendApp(options = {}) {
   const {
     staticDir = null,
     serviceName = 'twilight-izakaya-backend',
+    apiSettingsState = createApiSettingsState(),
   } = options;
 
   const app = express();
@@ -30,6 +33,7 @@ export function createBackendApp(options = {}) {
     });
   });
 
+  registerApiSettingsRoute(app, apiSettingsState);
   registerNpcDialogueRoute(app);
 
   if (staticDir) {
@@ -53,11 +57,13 @@ export function startBackendServer(options = {}) {
     port = DEFAULT_BACKEND_PORT,
     staticDir = null,
     serviceName,
+    apiSettingsState,
   } = options;
 
   const app = createBackendApp({
     staticDir,
     serviceName,
+    apiSettingsState,
   });
 
   return new Promise((resolve, reject) => {

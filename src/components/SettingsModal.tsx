@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Download, Home, Save, Trash2, Wrench, X } from 'lucide-react';
+import { ChevronLeft, Download, Home, KeyRound, Save, Trash2, Wrench, X } from 'lucide-react';
 import { GUESTS, getGuestsForDay } from '../data/gameData';
 import { saveSystem, type SaveSlot } from '../systems/SaveSystem';
 import type { GamePhase } from '../state/gameState';
+import ApiSettingsPanel from './ApiSettingsPanel';
 import AudioSettingsPanel from './AudioSettingsPanel';
 import { useAudioSystem } from '../systems/audioSystem';
 
@@ -18,7 +19,7 @@ interface Props {
   currentDay: number;
 }
 
-type ModalMode = 'main' | 'save' | 'load' | 'debug';
+type ModalMode = 'main' | 'save' | 'load' | 'api' | 'debug';
 
 const SLOT_IDS = ['slot_1', 'slot_2', 'slot_3', 'slot_4', 'slot_5', 'slot_6'];
 const WEEKDAY_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
@@ -241,6 +242,13 @@ export default function SettingsModal({
       )}
 
       <div className="border-t-4 border-[#1a110c] pt-4">
+        <button
+          onClick={() => setMode('api')}
+          className="mb-4 flex w-full items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-4 text-2xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
+        >
+          <KeyRound size={28} />
+          API 设置
+        </button>
         <AudioSettingsPanel
           settings={audioSettings}
           onChange={setAudioSettings}
@@ -426,6 +434,19 @@ export default function SettingsModal({
     </div>
   );
 
+  const renderApiSettingsPanel = () => (
+    <div className="space-y-5">
+      <ApiSettingsPanel className="rounded-lg border-[#1a110c] bg-[#2c1e16]" />
+      <button
+        onClick={() => setMode('main')}
+        className="flex w-full items-center justify-center gap-2 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-3 text-xl font-bold text-[#e8dcc4] transition-colors hover:bg-[#5c4a3d]"
+      >
+        <ChevronLeft size={24} />
+        返回
+      </button>
+    </div>
+  );
+
   const title =
     mode === 'main'
       ? '系统菜单'
@@ -433,7 +454,9 @@ export default function SettingsModal({
         ? '保存游戏'
         : mode === 'load'
           ? '读取游戏'
-          : '调试跳转';
+          : mode === 'api'
+            ? 'API 设置'
+            : '调试跳转';
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-8">
@@ -454,6 +477,7 @@ export default function SettingsModal({
           {mode === 'main' && renderMainMenu()}
           {mode === 'save' && renderSlotGrid(handleSaveClick, '保存', <Save size={24} />)}
           {mode === 'load' && renderSlotGrid(handleLoadClick, '读取', <Download size={24} />)}
+          {mode === 'api' && renderApiSettingsPanel()}
           {mode === 'debug' && renderDebugPanel()}
         </div>
       </div>
