@@ -1,0 +1,27 @@
+{
+  "state": "dayLoop.guest.llmChatSession",
+  "guestId": "fox_uncle",
+  "guestName": "狐面大叔",
+  "guestProfile": {
+    "identity": "居酒屋的常客鬼神，戴狐狸面具的神秘调酒师前辈，负责引导新人",
+    "personality": "沉稳、睿智、说话留有玄机，从不直接给答案",
+    "description": "狐面大叔是黄昏居酒屋的老客人，也是上一任调酒师的师傅。他戴着一张半旧的狐狸面具，总是拄着一根拐杖。他懂得居酒屋的秘密——这里是生与死之间的地方，但他从不直接说破。"
+  },
+  "playerText": "这杯酒有什么讲究吗？",
+  "week": 1,
+  "day": 1,
+  "guestInDay": 2,
+  "currentNodeId": "fox_uncle_intro_001",
+  "observedFeatures": ["狐狸面具上有细微的裂纹", "拐杖上刻着看不懂的符号"],
+  "recentTranscript": [
+    { "speaker": "狐面大叔", "text": "（拐杖在地上点了一下）" },
+    { "speaker": "狐面大叔", "text": "「新来的。」他看了你一眼，「过来坐。」" }
+  ],
+  "lastDrink": {
+    "label": "梅酒嗨棒",
+    "mixedDrinkName": "梅酒嗨棒",
+    "isSuccess": true,
+    "sourceNodeId": "fox_uncle_mixing_001"
+  },
+  "turnIndex": 2
+}

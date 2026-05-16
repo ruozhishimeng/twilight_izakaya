@@ -6,3 +6,21 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# ====== 开发侧文档（与正式发布无关）======
+/LLM开发需求文档.md
+/MiniMax对话模块说明.md
+/桌面封装开发计划.md
+/状态系统驱动内容规范.md
+/状态系统驱动节点模板.md
+/项目系统与迭代说明.md
+/character-relations.md
+
+# ====== Claude Code / Agent 侧 ======
+/.claude/
+
+# ====== Electron 打包产物 ======
+/release/
+
+# ====== 调试输出 ======
+/devtools/debug-output/

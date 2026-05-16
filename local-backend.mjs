@@ -1,33 +1,22 @@
 import dotenv from 'dotenv';
-import express from 'express';
-import { registerNpcDialogueRoute } from './server/npcDialogue/route.mjs';
+import {
+  DEFAULT_BACKEND_HOST,
+  DEFAULT_BACKEND_PORT,
+  startBackendServer,
+} from './server/backendApp.mjs';
 
 dotenv.config();
 
-const app = express();
-const port = Number(process.env.PORT || 3001);
-const host = process.env.HOST || '127.0.0.1';
+const port = Number(process.env.PORT || DEFAULT_BACKEND_PORT);
+const host = process.env.HOST || DEFAULT_BACKEND_HOST;
 
-app.use(express.json());
-
-app.get('/health', (_req, res) => {
-  res.json({
-    ok: true,
-    service: 'twilight-izakaya-backend',
+try {
+  await startBackendServer({
+    host,
     port,
-    time: new Date().toISOString(),
   });
-});
-
-app.get('/api/ping', (_req, res) => {
-  res.json({
-    message: 'pong',
-    service: 'twilight-izakaya-backend',
-  });
-});
-
-registerNpcDialogueRoute(app);
-
-app.listen(port, host, () => {
   console.log(`[twilight-izakaya-backend] listening on http://${host}:${port}`);
-});
+} catch (error) {
+  console.error('[twilight-izakaya-backend] failed to start:', error);
+  process.exit(1);
+}

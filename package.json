@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "electron/main.mjs",
   "scripts": {
     "dev:backend": "node local-backend.mjs",
     "content:check": "tsx scripts/validate-content.ts",
@@ -10,6 +11,8 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "prebuild": "npm run content:check",
     "build": "vite build",
+    "desktop:dev": "npm run build && electron .",
+    "desktop:pack": "npm run build && electron-builder --win portable",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "prelint": "npm run content:check",
@@ -33,9 +36,33 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.14.0",
     "autoprefixer": "^10.4.21",
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.12",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
+  },
+  "build": {
+    "appId": "com.twilightizakaya.game",
+    "productName": "黄昏居酒屋",
+    "asar": false,
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "server/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+    }
   }
 }

@@ -1,0 +1,27 @@
+{
+  "state": "dayLoop.guest.llmChatSession",
+  "guestId": "aqiang",
+  "guestName": "阿相",
+  "guestProfile": {
+    "identity": "一个在雨夜死去的年轻邮差，执念是把音乐盒送给妹妹",
+    "personality": "沉默寡言，倔强，不习惯接受帮助",
+    "description": "阿相22岁，为了给妹妹雪攒钱买生日礼物，连续送了一百六十七单外卖，在一个雨夜死于交通事故。他不知道自巳已经死了，只记得还要把音乐盒送到妹妹手里。"
+  },
+  "playerText": "抱歉，刚才那杯没调好。",
+  "week": 1,
+  "day": 3,
+  "guestInDay": 1,
+  "currentNodeId": "aqiang_001_dialogue_main",
+  "observedFeatures": ["右太阳穴的青紫撞伤"],
+  "recentTranscript": [
+    { "speaker": "阿相", "text": "......有让人想起家的酒吗。" },
+    { "speaker": "酒保", "text": "让我试试。" }
+  ],
+  "lastDrink": {
+    "label": "马丁尼",
+    "mixedDrinkName": "马丁尼",
+    "isSuccess": false,
+    "sourceNodeId": "aqiang_mixing_001"
+  },
+  "turnIndex": 2
+}
