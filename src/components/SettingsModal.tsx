@@ -195,67 +195,73 @@ export default function SettingsModal({
   };
 
   const renderMainMenu = () => (
-    <div className="space-y-6">
-      <div className="flex gap-4 pt-4">
-        <button
-          onClick={() => setMode('save')}
-          className="flex flex-1 items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-4 text-2xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
-        >
-          <Save size={28} />
-          保存游戏
-        </button>
-        <button
-          onClick={() => setMode('load')}
-          className="flex flex-1 items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-4 text-2xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
-        >
-          <Download size={28} />
-          读取游戏
-        </button>
-      </div>
+    <div className="space-y-5">
+      <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="space-y-5 rounded-lg border-4 border-[#8b5a2b] bg-[#241914] p-5">
+          <div className="border-b-2 border-[#4a3f35] pb-3">
+            <h3 className="text-2xl font-bold text-[#f3e5c5]">游戏进度</h3>
+          </div>
 
-      <div className="border-t-4 border-[#1a110c] pt-4">
-        <button
-          onClick={onReturnToMenu}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#5c3a2a] py-4 text-2xl font-bold text-amber-200 transition-colors hover:bg-[#6c4a3a]"
-        >
-          <Home size={28} />
-          返回主菜单
-        </button>
-      </div>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setMode('save')}
+              className="flex min-h-20 items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] px-3 py-4 text-xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
+            >
+              <Save size={26} />
+              保存
+            </button>
+            <button
+              onClick={() => setMode('load')}
+              className="flex min-h-20 items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] px-3 py-4 text-xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
+            >
+              <Download size={26} />
+              读取
+            </button>
+          </div>
 
-      {enableDebugTools && onDebugJump && (
-        <div className="border-t-4 border-[#1a110c] pt-4">
           <button
-            onClick={() => {
-              setDebugWeek(currentWeek);
-              setDebugDay(currentDay);
-              setDebugGuestInDay(1);
-              setMessage(null);
-              setMode('debug');
-            }}
-            className="flex w-full items-center justify-center gap-3 rounded-lg border-4 border-[#16212a] bg-[#3a4d5c] py-4 text-2xl font-bold text-[#d9ecff] transition-colors hover:bg-[#496274]"
+            onClick={onReturnToMenu}
+            className="flex w-full items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#5c3a2a] px-4 py-4 text-xl font-bold text-amber-200 transition-colors hover:bg-[#6c4a3a]"
           >
-            <Wrench size={28} />
-            调试跳转
+            <Home size={26} />
+            返回主菜单
           </button>
-        </div>
-      )}
 
-      <div className="border-t-4 border-[#1a110c] pt-4">
-        <button
-          onClick={() => setMode('api')}
-          className="mb-4 flex w-full items-center justify-center gap-3 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] py-4 text-2xl font-bold text-amber-200 transition-colors hover:bg-[#5c4a3d]"
-        >
-          <KeyRound size={28} />
-          API 设置
-        </button>
+          {enableDebugTools && onDebugJump && (
+            <button
+              onClick={() => {
+                setDebugWeek(currentWeek);
+                setDebugDay(currentDay);
+                setDebugGuestInDay(1);
+                setMessage(null);
+                setMode('debug');
+              }}
+              className="flex w-full items-center justify-center gap-3 rounded-lg border-4 border-[#16212a] bg-[#3a4d5c] px-4 py-4 text-xl font-bold text-[#d9ecff] transition-colors hover:bg-[#496274]"
+            >
+              <Wrench size={26} />
+              调试跳转
+            </button>
+          )}
+        </section>
+
         <AudioSettingsPanel
           settings={audioSettings}
           onChange={setAudioSettings}
           title="音频设置"
-          className="space-y-5 rounded-lg border-4 border-[#1a110c] bg-[#2c1e16] p-5"
+          className="h-full space-y-5 rounded-lg border-4 border-[#8b5a2b] bg-[#241914] p-5"
         />
       </div>
+
+      <button
+        onClick={() => setMode('api')}
+        className="flex w-full items-center justify-between gap-4 rounded-lg border-4 border-[#8b5a2b] bg-[#241914] p-5 text-left transition-colors hover:bg-[#2c1e16]"
+      >
+        <span className="flex items-center gap-3 text-[#f3e5c5]">
+          <KeyRound size={26} />
+          <span className="text-2xl font-bold">API 设置</span>
+        </span>
+        <span className="text-2xl text-amber-300">&gt;</span>
+      </button>
     </div>
   );
 
@@ -459,8 +465,8 @@ export default function SettingsModal({
             : '调试跳转';
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-8">
-      <div className="relative flex w-full max-w-2xl flex-col pixel-panel animate-scale-up p-8">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4 md:p-8">
+      <div className="relative flex max-h-[calc(100vh-4rem)] w-full max-w-4xl flex-col overflow-hidden pixel-panel animate-scale-up p-6 md:p-8">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-10 text-[#e8dcc4] transition-all hover:scale-110 hover:text-white"
@@ -469,11 +475,11 @@ export default function SettingsModal({
           <X size={32} />
         </button>
 
-        <h2 className="mb-8 border-b-4 border-[#1a110c] pb-4 text-center text-4xl font-bold text-amber-400">
+        <h2 className="mb-6 shrink-0 border-b-4 border-[#1a110c] pb-4 text-center text-4xl font-bold text-amber-400">
           {title}
         </h2>
 
-        <div className="flex-1">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
           {mode === 'main' && renderMainMenu()}
           {mode === 'save' && renderSlotGrid(handleSaveClick, '保存', <Save size={24} />)}
           {mode === 'load' && renderSlotGrid(handleLoadClick, '读取', <Download size={24} />)}
