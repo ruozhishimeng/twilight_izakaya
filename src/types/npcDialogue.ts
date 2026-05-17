@@ -45,7 +45,7 @@ export interface NpcDialogueUsage {
 
 export interface NpcDialogueResponse {
   replyLines: string[];
-  mood: 'steady' | 'warm' | 'guarded' | 'awkward';
+  mood: 'steady' | 'warm' | 'guarded' | 'awkward' | 'cryptic' | 'nostalgic';
   endChat: boolean;
   usage?: NpcDialogueUsage;
 }

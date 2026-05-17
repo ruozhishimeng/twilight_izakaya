@@ -20,7 +20,7 @@ import { buildMockNpcDialogueResponse } from '../server/npcDialogue/mock.mjs';
 // (route.mjs does not export these, so we keep a copy here)
 // ============================================================
 
-const ALLOWED_MOODS = new Set(['steady', 'warm', 'guarded', 'awkward']);
+const ALLOWED_MOODS = new Set(['steady', 'warm', 'guarded', 'awkward', 'cryptic', 'nostalgic']);
 
 function deriveGuestType(guestId) {
   if (guestId === 'fox_uncle') return '鬼神 (ghost)';

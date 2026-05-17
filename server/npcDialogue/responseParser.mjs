@@ -1,6 +1,6 @@
 import { MiniMaxProviderError } from './provider.mjs';
 
-const ALLOWED_MOODS = new Set(['steady', 'warm', 'guarded', 'awkward']);
+const ALLOWED_MOODS = new Set(['steady', 'warm', 'guarded', 'awkward', 'cryptic', 'nostalgic']);
 const ALTERNATE_REPLY_LINE_KEYS = ['reply', 'replyLine', 'text', 'content', 'message', 'dialogue'];
 
 function stripCodeFence(content) {
@@ -42,7 +42,7 @@ function fallbackPlainDialogue(content) {
 }
 
 function recoverMalformedJson(content) {
-  const moodMatch = content.match(/"mood"\s*:\s*"(steady|warm|guarded|awkward)"/);
+  const moodMatch = content.match(/"mood"\s*:\s*"(steady|warm|guarded|awkward|cryptic|nostalgic)"/);
   const endChatMatch = content.match(/"endChat"\s*:\s*(true|false)/);
   const replyStart = content.indexOf('"replyLines"');
 
