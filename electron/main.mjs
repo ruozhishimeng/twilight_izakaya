@@ -12,6 +12,7 @@ const DEFAULT_CONFIG = {
   MINIMAX_BASE_URL: 'https://api.minimaxi.com',
   MINIMAX_TIMEOUT_MS: '20000',
 };
+const BUNDLED_AUTHOR_KEY_FILE = path.join('electron', 'author-key.local.json');
 
 let mainWindow = null;
 let backendServer = null;
@@ -61,6 +62,22 @@ function applyDesktopConfig(config) {
   process.env.TWILIGHT_DESKTOP = 'true';
 }
 
+function readBundledAuthorApiKey(appRoot) {
+  const bundledAuthorKeyPath = path.join(appRoot, BUNDLED_AUTHOR_KEY_FILE);
+
+  if (!fs.existsSync(bundledAuthorKeyPath)) {
+    return '';
+  }
+
+  try {
+    const raw = fs.readFileSync(bundledAuthorKeyPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return typeof parsed.authorApiKey === 'string' ? parsed.authorApiKey.trim() : '';
+  } catch {
+    throw new Error('桌面封包作者 KEY 文件格式无效。');
+  }
+}
+
 function persistDesktopConfig(configPath, patch) {
   const current = fs.existsSync(configPath)
     ? JSON.parse(fs.readFileSync(configPath, 'utf8'))
@@ -84,10 +101,12 @@ async function startDesktopBackend() {
 
   const { config, configPath } = ensureDesktopConfig();
   applyDesktopConfig(config);
+  const bundledAuthorApiKey = readBundledAuthorApiKey(appRoot);
   const apiSettingsState = createApiSettingsState({
     authorApiKey:
       process.env.TWILIGHT_AUTHOR_MINIMAX_API_KEY ||
       process.env.AUTHOR_MINIMAX_API_KEY ||
+      bundledAuthorApiKey ||
       '',
     persistConfig: patch => persistDesktopConfig(configPath, patch),
   });

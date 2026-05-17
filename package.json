@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.7",
   "type": "module",
   "main": "electron/main.mjs",
   "scripts": {
@@ -13,6 +13,7 @@
     "build": "vite build",
     "desktop:dev": "npm run build && electron .",
     "desktop:pack": "npm run build && electron-builder --win portable",
+    "desktop:pack:author": "node scripts/packageDesktopWithAuthorKey.mjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "prelint": "npm run content:check",
@@ -44,6 +45,9 @@
     "vite": "^6.2.0"
   },
   "build": {
+    "directories": {
+      "output": "release"
+    },
     "appId": "com.twilightizakaya.game",
     "productName": "黄昏居酒屋",
     "asar": false,
