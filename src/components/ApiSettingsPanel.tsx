@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { KeyRound, RefreshCw, ShieldCheck, Trash2, UserRound } from 'lucide-react';
 import {
   clearMiniMaxKey,
@@ -14,6 +14,18 @@ interface Props {
   onStatusChange?: (status: ApiKeyStatus) => void;
 }
 
+interface ApiSettingsLoadingState {
+  isRefreshingStatus: boolean;
+  isSubmitting: boolean;
+}
+
+export function isAuthorKeyButtonDisabled(
+  status: ApiKeyStatus | null,
+  loadingState: ApiSettingsLoadingState,
+): boolean {
+  return loadingState.isSubmitting || status?.supportsAuthorKey === false;
+}
+
 const panelClass = 'border-4 border-[#8b5a2b] bg-[#241914] p-5 pixel-rounded';
 const labelClass = 'text-sm font-bold tracking-[0.18em] text-amber-300';
 const inputClass =
@@ -26,34 +38,51 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const statusRequestIdRef = useRef(0);
 
-  const applyStatus = (nextStatus: ApiKeyStatus) => {
+  const applyStatus = useCallback((nextStatus: ApiKeyStatus) => {
     setStatus(nextStatus);
     onStatusChange?.(nextStatus);
-  };
+  }, [onStatusChange]);
 
-  const loadStatus = async () => {
-    setIsLoading(true);
+  const loadStatus = useCallback(async () => {
+    const requestId = statusRequestIdRef.current + 1;
+    statusRequestIdRef.current = requestId;
+    setIsRefreshingStatus(true);
     setErrorMessage(null);
 
     try {
-      applyStatus(await fetchApiKeyStatus());
+      const nextStatus = await fetchApiKeyStatus();
+      if (requestId === statusRequestIdRef.current) {
+        applyStatus(nextStatus);
+      }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '无法读取 API Key 状态。');
+      if (requestId === statusRequestIdRef.current) {
+        setErrorMessage(error instanceof Error ? error.message : '无法读取 API Key 状态。');
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === statusRequestIdRef.current) {
+        setIsRefreshingStatus(false);
+      }
     }
-  };
+  }, [applyStatus]);
 
   useEffect(() => {
     void loadStatus();
-  }, []);
+  }, [loadStatus]);
 
-  const handleSaveCustomKey = async () => {
-    setIsLoading(true);
+  const beginSubmit = () => {
+    statusRequestIdRef.current += 1;
+    setIsRefreshingStatus(false);
+    setIsSubmitting(true);
     setMessage(null);
     setErrorMessage(null);
+  };
+
+  const handleSaveCustomKey = async () => {
+    beginSubmit();
 
     try {
       const nextStatus = await saveCustomMiniMaxKey(apiKeyInput);
@@ -63,14 +92,12 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '保存 MiniMax KEY 失败。');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleUseAuthorKey = async () => {
-    setIsLoading(true);
-    setMessage(null);
-    setErrorMessage(null);
+    beginSubmit();
 
     try {
       const nextStatus = await useAuthorMiniMaxKey();
@@ -80,14 +107,12 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '无法使用作者 KEY。');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleClearKey = async () => {
-    setIsLoading(true);
-    setMessage(null);
-    setErrorMessage(null);
+    beginSubmit();
 
     try {
       const nextStatus = await clearMiniMaxKey();
@@ -96,7 +121,7 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '清除 KEY 失败。');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -110,11 +135,11 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
         <button
           type="button"
           onClick={() => void loadStatus()}
-          disabled={isLoading}
+          disabled={isRefreshingStatus || isSubmitting}
           className="rounded-lg p-2 text-[#d8c7a8] transition-colors hover:bg-[#2c1e16] hover:text-amber-200 disabled:opacity-50"
           title="刷新状态"
         >
-          <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+          <RefreshCw size={20} className={isRefreshingStatus ? 'animate-spin' : ''} />
         </button>
       </div>
 
@@ -154,7 +179,7 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
         <button
           type="button"
           onClick={() => void handleSaveCustomKey()}
-          disabled={isLoading || !apiKeyInput.trim()}
+          disabled={isSubmitting || !apiKeyInput.trim()}
           className="inline-flex items-center justify-center gap-2 rounded-lg border-4 border-[#1a110c] bg-[#5c8a4a] px-4 py-3 text-base font-bold text-amber-100 transition-colors hover:bg-[#6c9a5a] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ShieldCheck size={20} />
@@ -163,7 +188,7 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
         <button
           type="button"
           onClick={() => void handleUseAuthorKey()}
-          disabled={isLoading || status?.supportsAuthorKey === false}
+          disabled={isAuthorKeyButtonDisabled(status, { isRefreshingStatus, isSubmitting })}
           className={secondaryButtonClass}
         >
           <UserRound size={20} />
@@ -172,7 +197,7 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
         <button
           type="button"
           onClick={() => void handleClearKey()}
-          disabled={isLoading || !status?.configured}
+          disabled={isSubmitting || !status?.configured}
           className={secondaryButtonClass}
         >
           <Trash2 size={20} />
