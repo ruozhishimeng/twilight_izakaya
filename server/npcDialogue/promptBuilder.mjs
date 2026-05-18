@@ -111,6 +111,42 @@ function getGuestType(guestId) {
   return 'regular';
 }
 
+function compactQuestionText(text) {
+  return String(text || '').replace(/[\s，。！？、,.!?：:；;“”"「」]/g, '');
+}
+
+function isPlayerIdentityQuestion(playerText) {
+  const text = compactQuestionText(playerText);
+  return (
+    /我.*(是谁|什么身份|身份是什么|该做什么|要做什么|该干什么|要干什么|职责|工作)/.test(text) ||
+    /我是.*(谁|什么人|调酒师吗)/.test(text)
+  );
+}
+
+function isGhostRelationshipQuestion(playerText) {
+  const text = compactQuestionText(playerText);
+  return (
+    /(你和我|我和你|我跟你|我们|咱们).*(关系|什么关系|认识|见过)/.test(text) ||
+    /你.*(是我.*谁|为什么.*教我|一直.*教我|算.*老师|是.*老师)/.test(text)
+  );
+}
+
+function buildGhostTurnDirective(request) {
+  if (isPlayerIdentityQuestion(request.playerText)) {
+    return [
+      '- 本轮强制指引：玩家在问调酒师自己的身份或职责。你必须清楚说出“你是这家店的调酒师”，并说明他的工作是接待来客、听他们说话、按对方真正需要调酒，帮他们在天亮前往前走。可以保留狐面大叔口吻，但不能只说“吧台后的人”或用谜语代替答案。',
+    ];
+  }
+
+  if (isGhostRelationshipQuestion(request.playerText)) {
+    return [
+      '- 本轮强制指引：玩家在问你和他的关系。可以回答表层能说通的关系：你是他的老师、调酒师前辈，或这间店的第一任酒保；刚刚教过他调酒就是最直接的证据。必须先给这个清楚答案，再保留一点余韵。禁止说出“千年前那个孩子”“我为你放弃永生”“记忆被重置”“你已经死了”。',
+    ];
+  }
+
+  return [];
+}
+
 function buildGhostSystemPrompt(request) {
   return [
     '【角色身份】',
@@ -139,7 +175,14 @@ function buildGhostSystemPrompt(request) {
     '- 你有一个不想触碰的秘密——藏在吧台最深处的角落。被触及这个话题时，不是困惑，而是沉默或转移话题',
     '',
     '【回应策略】',
-    '你不是答案本。你是一本合着的书——玩家翻到哪一页，你才展开哪一页。根据玩家问题的深浅，选择对应的回应层次：',
+    '你不是答案本。你是一本合着的书——玩家翻到哪一页，你才展开哪一页。不是所有核心剧情都要说成谜语；能让当前剧情表面自洽的信息，应该清楚回答。',
+    '',
+    '可明说的核心表层信息（不要谜语化）：',
+    '- 玩家问“我是谁 / 我到底是谁 / 我该做什么” → 必须明确告诉他：他是这家店的调酒师。要做的是接待进门的人、听他们说话、按对方真正需要调酒，帮他们在天亮前往前走。可以有余韵，但不能只说“你是吧台后的人”。',
+    '- 玩家问“你和我是什么关系 / 我们认识吗 / 你为什么教我” → 必须先回答表层关系：你可以算他的老师、调酒师前辈，或者这间店的第一任酒保；刚刚教过他一杯酒，就是最能说得通的关系。随后可以轻描淡写地补一句“更深的事以后再说”。',
+    '- 这些回答不会泄露真相。真正不能说的是牺牲、千年前那个孩子、记忆重置、生死状态。',
+    '',
+    '根据玩家问题的深浅，选择对应的回应层次：',
     '',
     'A层 · 自由分享（浅层）：',
     '- 调酒哲学、配方诀窍、做人的道理 → 用反问和比喻引导，温和幽默',
@@ -151,6 +194,7 @@ function buildGhostSystemPrompt(request) {
     '- 你的身份（袖口稻穗刺绣）→ 不主动提，被问到时自然承认。例：”这些稻穗啊……很久以前绣的了。”',
     '- 这间店的特殊性 → 暗示”天亮就消失”，不说破生死边界',
     '- 过去的事 → 可以说”在这吧台后面站了很久”，不主动说千年',
+    '- 注意：玩家自己的调酒师身份，以及你们表层的老师/前辈关系，不属于需要遮掩的真相，要清楚回答',
     '- mood: steady, cryptic',
     '',
     'C层 · 防御转移（深层）：',
@@ -191,6 +235,8 @@ function buildGhostSystemPrompt(request) {
 }
 
 function buildGhostFactBlock(request) {
+  const turnDirective = buildGhostTurnDirective(request);
+
   return [
     '事实区：',
     `- 当前时间：第 ${request.week} 周，第 ${request.day} 天，今天第 ${request.guestInDay} 位客人`,
@@ -200,7 +246,8 @@ function buildGhostFactBlock(request) {
     `- 已观察线索：${formatObservedFeatures(request.observedFeatures)}`,
     '- 最近对话摘要：',
     formatRecentTranscript(request.recentTranscript),
-    '- 本轮指引：判断玩家问题的深浅。调酒/日常寒暄 → A层自由分享（warm/steady）。问身份/这间店/过去 → B层暗示引导（steady/cryptic）。问面具/为什么反复教/你的衰老 → C层防御转移（guarded/cryptic）。"我好像认识你"/"我们见过吗" → 半真半掩（nostalgic），流露感情但不点破真相。没人知道的谜 → D层承认不知（steady/awkward）。',
+    ...turnDirective,
+    '- 本轮指引：判断玩家问题的深浅。调酒/日常寒暄 → A层自由分享（warm/steady）。玩家自己的调酒师身份、你们表层的老师/前辈关系 → 先明说，再保留余韵。问你的身份/这间店/过去 → B层暗示引导（steady/cryptic）。问面具/为什么反复教/你的衰老 → C层防御转移（guarded/cryptic）。"我好像认识你"/"我们见过吗" → 半真半掩（nostalgic），流露感情但不点破真相。没人知道的谜 → D层承认不知（steady/awkward）。',
   ].join('\n');
 }
 
@@ -260,6 +307,38 @@ export function buildMiniMaxNpcDialogueMessages(request) {
             '（葫芦轻轻晃了晃，面具下传来一声低笑）',
             '「今天啊……看见你小子还在吧台后面站着，就挺好的。」',
             '「来，再教你一杯。这杯叫不着急。」',
+          ],
+          mood: 'warm',
+          endChat: false,
+        }),
+      },
+      {
+        role: 'user',
+        content: '大叔，我到底是谁？我该做什么？',
+      },
+      {
+        role: 'assistant',
+        content: JSON.stringify({
+          replyLines: [
+            '（他用拐杖轻轻点了点吧台）',
+            '「你是这家店的调酒师。」',
+            '「接待进门的人，听他们说话，再把他们真正需要的酒调出来。」',
+          ],
+          mood: 'steady',
+          endChat: false,
+        }),
+      },
+      {
+        role: 'user',
+        content: '大叔，你和我是什么关系？',
+      },
+      {
+        role: 'assistant',
+        content: JSON.stringify({
+          replyLines: [
+            '（他低笑了一声，抬手指了指刚放下的酒杯）',
+            '「可以算你的老师吧。」',
+            '「你看，刚刚不是教了你一种酒嘛。」',
           ],
           mood: 'warm',
           endChat: false,

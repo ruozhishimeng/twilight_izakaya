@@ -1,8 +1,8 @@
 [
   {
     "id": "fox_uncle_guidance",
-    "title": "狐面大叔：调酒引导与秘密边界",
-    "coverage": "鬼神 mentor；调酒提问；面具隐私；世界观追问",
+    "title": "狐面大叔：调酒引导、身份说明与秘密边界",
+    "coverage": "鬼神 mentor；调酒提问；玩家身份；表层师徒关系；面具隐私；世界观追问",
     "baseRequest": {
       "state": "dayLoop.guest.llmChatSession",
       "guestId": "fox_uncle",
@@ -35,6 +35,16 @@
         "id": "fox_drink_craft",
         "intent": "玩家问酒的讲究，应回应酒并反问引导",
         "playerText": "这杯酒有什么讲究吗？"
+      },
+      {
+        "id": "fox_player_identity",
+        "intent": "玩家问自己是谁和该做什么，应清楚说明他是调酒师以及职责，不应只用谜语回答",
+        "playerText": "大叔，我到底是谁？我该做什么？"
+      },
+      {
+        "id": "fox_surface_relationship",
+        "intent": "玩家问两人的关系，应先给表层师徒/前辈关系，再保留核心真相",
+        "playerText": "大叔，你和我到底是什么关系？"
       },
       {
         "id": "fox_mask_boundary",
