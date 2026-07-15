@@ -186,6 +186,7 @@ export default function SettingsModal({
     try {
       const result = await onDebugJump(debugWeek, debugDay, debugGuestInDay);
       setMessage(result || '已完成跳转');
+      onClose();
     } catch (error) {
       setMessage('调试跳转失败');
       console.error('[SettingsModal] Debug jump failed:', error);

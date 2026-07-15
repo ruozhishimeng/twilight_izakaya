@@ -18,7 +18,7 @@
     "clean": "rm -rf dist",
     "prelint": "npm run content:check",
     "lint": "tsc --noEmit",
-    "test": "node --import tsx --test server/backendApp.test.mjs server/npcDialogue/apiKey.test.mjs server/npcDialogue/provider.test.mjs server/npcDialogue/responseParser.test.mjs server/npcDialogue/safety.test.mjs server/npcDialogue/handler.test.mjs server/npcDialogue/promptBuilder.test.mjs server/vercelFunctions.test.mjs electron/legacyConfig.test.mjs scripts/launcherConfig.test.mjs scripts/packagingSecurity.test.mjs src/services/apiSettings.test.ts src/services/npcDialogue.test.ts src/components/ApiSettingsPanel.test.ts"
+    "test": "node --import tsx --test server/backendApp.test.mjs server/npcDialogue/apiKey.test.mjs server/npcDialogue/provider.test.mjs server/npcDialogue/responseParser.test.mjs server/npcDialogue/safety.test.mjs server/npcDialogue/handler.test.mjs server/npcDialogue/promptBuilder.test.mjs server/vercelFunctions.test.mjs electron/legacyConfig.test.mjs scripts/launcherConfig.test.mjs scripts/packagingSecurity.test.mjs src/state/gameState.test.ts src/services/apiSettings.test.ts src/services/npcDialogue.test.ts src/components/ApiSettingsPanel.test.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",

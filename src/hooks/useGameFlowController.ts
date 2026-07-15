@@ -34,6 +34,7 @@ import type { NpcDialogueRequest } from '../types/npcDialogue';
 interface GameMachineController {
   snapshot: GameSnapshot;
   transition: (value: GameRootStateValue) => void;
+  debugJumpToVisit: (week: number, day: number, guestInDay: number) => void;
   patchContext: (patch: Partial<GameContext>) => void;
   patchCurrentGuest: (patch: Partial<GameContext['currentGuest']>) => void;
   patchNpcDialogue: (patch: Partial<GameContext['npcDialogue']>) => void;
@@ -65,6 +66,7 @@ export function useGameFlowController(
   const {
     snapshot,
     transition,
+    debugJumpToVisit,
     patchContext,
     patchCurrentGuest,
     patchNpcDialogue,
@@ -186,13 +188,14 @@ export function useGameFlowController(
       return '未找到可跳转的剧情日期。';
     }
 
-    jumpToVisit(targetVisit);
+    debugJumpToVisit(targetVisit.week, targetVisit.day, targetVisit.guestInDay);
+    closeTranscript();
     if (targetVisit.exact) {
       return `已跳转到第 ${targetVisit.week} 周 ${weekdayLabel(targetVisit.day)}。`;
     }
 
     return `指定日期没有客人，已跳转到最近的第 ${targetVisit.week} 周 ${weekdayLabel(targetVisit.day)}。`;
-  }, [jumpToVisit]);
+  }, [closeTranscript, debugJumpToVisit]);
 
   const finalizeGuestAdvance = useCallback((payload: GuestReflectionState) => {
     resetCurrentGuest();

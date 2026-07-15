@@ -16,6 +16,10 @@ export function useGameMachine() {
     dispatch({ type: 'TRANSITION', value });
   }, []);
 
+  const debugJumpToVisit = useCallback((week: number, day: number, guestInDay: number) => {
+    dispatch({ type: 'DEBUG_JUMP', week, day, guestInDay });
+  }, []);
+
   const reset = useCallback((value?: GameRootStateValue) => {
     dispatch({ type: 'RESET', value });
   }, []);
@@ -43,6 +47,7 @@ export function useGameMachine() {
   return {
     snapshot,
     transition,
+    debugJumpToVisit,
     reset,
     loadSnapshot,
     patchContext,

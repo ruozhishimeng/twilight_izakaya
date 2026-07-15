@@ -155,6 +155,7 @@ export interface PersistedGameSnapshot {
 
 export type GameEvent =
   | { type: 'TRANSITION'; value: GameRootStateValue }
+  | { type: 'DEBUG_JUMP'; week: number; day: number; guestInDay: number }
   | { type: 'RESET'; value?: GameRootStateValue }
   | { type: 'LOAD'; snapshot: GameSnapshot }
   | { type: 'PATCH_CONTEXT'; patch: Partial<GameContext> }
@@ -343,6 +344,23 @@ export function reduceGameEvent(snapshot: GameSnapshot, event: GameEvent): GameS
       return {
         ...snapshot,
         value: event.value,
+      };
+    case 'DEBUG_JUMP':
+      return {
+        value: 'dayLoop.intro',
+        context: {
+          ...snapshot.context,
+          week: event.week,
+          day: event.day,
+          guestInDay: event.guestInDay,
+          pendingStoryUnlocks: {},
+          currentDayRecords: [],
+          pendingDaySummary: null,
+          pendingGuestReflection: null,
+          guestInterludeText: undefined,
+          currentGuest: createEmptyCurrentGuestRuntime(),
+          npcDialogue: createInitialNpcDialogueRuntime(),
+        },
       };
     case 'RESET':
       return {

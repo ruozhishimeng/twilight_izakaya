@@ -147,6 +147,7 @@ export default function App() {
   const {
     snapshot,
     transition: transitionTo,
+    debugJumpToVisit,
     reset,
     loadSnapshot,
     patchContext,
@@ -200,6 +201,7 @@ export default function App() {
     {
       snapshot,
       transition: transitionTo,
+      debugJumpToVisit,
       patchContext,
       patchCurrentGuest,
       patchNpcDialogue,
