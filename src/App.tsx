@@ -153,6 +153,7 @@ export default function App() {
     loadSnapshot,
     patchContext,
     patchCurrentGuest,
+    applyNarrativeTransaction,
     patchNpcDialogue,
     resetCurrentGuest,
   } = useGameMachine();
@@ -179,6 +180,8 @@ export default function App() {
     availableChatNodes,
     canShowTranscriptButton,
     activeAudioNode,
+    recordNarrativeOption,
+    recordNarrativeNodeCompletion,
     appendCurrentGuestTranscript,
     debugJump,
     beginGuestArrival,
@@ -205,6 +208,7 @@ export default function App() {
       debugJumpToVisit,
       patchContext,
       patchCurrentGuest,
+      applyNarrativeTransaction,
       patchNpcDialogue,
       resetCurrentGuest,
     },
@@ -574,6 +578,8 @@ export default function App() {
                 onEnterMixing={enterMixing}
                 onEnterObservation={enterObservation}
                 onEnterTailChatBeforeNextNode={enterTailChatBeforeNodeEnd}
+                onOptionSelected={recordNarrativeOption}
+                onNodeCompleted={recordNarrativeNodeCompletion}
                 onComplete={completeConversation}
                 onReward={rewardGuest}
                 showReward={snapshot.value === 'dayLoop.guest.reward'}
@@ -677,6 +683,7 @@ export default function App() {
           unlockedStoryChapters={game.unlockedStoryChapters}
           inventory={game.inventory}
           unlockedRecipes={game.unlockedRecipes}
+          narrativeEffects={game.narrativeEffects}
         />
       )}
 

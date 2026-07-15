@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { GUESTS, chapterMatchesUnlockId, contentRegistry, getCocktailImage, getIngredientImage } from '../data/gameData';
+import {
+  getRelationshipValue,
+  type NarrativeEffectsState,
+} from '../state/narrativeEffects';
 
 interface Props {
   onClose: () => void;
@@ -9,6 +13,7 @@ interface Props {
   unlockedStoryChapters: Record<string, string[]>;
   inventory: string[];
   unlockedRecipes: string[];
+  narrativeEffects: NarrativeEffectsState;
 }
 
 type Tab = 'items' | 'recipes' | 'characters';
@@ -67,7 +72,17 @@ interface CharacterEntry {
   observedNotes: Array<{ id: string; name: string; desc: string }>;
   totalFeatures: number;
   personality: string;
+  relationshipTier: string;
   stories: CharacterStory[];
+}
+
+function describeAffection(value: number) {
+  if (value <= -40) return '疏离';
+  if (value < 0) return '戒备';
+  if (value < 20) return '初识';
+  if (value < 50) return '熟悉';
+  if (value < 80) return '信赖';
+  return '羁绊';
 }
 
 function PixelButton({
@@ -171,6 +186,7 @@ export default function BookModal({
   unlockedStoryChapters,
   inventory,
   unlockedRecipes,
+  narrativeEffects,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('items');
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -276,6 +292,9 @@ export default function BookModal({
           observedNotes,
           totalFeatures: guest.features.length,
           personality: readGuestDescription(guest),
+          relationshipTier: describeAffection(
+            getRelationshipValue(narrativeEffects, guest.id),
+          ),
           stories,
         };
       }).sort((a, b) => {
@@ -284,7 +303,7 @@ export default function BookModal({
         }
         return a.name.localeCompare(b.name, 'zh-Hans-CN');
       }),
-    [characterObservations, characterProgress, unlockedStoryChapters]
+    [characterObservations, characterProgress, narrativeEffects, unlockedStoryChapters]
   );
 
   const characterStoryDetails = useMemo(() => {
@@ -638,6 +657,11 @@ export default function BookModal({
                         <div className="mt-2 text-sm text-[#a38c66]">
                           {selectedCharacter.unlocked ? selectedCharacter.type : '尚未记录'}
                         </div>
+                        {selectedCharacter.unlocked && (
+                          <div className="mt-3 inline-flex border-2 border-[#6d5439] bg-[#2c1e16] px-3 py-1 text-sm text-[#efc786] pixel-rounded-sm">
+                            关系：{selectedCharacter.relationshipTier}
+                          </div>
+                        )}
                         <p className="mt-4 leading-7 text-[#d8c7a8]">
                           {selectedCharacter.unlocked
                             ? selectedCharacter.personality

@@ -21,7 +21,26 @@ export interface PlayerOptionCondition {
   locked_text: string;
 }
 
+export type NarrativeEffectScopeSource = 'game' | 'visit';
+
+export interface RelationshipChangeEffectSource {
+  id: string;
+  type: 'relationship.change';
+  target: 'self' | string;
+  axis?: string;
+  amount: number;
+  feedback?: string;
+}
+
+export type NarrativeEffectSource = RelationshipChangeEffectSource;
+
+export interface NarrativeEffectBlockSource {
+  effects?: NarrativeEffectSource[];
+  effect_scope?: NarrativeEffectScopeSource;
+}
+
 export interface NodePlayerOption {
+  id?: string;
   option?: string;
   text: string;
   branch_type?: 'flavor' | 'plot' | 'choice' | null;
@@ -33,6 +52,8 @@ export interface NodePlayerOption {
   impact_log?: string;
   trigger_event?: string;
   condition?: PlayerOptionCondition;
+  effects?: NarrativeEffectSource[];
+  effect_scope?: NarrativeEffectScopeSource;
 }
 
 export interface GuestPhase {
@@ -203,6 +224,7 @@ export interface CharacterNode {
   complete_teaching?: boolean;
   game_action?: TeachingGameActionSource;
   llm_chat?: NodeLlmChatSource;
+  on_complete?: NarrativeEffectBlockSource;
   [key: string]: unknown;
 }
 

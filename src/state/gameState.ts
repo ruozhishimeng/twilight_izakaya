@@ -1,5 +1,12 @@
 import type { DailyGuestRecord, DailySummary, JournalReward } from '../types/journal';
 import { assertTransitionState } from './gameTransitions';
+import {
+  applyNarrativeTransaction as applyNarrativeEffectsTransaction,
+  createInitialNarrativeEffectsState,
+  hydrateNarrativeEffectsState,
+  type NarrativeEffectsState,
+  type NarrativeTransaction,
+} from './narrativeEffects';
 
 export type GamePhase =
   | 'start_screen'
@@ -129,6 +136,7 @@ export interface GameContext {
   guestInDay: number;
   characterProgress: Record<string, number>;
   characterObservations: Record<string, string[]>;
+  narrativeEffects: NarrativeEffectsState;
   pendingStoryUnlocks: Record<string, StoryUnlockEntry[]>;
   unlockedStoryChapters: Record<string, string[]>;
   unlockedRecipes: string[];
@@ -161,9 +169,10 @@ export type GameEvent =
   | { type: 'PATCH_CONTEXT'; patch: Partial<GameContext> }
   | { type: 'PATCH_CURRENT_GUEST'; patch: Partial<CurrentGuestRuntime> }
   | { type: 'RESET_CURRENT_GUEST' }
+  | { type: 'APPLY_NARRATIVE_TRANSACTION'; transaction: NarrativeTransaction }
   | { type: 'PATCH_NPC_DIALOGUE'; patch: Partial<NpcDialogueRuntime> };
 
-export const PERSISTED_GAME_SNAPSHOT_VERSION = 3;
+export const PERSISTED_GAME_SNAPSHOT_VERSION = 4;
 
 export function isGameRootStateValue(value: unknown): value is GameRootStateValue {
   return typeof value === 'string' && GAME_ROOT_STATE_VALUES.includes(value as GameRootStateValue);
@@ -282,11 +291,18 @@ export function hydrateNpcDialogueRuntime(
   };
 }
 
-export function hydrateGameContext(context: GameContext): GameContext {
+export function hydrateGameContext(
+  context: Partial<GameContext> | null | undefined,
+): GameContext {
+  const base = createInitialGameContext();
+  const next = context || {};
+
   return {
-    ...context,
-    currentGuest: hydrateCurrentGuestRuntime(context.currentGuest),
-    npcDialogue: hydrateNpcDialogueRuntime(context.npcDialogue),
+    ...base,
+    ...next,
+    narrativeEffects: hydrateNarrativeEffectsState(next.narrativeEffects),
+    currentGuest: hydrateCurrentGuestRuntime(next.currentGuest),
+    npcDialogue: hydrateNpcDialogueRuntime(next.npcDialogue),
   };
 }
 
@@ -297,6 +313,7 @@ export function createInitialGameContext(): GameContext {
     guestInDay: 1,
     characterProgress: {},
     characterObservations: {},
+    narrativeEffects: createInitialNarrativeEffectsState(),
     pendingStoryUnlocks: {},
     unlockedStoryChapters: {},
     unlockedRecipes: [],
@@ -407,6 +424,23 @@ export function reduceGameEvent(snapshot: GameSnapshot, event: GameEvent): GameS
           npcDialogue: createInitialNpcDialogueRuntime(),
         },
       };
+    case 'APPLY_NARRATIVE_TRANSACTION': {
+      const result = applyNarrativeEffectsTransaction(
+        snapshot.context.narrativeEffects,
+        event.transaction,
+      );
+      if (!result.applied) {
+        return snapshot;
+      }
+
+      return {
+        ...snapshot,
+        context: {
+          ...snapshot.context,
+          narrativeEffects: result.nextState,
+        },
+      };
+    }
     case 'PATCH_NPC_DIALOGUE':
       return {
         ...snapshot,

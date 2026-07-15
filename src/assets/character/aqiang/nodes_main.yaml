@@ -32,18 +32,34 @@ nodes:
           - 这个人......浑身湿透了。像是从雨里直接跑进来的。
           - 他在赶什么？
     player_options:
-      - option: 「外面雨很大，要不要先擦一擦？」
+      - id: care_about_his_condition
+        option: 「外面雨很大，要不要先擦一擦？」
         text: 「外面雨很大，要不要先擦一擦？」
         branch_type: flavor
+        effects:
+          - id: care_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 3
+            feedback: 阿相注意到了你不带目的的关心。
         script_flow:
           - type: npc
             content:
               - 「不用。我很快就走。」
               - 「......送完这单就走。」
         impact_log: 关心他的状态
-      - option: 「您这是......速运员？这么晚还在跑？」
+      - id: ask_about_his_work
+        option: 「您这是......速运员？这么晚还在跑？」
         text: 「您这是......速运员？这么晚还在跑？」
         branch_type: flavor
+        effects:
+          - id: work_question_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 1
+            feedback: 阿相愿意多回答你一句。
         script_flow:
           - type: npc
             content:
@@ -79,9 +95,17 @@ nodes:
           - 「......不是快递。」
           - 「是......要亲手交给她的东西。」
     player_options:
-      - option: 「是要送给谁吗？」
+      - id: ask_about_recipient
+        option: 「是要送给谁吗？」
         text: 「是要送给谁吗？」
         branch_type: flavor
+        effects:
+          - id: recipient_question_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 2
+            feedback: 提到妹妹时，阿相对你的戒备松动了一点。
         script_flow:
           - type: npc
             content:
@@ -91,9 +115,17 @@ nodes:
             content:
               - 提到"妹妹"的时候，他的语气突然慢了下来。
         impact_log: 询问收件人
-      - option: 「导航怎么不准了？」
+      - id: ask_about_navigation
+        option: 「导航怎么不准了？」
         text: 「导航怎么不准了？」
         branch_type: flavor
+        effects:
+          - id: navigation_question_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 1
+            feedback: 阿相接受了你对异常细节的追问。
         script_flow:
           - type: npc
             content:
@@ -171,6 +203,14 @@ nodes:
           - 「......她还在等我。」
     player_options: []
     next_node: null
+    on_complete:
+      effects:
+        - id: remembered_drink_builds_affection
+          type: relationship.change
+          target: self
+          axis: affection
+          amount: 4
+          feedback: 这杯酒让阿相觉得你理解了他的执念。
     diary_note: '一个浑身湿透的速运员，胸口紧紧护着什么东西。他说"最后一单"，说"妹妹还在等"。雨那么大，愿他平安到达。'
 
   - event_id: aqiang_phase1_fail
@@ -190,6 +230,14 @@ nodes:
           - 「我得走了。」
     player_options: []
     next_node: null
+    on_complete:
+      effects:
+        - id: mismatched_drink_reduces_affection
+          type: relationship.change
+          target: self
+          axis: affection
+          amount: -1
+          feedback: 这杯酒没能真正回应阿相的请求。
     diary_note: "阿相喝完就走了。他总是很急，赶着去送那最后一单......胸口的硬物，是送给妹妹的礼物吗？"
 
   # ========================================

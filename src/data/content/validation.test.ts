@@ -7,7 +7,10 @@ import type {
   Guest,
   RecipesCatalog,
 } from './types';
-import { validateContentRegistry } from './validation';
+import {
+  validateContentRegistry,
+  validateNarrativeEffectDeclarations,
+} from './validation';
 
 const ingredientIds = ['bc01', 'm04', 'f03'];
 
@@ -216,4 +219,127 @@ test('requires complete request metadata for an explicit mixing exit', () => {
   assert.match(message, /preferred drink is missing id/);
   assert.match(message, /preferred drink is missing name/);
   assert.match(message, /preferred drink is missing a non-empty formula/);
+});
+
+test('valid option and node relationship effects pass declaration validation', () => {
+  const node: CharacterNode = {
+    event_id: 'aqiang_relationship_event',
+    player_options: [
+      {
+        id: 'show_concern',
+        text: '关心他的状态',
+        effects: [
+          {
+            id: 'affection_up',
+            type: 'relationship.change',
+            target: 'self',
+            axis: 'affection',
+            amount: 2,
+            feedback: '阿相感受到了你的关心',
+          },
+        ],
+      },
+    ],
+    on_complete: {
+      effect_scope: 'visit',
+      effects: [
+        {
+          id: 'visit_complete',
+          type: 'relationship.change',
+          target: 'aqiang',
+          amount: 1,
+        },
+      ],
+    },
+  };
+
+  assert.deepEqual(
+    validateNarrativeEffectDeclarations('aqiang', 'aqiang_relationship_event', node),
+    [],
+  );
+});
+
+test('an option effects block requires a stable and unique option id', () => {
+  const node: CharacterNode = {
+    event_id: 'unstable_options',
+    player_options: [
+      { text: '没有 ID', effects: [] },
+      { id: 'same', text: '重复一' },
+      { id: 'same', text: '重复二' },
+    ],
+  };
+
+  const errors = validateNarrativeEffectDeclarations('aqiang', 'unstable_options', node);
+  assert.ok(errors.some(error => error.includes('option 1 with effects requires a stable id')));
+  assert.ok(errors.some(error => error.includes('duplicate option id "same"')));
+});
+
+test('effect blocks reject duplicate ids, invalid relationship fields and illegal scope', () => {
+  const node = {
+    event_id: 'invalid_effects',
+    player_options: [
+      {
+        id: 'invalid_option',
+        text: '错误效果',
+        effect_scope: 'session',
+        effects: [
+          {
+            id: 'duplicate',
+            type: 'unknown.effect',
+            target: '',
+            axis: '',
+            amount: 0,
+            feedback: '',
+          },
+          {
+            id: 'duplicate',
+            type: 'relationship.change',
+            target: 'self',
+            amount: Number.POSITIVE_INFINITY,
+          },
+        ],
+      },
+    ],
+  } as unknown as CharacterNode;
+
+  const errors = validateNarrativeEffectDeclarations('aqiang', 'invalid_effects', node);
+  const message = errors.join('\n');
+  assert.match(message, /effect_scope must be "game" or "visit"/);
+  assert.match(message, /duplicate effect id "duplicate"/);
+  assert.match(message, /type must be "relationship\.change"/);
+  assert.match(message, /target must be a non-empty string/);
+  assert.match(message, /axis must be a non-empty string/);
+  assert.match(message, /amount must be a finite non-zero number/);
+  assert.match(message, /feedback must be a non-empty string/);
+});
+
+test('node on_complete uses the same validation rules', () => {
+  const malformedBlock = {
+    event_id: 'bad_on_complete',
+    on_complete: {
+      effect_scope: 'forever',
+      effects: [
+        {
+          id: '',
+          type: 'relationship.change',
+          target: 'self',
+          amount: Number.NaN,
+        },
+      ],
+    },
+  } as unknown as CharacterNode;
+
+  const errors = validateNarrativeEffectDeclarations('aqiang', 'bad_on_complete', malformedBlock);
+  assert.ok(errors.some(error => error.includes('on_complete effect_scope')));
+  assert.ok(errors.some(error => error.includes('id must be a non-empty string')));
+  assert.ok(errors.some(error => error.includes('amount must be a finite non-zero number')));
+
+  assert.deepEqual(
+    validateNarrativeEffectDeclarations(
+      'aqiang',
+      'invalid_on_complete_shape',
+      { on_complete: [] } as unknown as CharacterNode,
+    ),
+    ['[aqiang] node invalid_on_complete_shape on_complete must be an object'],
+  );
 });

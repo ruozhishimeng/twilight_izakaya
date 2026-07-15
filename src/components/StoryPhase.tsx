@@ -93,6 +93,8 @@ interface Props {
   onEnterMixing: (teachingNode: CharacterNode | null, mixingNode: CharacterNode) => void;
   onEnterObservation: (trigger: NarrativeObservationExit) => void;
   onEnterTailChatBeforeNextNode?: (node: CharacterNode) => void;
+  onOptionSelected?: (node: CharacterNode, option: NodePlayerOption) => void;
+  onNodeCompleted?: (node: CharacterNode) => void;
   onComplete: () => void;
   onReward: (reward: CharacterReward) => void;
   showReward?: boolean;
@@ -110,6 +112,8 @@ export default function StoryPhase({
   onEnterMixing,
   onEnterObservation,
   onEnterTailChatBeforeNextNode,
+  onOptionSelected,
+  onNodeCompleted,
   onComplete,
   onReward,
   showReward,
@@ -237,6 +241,8 @@ export default function StoryPhase({
       return;
     }
 
+    onNodeCompleted?.(currentNode);
+
     switch (exit.kind) {
       case 'next':
         onNodeChange(exit.target);
@@ -250,12 +256,15 @@ export default function StoryPhase({
       case 'end_visit':
         onComplete();
     }
-  }, [currentNode, onComplete, onEnterMixing, onEnterObservation, onNodeChange]);
+  }, [currentNode, onComplete, onEnterMixing, onEnterObservation, onNodeChange, onNodeCompleted]);
 
   const continueFromNodeEnd = useCallback(() => {
     if (pendingNextNode) {
       const next = pendingNextNode;
       setPendingNextNode(null);
+      if (currentNode) {
+        onNodeCompleted?.(currentNode);
+      }
 
       if (
         currentNode?.llm_chat?.entry_mode === 'before_next_node' &&
@@ -295,6 +304,7 @@ export default function StoryPhase({
       currentNode?.llm_chat?.entry_mode === 'before_next_node' &&
       currentExit?.kind === 'next'
     ) {
+      onNodeCompleted?.(currentNode);
       onEnterTailChatBeforeNextNode?.(currentNode);
     } else {
       followExit(currentExit);
@@ -305,6 +315,7 @@ export default function StoryPhase({
     currentExit,
     followExit,
     onNodeChange,
+    onNodeCompleted,
     onEnterTailChatBeforeNextNode,
     pendingNodeExit,
     pendingNextNode,
@@ -378,6 +389,7 @@ export default function StoryPhase({
 
   const handleOptionClick = (opt: NodePlayerOption, idx: number) => {
     const branchType = getOptionBranchType(opt);
+    onOptionSelected?.(currentNode, opt);
 
     // choice 类型：标记完成，不跳转，继续显示选项
     if (branchType === 'choice') {
@@ -438,6 +450,7 @@ export default function StoryPhase({
     }
 
     if (opt.next_node) {
+      onNodeCompleted?.(currentNode);
       onNodeChange(opt.next_node);
     } else {
       followExit(currentExit);

@@ -8,6 +8,7 @@ import {
   type GameRootStateValue,
   type PersistedGameSnapshot,
 } from '../state/gameState';
+import type { NarrativeTransaction } from '../state/narrativeEffects';
 
 export function useGameMachine() {
   const [snapshot, dispatch] = useReducer(reduceGameEvent, undefined, createInitialGameSnapshot);
@@ -36,6 +37,10 @@ export function useGameMachine() {
     dispatch({ type: 'PATCH_CURRENT_GUEST', patch });
   }, []);
 
+  const applyNarrativeTransaction = useCallback((transaction: NarrativeTransaction) => {
+    dispatch({ type: 'APPLY_NARRATIVE_TRANSACTION', transaction });
+  }, []);
+
   const resetCurrentGuest = useCallback(() => {
     dispatch({ type: 'RESET_CURRENT_GUEST' });
   }, []);
@@ -52,6 +57,7 @@ export function useGameMachine() {
     loadSnapshot,
     patchContext,
     patchCurrentGuest,
+    applyNarrativeTransaction,
     patchNpcDialogue,
     resetCurrentGuest,
   };

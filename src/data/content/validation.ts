@@ -29,6 +29,10 @@ function hasOwn(value: object, key: string) {
   return Object.prototype.hasOwnProperty.call(value, key);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
 function hasNextNarrativeExit(node: CharacterNode | undefined) {
   if (!node) {
     return false;
@@ -304,6 +308,114 @@ function validatePlayerOptions(
   });
 }
 
+function validateNarrativeEffectScope(
+  value: unknown,
+  context: string,
+  errors: string[],
+) {
+  if (value !== undefined && value !== 'game' && value !== 'visit') {
+    errors.push(`${context} effect_scope must be "game" or "visit"`);
+  }
+}
+
+function validateNarrativeEffectsBlock(
+  value: unknown,
+  context: string,
+  errors: string[],
+) {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    errors.push(`${context} effects must be an array`);
+    return;
+  }
+
+  const effectIds = new Set<string>();
+  value.forEach((effect, index) => {
+    const effectContext = `${context} effect ${index + 1}`;
+    if (!isRecord(effect)) {
+      errors.push(`${effectContext} must be an object`);
+      return;
+    }
+
+    const effectId = effect.id;
+    if (!hasNonEmptyString(effectId)) {
+      errors.push(`${effectContext} id must be a non-empty string`);
+    } else if (effectIds.has(effectId)) {
+      errors.push(`${context} contains duplicate effect id "${effectId}"`);
+    } else {
+      effectIds.add(effectId);
+    }
+
+    if (effect.type !== 'relationship.change') {
+      errors.push(`${effectContext} type must be "relationship.change"`);
+    }
+    if (!hasNonEmptyString(effect.target)) {
+      errors.push(`${effectContext} target must be a non-empty string`);
+    }
+    if (effect.axis !== undefined && !hasNonEmptyString(effect.axis)) {
+      errors.push(`${effectContext} axis must be a non-empty string`);
+    }
+    if (
+      typeof effect.amount !== 'number' ||
+      !Number.isFinite(effect.amount) ||
+      effect.amount === 0
+    ) {
+      errors.push(`${effectContext} amount must be a finite non-zero number`);
+    }
+    if (effect.feedback !== undefined && !hasNonEmptyString(effect.feedback)) {
+      errors.push(`${effectContext} feedback must be a non-empty string`);
+    }
+  });
+}
+
+export function validateNarrativeEffectDeclarations(
+  guestId: string,
+  nodeId: string,
+  node: CharacterNode,
+): string[] {
+  const errors: string[] = [];
+  const optionIds = new Set<string>();
+
+  if (Array.isArray(node.player_options)) {
+    node.player_options.forEach((option, index) => {
+      const context = `[${guestId}] node ${nodeId} option ${index + 1}`;
+      const optionId = option.id;
+      const definesEffects = hasOwn(option, 'effects');
+
+      if (optionId !== undefined && !hasNonEmptyString(optionId)) {
+        errors.push(`${context} id must be a non-empty string`);
+      } else if (hasNonEmptyString(optionId)) {
+        if (optionIds.has(optionId)) {
+          errors.push(`[${guestId}] node ${nodeId} contains duplicate option id "${optionId}"`);
+        } else {
+          optionIds.add(optionId);
+        }
+      }
+
+      if (definesEffects && !hasNonEmptyString(optionId)) {
+        errors.push(`${context} with effects requires a stable id`);
+      }
+
+      validateNarrativeEffectScope(option.effect_scope, context, errors);
+      validateNarrativeEffectsBlock(option.effects, context, errors);
+    });
+  }
+
+  if (node.on_complete !== undefined) {
+    const context = `[${guestId}] node ${nodeId} on_complete`;
+    if (!isRecord(node.on_complete)) {
+      errors.push(`${context} must be an object`);
+    } else {
+      validateNarrativeEffectScope(node.on_complete.effect_scope, context, errors);
+      validateNarrativeEffectsBlock(node.on_complete.effects, context, errors);
+    }
+  }
+
+  return errors;
+}
+
 function validateObservationTrigger(
   guest: Guest,
   nodeId: string,
@@ -571,6 +683,7 @@ function validateCommonNodeReferences(
   validateNarrativeExit(guest, nodeId, node, registry, errors);
   validateTriggerCondition(guest, nodeId, node.trigger_condition, errors);
   validatePlayerOptions(guest, nodeId, node.player_options, errors);
+  errors.push(...validateNarrativeEffectDeclarations(guest.id, nodeId, node));
   if (!hasOwn(node, 'exit')) {
     validateObservationTrigger(guest, nodeId, node.trigger_observation, errors);
   }

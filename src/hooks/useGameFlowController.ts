@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import type { CharacterNode } from '../data/content/types';
+import type { CharacterNode, NodePlayerOption } from '../data/content/types';
 import {
   getMixingRequest,
   isMixingExit,
   resolveNodeExit,
 } from '../data/content/narrative';
+import {
+  compileNodeCompletionNarrativeTransaction,
+  compileOptionNarrativeTransaction,
+} from '../data/content/effects';
+import type { NarrativeTransaction } from '../state/narrativeEffects';
 import {
   contentRegistry,
   findNodeForGuest,
@@ -43,6 +48,7 @@ interface GameMachineController {
   patchContext: (patch: Partial<GameContext>) => void;
   patchCurrentGuest: (patch: Partial<GameContext['currentGuest']>) => void;
   patchNpcDialogue: (patch: Partial<GameContext['npcDialogue']>) => void;
+  applyNarrativeTransaction: (transaction: NarrativeTransaction) => void;
   resetCurrentGuest: () => void;
 }
 
@@ -90,6 +96,7 @@ export function useGameFlowController(
     patchContext,
     patchCurrentGuest,
     patchNpcDialogue,
+    applyNarrativeTransaction,
     resetCurrentGuest,
   } = machine;
   const closeTranscript = options.closeTranscript || (() => {});
@@ -108,6 +115,35 @@ export function useGameFlowController(
     canShowTranscriptButton,
     activeAudioNode,
   } = runtime;
+  const visitId = `W${game.week}:D${game.day}:G${game.guestInDay}:${guest.id}`;
+
+  const recordNarrativeOption = useCallback((node: CharacterNode, option: NodePlayerOption) => {
+    const eventId = node.event_id || node.id;
+    if (!eventId || !option.id) {
+      return;
+    }
+
+    applyNarrativeTransaction(compileOptionNarrativeTransaction({
+      guestId: guest.id,
+      eventId,
+      option,
+      visitId,
+    }));
+  }, [applyNarrativeTransaction, guest.id, visitId]);
+
+  const recordNarrativeNodeCompletion = useCallback((node: CharacterNode) => {
+    const eventId = node.event_id || node.id;
+    if (!eventId) {
+      return;
+    }
+
+    applyNarrativeTransaction(compileNodeCompletionNarrativeTransaction({
+      guestId: guest.id,
+      eventId,
+      node,
+      visitId,
+    }));
+  }, [applyNarrativeTransaction, guest.id, visitId]);
 
   const appendCurrentGuestChallenge = useCallback((challenge?: string) => {
     const normalized = challenge?.trim();
@@ -963,6 +999,8 @@ export function useGameFlowController(
     availableChatNodes,
     canShowTranscriptButton,
     activeAudioNode,
+    recordNarrativeOption,
+    recordNarrativeNodeCompletion,
     appendCurrentGuestTranscript,
     debugJump,
     beginGuestArrival,
