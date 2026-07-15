@@ -16,15 +16,20 @@ for (const launcherName of ['twilight_izakaya_launcher.ps1', '黄昏居酒屋.ps
 }
 
 test(
-  'Node environment repair tolerates a missing drive under stop-on-error mode',
+  'Node environment repair tolerates missing drives under stop-on-error mode',
   { skip: process.platform !== 'win32' },
   () => {
     const scriptPath = path.join(projectRoot, 'scripts', 'ensure-node-env.ps1');
     const escapedScriptPath = scriptPath.replaceAll("'", "''");
     const command = [
       "$ErrorActionPreference = 'Stop'",
+      '$missingDrive = (68..90 | ForEach-Object { [char]$_ } | Where-Object { -not (Get-PSDrive -Name $_ -ErrorAction SilentlyContinue) } | Select-Object -First 1)',
+      "if (-not $missingDrive) { throw 'No unused drive letter is available for the launcher regression test.' }",
+      '$missingCandidate = "${missingDrive}:\\__twilight_missing_node__"',
+      '$env:LOCALAPPDATA = $missingCandidate',
+      '$env:SystemRoot = $missingCandidate',
       `. '${escapedScriptPath}'`,
-      "if (Test-TwilightNodeDirectory -Candidate 'Z:\\__twilight_missing_node__') { exit 2 }",
+      'if (Test-TwilightNodeDirectory -Candidate $missingCandidate) { exit 2 }',
     ].join('; ');
 
     const result = spawnSync(

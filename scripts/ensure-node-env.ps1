@@ -18,7 +18,7 @@ function Test-TwilightNodeDirectory {
 function Repair-TwilightNodeEnvironment {
   $userProfile = $env:USERPROFILE
   if ([string]::IsNullOrWhiteSpace($userProfile) -and -not [string]::IsNullOrWhiteSpace($env:USERNAME)) {
-    $userProfile = Join-Path 'C:\Users' $env:USERNAME
+    $userProfile = [System.IO.Path]::Combine('C:\Users', $env:USERNAME)
   }
 
   $windowsRoot = if ([string]::IsNullOrWhiteSpace($env:SystemRoot)) { 'C:\Windows' } else { $env:SystemRoot }
@@ -28,7 +28,7 @@ function Repair-TwilightNodeEnvironment {
   $repairs = [ordered]@{
     SystemRoot = $windowsRoot
     windir = $windowsRoot
-    ComSpec = Join-Path $windowsRoot 'System32\cmd.exe'
+    ComSpec = [System.IO.Path]::Combine($windowsRoot, 'System32', 'cmd.exe')
     APPDATA = $applicationData
     LOCALAPPDATA = $localApplicationData
   }
@@ -54,7 +54,9 @@ function Repair-TwilightNodeEnvironment {
 
   $resolvedLocalAppData = [Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process')
   if (-not [string]::IsNullOrWhiteSpace($resolvedLocalAppData)) {
-    $nodeCandidates += Join-Path $resolvedLocalAppData 'Programs\nodejs'
+    try {
+      $nodeCandidates += [System.IO.Path]::Combine($resolvedLocalAppData, 'Programs', 'nodejs')
+    } catch {}
   }
 
   $pathEntries = @()
