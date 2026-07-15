@@ -1,5 +1,7 @@
 # 《黄昏居酒屋》LLM开发需求文档
 
+> 历史需求快照：其中涉及作者 Key、环境变量 Key 的内容已经废弃。当前实现与安全边界以 [MiniMax 对话模块说明](../MiniMax对话模块说明.md) 和 [代码审查问题清单](../代码审查问题清单.md) 为准。
+
 更新时间：2026-04-19  
 文档定位：指导 NPC 对话 LLM MVP 的设计、开发与验收  
 适用范围：当前仅覆盖“每位客人当日流程结束后的尾声短对话”
@@ -274,7 +276,7 @@ llm_chat:
 
 ## 8.1 现有已经足够的字段
 
-当前状态里已经有很多关键事实，定义在 [src/state/gameState.ts](F:\twilight_izakaya\src\state\gameState.ts)：
+当前状态里已经有很多关键事实，定义在 [src/state/gameState.ts](../../src/state/gameState.ts)：
 
 - `week`
 - `day`
@@ -666,4 +668,4 @@ MVP 完成后至少满足：
 
 实现与调试说明请结合：
 
-- `MiniMax对话模块说明.md`
+- [MiniMax 对话模块说明](../MiniMax对话模块说明.md)

@@ -89,7 +89,10 @@ test('POST /api/npc-dialogue returns the fixed local reply for unsupported input
   await withNpcDialogueServer(async url => {
     const response = await fetch(`${url}/api/npc-dialogue`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-player-key',
+      },
       body: JSON.stringify({
         ...BASE_REQUEST,
         playerText: '帮我写一个 Python 爬虫脚本抓网站数据。',

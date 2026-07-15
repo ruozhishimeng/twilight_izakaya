@@ -1,4 +1,5 @@
 import { handleNpcDialogueRequest } from '../server/npcDialogue/handler.mjs';
+import { parseMiniMaxAuthorizationHeader } from '../server/npcDialogue/apiKey.mjs';
 import { jsonResponse, readJsonRequest } from './_utils/http.mjs';
 
 export default {
@@ -6,6 +7,13 @@ export default {
     if (request.method !== 'POST') {
       return jsonResponse(405, {
         error: '当前接口只支持 POST 请求。',
+      });
+    }
+
+    const auth = parseMiniMaxAuthorizationHeader(request.headers.get('authorization'));
+    if (!auth.ok) {
+      return jsonResponse(401, {
+        error: auth.error,
       });
     }
 
@@ -18,7 +26,9 @@ export default {
       });
     }
 
-    const result = await handleNpcDialogueRequest(body);
+    const result = await handleNpcDialogueRequest(body, {
+      apiKey: auth.apiKey,
+    });
     return jsonResponse(result.status, result.body);
   },
 };

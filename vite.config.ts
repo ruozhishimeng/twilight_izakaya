@@ -5,11 +5,9 @@ import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
+  const backendTarget = process.env.VITE_BACKEND_TARGET || env.VITE_BACKEND_TARGET || 'http://127.0.0.1:3001';
   return {
     plugins: [react(), tailwindcss()],
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -21,11 +19,11 @@ export default defineConfig(({mode}) => {
       hmr: process.env.DISABLE_HMR !== 'true',
       proxy: {
         '/api': {
-          target: env.VITE_BACKEND_TARGET || 'http://127.0.0.1:3001',
+          target: backendTarget,
           changeOrigin: true,
         },
         '/health': {
-          target: env.VITE_BACKEND_TARGET || 'http://127.0.0.1:3001',
+          target: backendTarget,
           changeOrigin: true,
         },
       },

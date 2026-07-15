@@ -1,10 +1,6 @@
-const DEFAULT_BASE_URL = 'https://api.minimaxi.com';
-const DEFAULT_MODEL = 'MiniMax-M2.5';
+const MINIMAX_BASE_URL = 'https://api.minimaxi.com';
+const MINIMAX_MODEL = 'MiniMax-M2.5';
 const DEFAULT_TIMEOUT_MS = 20000;
-
-function normalizeBaseUrl(baseUrl) {
-  return baseUrl.replace(/\/+$/, '');
-}
 
 function parseTimeout(rawTimeout) {
   const timeout = Number.parseInt(rawTimeout || '', 10);
@@ -28,7 +24,7 @@ function mapMiniMaxStatusError(statusCode, statusMessage) {
       });
     case 1004:
       return new MiniMaxProviderError('MiniMax 密钥无效或未授权。', {
-        status: 500,
+        status: 401,
         code: 'minimax_auth_failed',
       });
     case 1026:
@@ -58,32 +54,28 @@ export class MiniMaxProviderError extends Error {
   }
 }
 
-export async function requestMiniMaxNpcDialogue({ messages, promptChars }) {
-  const apiKey = process.env.MINIMAX_API_KEY?.trim();
+export async function requestMiniMaxNpcDialogue({ messages, promptChars, apiKey }) {
   if (!apiKey) {
-    throw new MiniMaxProviderError('未配置 MINIMAX_API_KEY，无法调用对话服务。', {
-      status: 500,
+    throw new MiniMaxProviderError('请先填写自己的 MiniMax API Key。', {
+      status: 401,
       code: 'missing_api_key',
     });
   }
 
-  const configuredModel = process.env.MINIMAX_MODEL?.trim() || DEFAULT_MODEL;
-
-  const baseUrl = normalizeBaseUrl(process.env.MINIMAX_BASE_URL?.trim() || DEFAULT_BASE_URL);
   const timeoutMs = parseTimeout(process.env.MINIMAX_TIMEOUT_MS);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   let response;
   try {
-    response = await fetch(`${baseUrl}/v1/text/chatcompletion_v2`, {
+    response = await fetch(`${MINIMAX_BASE_URL}/v1/text/chatcompletion_v2`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: configuredModel,
+        model: MINIMAX_MODEL,
         stream: false,
         temperature: 0.35,
         top_p: 0.9,
@@ -134,7 +126,7 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars }) {
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
       throw new MiniMaxProviderError('MiniMax 密钥无效或未授权。', {
-        status: 500,
+        status: 401,
         code: 'http_auth_failed',
       });
     }
@@ -158,7 +150,7 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars }) {
   return {
     content,
     usage: {
-      provider: `minimax:${configuredModel}`,
+      provider: `minimax:${MINIMAX_MODEL}`,
       promptTokens: payload?.usage?.prompt_tokens,
       completionTokens: payload?.usage?.completion_tokens,
       totalTokens: payload?.usage?.total_tokens,

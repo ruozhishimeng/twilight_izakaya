@@ -328,9 +328,9 @@ character_web.yaml       # 关系网（设计参考文件，不进入运行时�
 
 ## Key Reference Files
 
-- [状态系统驱动内容规范.md](../../../状态系统驱动内容规范.md) - 运行时字段契约（最高优先级）
-- [状态系统驱动节点模板.md](../../../状态系统驱动节点模板.md) - 最小脚手架
-- [剧情文件规范文档.md](../../../剧情文件规范文档.md) - 文学风格参考 + 历史样例
+- [状态系统驱动内容规范.md](../../../docs/状态系统驱动内容规范.md) - 运行时字段契约（最高优先级）
+- [状态系统驱动节点模板.md](../../../docs/状态系统驱动节点模板.md) - 最小脚手架
+- [剧情文件规范文档.md](../../../docs/archive/剧情文件规范文档.md) - 文学风格参考 + 历史样例
 - [emotions.json](../../../src/assets/emotions.json) - 情感标签
 - [recipes.json](../../../src/assets/recipes/recipes.json) - 配方参考
 - [aqiang/character_meta.yaml](../../../src/assets/character/aqiang/character_meta.yaml) - 完整角色示例

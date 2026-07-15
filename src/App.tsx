@@ -119,7 +119,7 @@ function ApiKeyRequiredDialog({
         </div>
         <div className="mt-5 space-y-3 text-base leading-7 text-[#d8c7a8]">
           <p>{message}</p>
-          <p>当前对话模块仅支持 MiniMax。你可以填写自己的 KEY，也可以在设置中选择“使用作者的KEY”。</p>
+          <p>当前对话模块仅支持 MiniMax，请填写你自己的 KEY；KEY 只在本次运行内存中使用。</p>
         </div>
         <div className="mt-7 flex gap-4">
           <button
@@ -328,7 +328,7 @@ export default function App() {
       return false;
     } catch (error) {
       const detail = error instanceof Error ? error.message : '无法读取 API KEY 状态。';
-      setApiKeyPromptMessage(`${detail} 请先进入 API 设置确认本地后端与 KEY 配置。`);
+      setApiKeyPromptMessage(`${detail} 请先进入 API 设置填写自己的 MiniMax KEY。`);
       return false;
     } finally {
       setIsCheckingApiKey(false);

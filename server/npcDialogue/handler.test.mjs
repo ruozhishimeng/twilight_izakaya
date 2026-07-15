@@ -49,3 +49,10 @@ test('handleNpcDialogueRequest returns local safety replies without calling Mini
   assert.equal(result.body.endChat, false);
   assert.equal(result.body.usage.provider, 'local-safety-filter');
 });
+
+test('handleNpcDialogueRequest requires an explicit request key before a live MiniMax call', async () => {
+  const result = await handleNpcDialogueRequest(BASE_REQUEST);
+
+  assert.equal(result.status, 401);
+  assert.match(result.body.error, /MiniMax API Key/);
+});

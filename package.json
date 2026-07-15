@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "2.0.7",
+  "version": "2.0.10",
   "type": "module",
   "main": "electron/main.mjs",
   "scripts": {
@@ -12,15 +12,15 @@
     "prebuild": "npm run content:check",
     "build": "vite build",
     "desktop:dev": "npm run build && electron .",
-    "desktop:pack": "npm run build && electron-builder --win portable",
-    "desktop:pack:author": "node scripts/packageDesktopWithAuthorKey.mjs",
+    "desktop:pack": "npm run build && npm run desktop:security && electron-builder --win portable",
+    "desktop:security": "node scripts/checkDesktopPackageSecurity.mjs",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "prelint": "npm run content:check",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "node --import tsx --test server/backendApp.test.mjs server/npcDialogue/apiKey.test.mjs server/npcDialogue/provider.test.mjs server/npcDialogue/responseParser.test.mjs server/npcDialogue/safety.test.mjs server/npcDialogue/handler.test.mjs server/npcDialogue/promptBuilder.test.mjs server/vercelFunctions.test.mjs electron/legacyConfig.test.mjs scripts/launcherConfig.test.mjs scripts/packagingSecurity.test.mjs src/services/apiSettings.test.ts src/services/npcDialogue.test.ts src/components/ApiSettingsPanel.test.ts"
   },
   "dependencies": {
-    "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
@@ -54,7 +54,10 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "!electron/author-key.local.json",
+      "!electron/**/*.test.mjs",
       "server/**/*",
+      "!server/**/*.test.mjs",
       "package.json"
     ],
     "win": {
