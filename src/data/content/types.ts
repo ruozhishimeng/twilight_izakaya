@@ -81,6 +81,39 @@ export interface DrinkRequestSource {
   eval_branches?: DrinkRequestEvalBranches;
 }
 
+export interface NarrativeNextExit {
+  kind: 'next';
+  target: string;
+}
+
+export interface NarrativeObservationExit {
+  kind: 'observation';
+  prompt: string;
+  continue_node: string;
+  feature_groups?: string[];
+}
+
+export interface NarrativeMixingOutcomes {
+  success: string | null;
+  fail: string | null;
+}
+
+export interface NarrativeMixingExit {
+  kind: 'mixing';
+  request: DrinkRequestSource;
+  outcomes: NarrativeMixingOutcomes;
+}
+
+export interface NarrativeEndVisitExit {
+  kind: 'end_visit';
+}
+
+export type NarrativeExit =
+  | NarrativeNextExit
+  | NarrativeObservationExit
+  | NarrativeMixingExit
+  | NarrativeEndVisitExit;
+
 export interface TeachingRecipeSource {
   id?: string;
   name?: string;
@@ -143,6 +176,7 @@ export interface ResolvedLlmChatConfig {
 export interface CharacterNode {
   event_id?: string;
   id?: string;
+  exit?: NarrativeExit;
   next_node?: string | null;
   trigger_condition?: NodeTriggerCondition;
   script_flow?: ScriptFlowStep[];

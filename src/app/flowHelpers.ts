@@ -7,6 +7,7 @@ import {
   type CharacterNode,
   type Guest,
 } from '../data/gameData';
+import { getMixingOutcomeTarget, resolveNodeExit } from '../data/content/narrative';
 import type { DailyGuestRecord, JournalNote } from '../types/journal';
 import type { StoryUnlockEntry } from '../state/gameState';
 
@@ -62,9 +63,9 @@ export function resolveMixingOutcomeNode(
   mixingNode: CharacterNode | null,
   success: boolean,
 ) {
-  const explicitNodeId = success
-    ? mixingNode?.on_mixing_complete || mixingNode?.next_node
-    : mixingNode?.on_mixing_fail || mixingNode?.drink_request?.eval_branches?.fail;
+  const explicitNodeId = mixingNode
+    ? getMixingOutcomeTarget(resolveNodeExit(mixingNode), success)
+    : null;
 
   if (explicitNodeId) {
     return explicitNodeId;

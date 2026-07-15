@@ -16,6 +16,7 @@ import TailChatPhase from './components/TailChatPhase';
 import {
   GUESTS,
 } from './data/gameData';
+import { getMixingRequest, resolveNodeExit } from './data/content/narrative';
 import { useGameFlowController } from './hooks/useGameFlowController';
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { useGameMachine } from './hooks/useGameMachine';
@@ -212,6 +213,9 @@ export default function App() {
       playSfx,
     },
   );
+  const activeMixingRequest = mixingNode
+    ? getMixingRequest(resolveNodeExit(mixingNode)) || undefined
+    : undefined;
 
   const handleSave = useCallback(async (slotId: string, slotName: string) => {
     await saveSystem.saveGame(slotId, slotName, createPersistedSnapshot(snapshot));
@@ -593,7 +597,7 @@ export default function App() {
                 onServe={serveDrink}
                 inventory={game.inventory}
                 promptOverride={game.currentGuest.mixingPromptOverride}
-                mixingRequest={mixingNode?.drink_request}
+                mixingRequest={activeMixingRequest}
                 teaching={teachingNode?.teaching}
               />
             )}

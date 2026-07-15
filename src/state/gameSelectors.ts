@@ -8,6 +8,7 @@ import {
   type Guest,
   type ScheduleGuest,
 } from '../data/gameData';
+import { resolveNodeExit } from '../data/content/narrative';
 import type { GameSnapshot, GameRootStateValue } from './gameState';
 
 export interface GameRuntimeView {
@@ -74,10 +75,11 @@ export function selectGameRuntimeView(snapshot: GameSnapshot): GameRuntimeView {
 
   let activeAudioNode: CharacterNode | null = null;
   if (snapshot.value === 'dayLoop.guest.mixing') {
+    const teachingExit = teachingNode ? resolveNodeExit(teachingNode) : null;
     activeAudioNode =
       mixingNode ||
-      (teachingNode?.next_node
-        ? findNodeForGuest(teachingNode.next_node, guest.id, guest.nodeMap)
+      (teachingExit?.kind === 'next'
+        ? findNodeForGuest(teachingExit.target, guest.id, guest.nodeMap)
         : null) ||
       teachingNode ||
       null;

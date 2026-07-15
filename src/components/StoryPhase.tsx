@@ -1,5 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { CharacterReward, NodePlayerOption, NodePresentation, ObservationTriggerSource, ScriptFlowStep } from '../data/content/types';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type {
+  CharacterReward,
+  NarrativeExit,
+  NarrativeObservationExit,
+  NodePlayerOption,
+  NodePresentation,
+  ScriptFlowStep,
+} from '../data/content/types';
+import { resolveNodeExit } from '../data/content/narrative';
 import type { Guest, CharacterNode } from '../data/gameData';
 import type { GuestTranscriptEntry } from '../state/gameState';
 import PixelDialogueBox from './PixelDialogueBox';
@@ -9,15 +17,6 @@ interface DialogueLine {
   type: 'env' | 'npc' | 'inner';
   text: string;
 }
-
-interface MixingTransition {
-  teachingNode: CharacterNode | null;
-  mixingNode: CharacterNode;
-}
-
-type CompleteObservationTrigger = Required<Pick<ObservationTriggerSource, 'prompt' | 'continue_node'>> & {
-  feature_groups?: string[];
-};
 
 function buildScriptFlowLines(scriptFlow: ScriptFlowStep[] | undefined): DialogueLine[] {
   if (!Array.isArray(scriptFlow)) {
@@ -84,12 +83,6 @@ function buildOptionLines(option: NodePlayerOption): DialogueLine[] {
   return buildScriptFlowLines(option.script_flow);
 }
 
-function hasCompleteObservationTrigger(
-  trigger: ObservationTriggerSource | undefined,
-): trigger is CompleteObservationTrigger {
-  return !!trigger?.prompt && !!trigger.continue_node;
-}
-
 interface Props {
   guest: Guest;
   startNodeId: string;
@@ -98,7 +91,7 @@ interface Props {
   discoveredFeatures: string[];
   onNodeChange: (nodeId: string) => void;
   onEnterMixing: (teachingNode: CharacterNode | null, mixingNode: CharacterNode) => void;
-  onEnterObservation: (trigger: CompleteObservationTrigger) => void;
+  onEnterObservation: (trigger: NarrativeObservationExit) => void;
   onEnterTailChatBeforeNextNode?: (node: CharacterNode) => void;
   onComplete: () => void;
   onReward: (reward: CharacterReward) => void;
@@ -128,6 +121,7 @@ export default function StoryPhase({
   const [currentIdx, setCurrentIdx] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
   const [pendingNextNode, setPendingNextNode] = useState<string | null>(null);
+  const [pendingNodeExit, setPendingNodeExit] = useState(false);
   const [completedOptions, setCompletedOptions] = useState<Set<number>>(new Set());
   const [rewardPending, setRewardPending] = useState(false);
   const [rewardShownNodeId, setRewardShownNodeId] = useState<string | null>(null);
@@ -138,6 +132,10 @@ export default function StoryPhase({
 
   const activeNodeId = currentNodeId;
   const currentNode = activeNodeId ? findNodeForGuest(activeNodeId, guest.id, guest.nodeMap) : null;
+  const currentExit = useMemo(
+    () => (currentNode ? resolveNodeExit(currentNode) : null),
+    [currentNode],
+  );
   const currentPresentation: NodePresentation = currentNode?.presentation || {};
 
   useEffect(() => {
@@ -165,6 +163,7 @@ export default function StoryPhase({
     setCurrentIdx(0);
     setShowOptions(false);
     setPendingNextNode(null);
+    setPendingNodeExit(false);
     setCompletedOptions(new Set());
     setRewardPending(false);
   }, [activeNodeId, guest.id]);
@@ -232,60 +231,26 @@ export default function StoryPhase({
     });
   }, [activeNodeId, currentIdx, onTranscriptLine, resolveSpeakerName, sentenceTypes, sentences]);
 
-  const isMixingNode = useCallback((node: CharacterNode | null | undefined) => {
-    if (!node) {
-      return false;
-    }
-
-    const nodeGameAction = node.game_action;
-    return (
-      nodeGameAction?.type === 'enter_mixing' ||
-      nodeGameAction?.action === 'ENTER_MIXING_MODE' ||
-      !!node.drink_request ||
-      !!node.on_mixing_complete ||
-      !!node.on_mixing_fail
-    );
-  }, []);
-
-  const resolveMixingTransition = useCallback((sourceNode: CharacterNode | null, targetNodeId?: string | null): MixingTransition | null => {
-    const targetNode = targetNodeId
-      ? findNodeForGuest(targetNodeId, guest.id, guest.nodeMap)
-      : null;
-
-    if (targetNode && isMixingNode(targetNode)) {
-      return {
-        teachingNode: sourceNode?.teaching ? sourceNode : null,
-        mixingNode: targetNode,
-      };
-    }
-
-    if (sourceNode?.teaching && sourceNode?.next_node) {
-      const nextNode = findNodeForGuest(sourceNode.next_node, guest.id, guest.nodeMap);
-      if (isMixingNode(nextNode)) {
-        return {
-          teachingNode: sourceNode,
-          mixingNode: nextNode,
-        };
-      }
-    }
-
-    return null;
-  }, [guest, isMixingNode]);
-
-  const enterNodeOrMixing = useCallback((nodeId: string | null | undefined) => {
-    if (!nodeId) {
+  const followExit = useCallback((exit: NarrativeExit | null) => {
+    if (!exit || !currentNode) {
       onComplete();
       return;
     }
 
-    const mixingTransition = resolveMixingTransition(currentNode, nodeId);
-    if (mixingTransition) {
-      onEnterMixing(mixingTransition.teachingNode, mixingTransition.mixingNode);
-      return;
+    switch (exit.kind) {
+      case 'next':
+        onNodeChange(exit.target);
+        return;
+      case 'observation':
+        onEnterObservation(exit);
+        return;
+      case 'mixing':
+        onEnterMixing(currentNode.teaching ? currentNode : null, currentNode);
+        return;
+      case 'end_visit':
+        onComplete();
     }
-
-    onNodeChange(nodeId);
-  }, [currentNode, onComplete, onEnterMixing, onNodeChange, resolveMixingTransition]);
+  }, [currentNode, onComplete, onEnterMixing, onEnterObservation, onNodeChange]);
 
   const continueFromNodeEnd = useCallback(() => {
     if (pendingNextNode) {
@@ -294,25 +259,20 @@ export default function StoryPhase({
 
       if (
         currentNode?.llm_chat?.entry_mode === 'before_next_node' &&
-        currentNode.next_node &&
-        next === currentNode.next_node
+        currentExit?.kind === 'next' &&
+        next === currentExit.target
       ) {
         onEnterTailChatBeforeNextNode?.(currentNode);
         return;
       }
 
-      enterNodeOrMixing(next);
+      onNodeChange(next);
       return;
     }
 
-    const mixingTransition = resolveMixingTransition(currentNode, currentNode?.next_node);
-    if (mixingTransition) {
-      onEnterMixing(mixingTransition.teachingNode, mixingTransition.mixingNode);
-      return;
-    }
-
-    if (hasCompleteObservationTrigger(currentNode?.trigger_observation)) {
-      onEnterObservation(currentNode.trigger_observation);
+    if (pendingNodeExit) {
+      setPendingNodeExit(false);
+      followExit(currentExit);
       return;
     }
 
@@ -323,8 +283,8 @@ export default function StoryPhase({
 
       if (hasChoiceOptions) {
         const totalOptions = currentNode.player_options.length;
-        if (completedOptions.size === totalOptions && currentNode.next_node) {
-          enterNodeOrMixing(currentNode.next_node);
+        if (completedOptions.size === totalOptions) {
+          followExit(currentExit);
         } else {
           setShowOptions(true);
         }
@@ -333,30 +293,26 @@ export default function StoryPhase({
       }
     } else if (
       currentNode?.llm_chat?.entry_mode === 'before_next_node' &&
-      currentNode.next_node
+      currentExit?.kind === 'next'
     ) {
       onEnterTailChatBeforeNextNode?.(currentNode);
-    } else if (currentNode?.next_node) {
-      enterNodeOrMixing(currentNode.next_node);
     } else {
-      onComplete();
+      followExit(currentExit);
     }
   }, [
     completedOptions,
     currentNode,
-    enterNodeOrMixing,
-    onComplete,
-    onEnterMixing,
-    onEnterObservation,
+    currentExit,
+    followExit,
+    onNodeChange,
     onEnterTailChatBeforeNextNode,
+    pendingNodeExit,
     pendingNextNode,
-    resolveMixingTransition,
   ]);
 
   useEffect(() => {
     const hasChoiceStep = Array.isArray(currentNode?.player_options) && currentNode.player_options.length > 0;
-    const hasObservationExit = hasCompleteObservationTrigger(currentNode?.trigger_observation);
-    const hasMixingExit = !!resolveMixingTransition(currentNode, currentNode?.next_node);
+    const hasBlockingExit = currentExit?.kind === 'observation' || currentExit?.kind === 'mixing';
     const canOpenChat = Boolean(
       chatAvailabilityEnabled &&
       currentNode &&
@@ -368,10 +324,9 @@ export default function StoryPhase({
       !rewardPending &&
       !showReward &&
       !hasChoiceStep &&
-      !hasObservationExit &&
-      !hasMixingExit &&
+      !hasBlockingExit &&
       !currentNode.reward &&
-      currentNode.next_node,
+      currentExit?.kind === 'next',
     );
 
     onChatAvailabilityChange?.(canOpenChat);
@@ -379,10 +334,10 @@ export default function StoryPhase({
     chatAvailabilityEnabled,
     currentIdx,
     currentNode,
+    currentExit,
     isDialogueTyping,
     onChatAvailabilityChange,
     pendingNextNode,
-    resolveMixingTransition,
     rewardPending,
     sentences.length,
     showOptions,
@@ -439,6 +394,7 @@ export default function StoryPhase({
           setCurrentIdx(0);
           setShowOptions(false);
           setPendingNextNode(null);
+          setPendingNodeExit(false);
           return;
         }
       }
@@ -448,6 +404,7 @@ export default function StoryPhase({
         setCurrentIdx(0);
         setShowOptions(false);
         setPendingNextNode(null);
+        setPendingNodeExit(false);
         return;
       }
     }
@@ -463,7 +420,9 @@ export default function StoryPhase({
         setSentenceTypes(['inner' as const, ...optionSentenceTypes]);
         setCurrentIdx(0);
         setShowOptions(false);
-        setPendingNextNode(opt.next_node || currentNode.next_node);
+        const nextTarget = opt.next_node || (currentExit?.kind === 'next' ? currentExit.target : null);
+        setPendingNextNode(nextTarget);
+        setPendingNodeExit(!nextTarget);
         return;
       }
     }
@@ -472,14 +431,16 @@ export default function StoryPhase({
       setSentences([`「${(opt.text || opt.option).replace(/^[「」]+|[「」]+$/g, '')}」`, opt.immediate_response]);
       setCurrentIdx(0);
       setShowOptions(false);
-      setPendingNextNode(opt.next_node || currentNode.next_node);
+      const nextTarget = opt.next_node || (currentExit?.kind === 'next' ? currentExit.target : null);
+      setPendingNextNode(nextTarget);
+      setPendingNodeExit(!nextTarget);
       return;
     }
 
     if (opt.next_node) {
       onNodeChange(opt.next_node);
     } else {
-      onComplete();
+      followExit(currentExit);
     }
   };
 

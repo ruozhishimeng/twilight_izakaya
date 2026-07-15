@@ -15,6 +15,7 @@ import type {
   TeachingRecipeSource,
   TeachingSource,
 } from './types';
+import { getExitTargets, resolveNodeExit } from './narrative';
 
 function hasNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
@@ -22,6 +23,21 @@ function hasNonEmptyString(value: unknown): value is string {
 
 function hasPositiveInteger(value: unknown) {
   return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+function hasOwn(value: object, key: string) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function hasNextNarrativeExit(node: CharacterNode | undefined) {
+  if (!node) {
+    return false;
+  }
+  try {
+    return resolveNodeExit(node).kind === 'next';
+  } catch {
+    return false;
+  }
 }
 
 function nodeRefId(node: CharacterNode) {
@@ -245,8 +261,12 @@ function validateNodeLlmChatConfig(
     errors.push(`[${guest.id}] node ${nodeId} llm_chat.entry_mode must be "before_next_node" or "after_node"`);
   }
 
-  if (config.entry_mode === 'before_next_node' && !hasNonEmptyString(guest.nodeMap.get(nodeId)?.next_node)) {
-    errors.push(`[${guest.id}] node ${nodeId} llm_chat.entry_mode=before_next_node requires next_node`);
+  const sourceNode = guest.nodeMap.get(nodeId);
+  if (
+    config.entry_mode === 'before_next_node' &&
+    !hasNextNarrativeExit(sourceNode)
+  ) {
+    errors.push(`[${guest.id}] node ${nodeId} llm_chat.entry_mode=before_next_node requires a next exit`);
   }
 }
 
@@ -386,10 +406,9 @@ function validateDrinkRequest(
     return;
   }
 
-  if (
-    drinkRequest.preferred_drink.id &&
-    !registry.recipeIds.has(String(drinkRequest.preferred_drink.id))
-  ) {
+  if (!hasNonEmptyString(drinkRequest.preferred_drink.id)) {
+    errors.push(`[${guest.id}] node ${nodeId} preferred drink is missing id`);
+  } else if (!registry.recipeIds.has(String(drinkRequest.preferred_drink.id))) {
     errors.push(`[${guest.id}] node ${nodeId} preferred drink id "${drinkRequest.preferred_drink.id}" is unknown`);
   }
 
@@ -403,6 +422,98 @@ function validateDrinkRequest(
     `[${guest.id}] node ${nodeId} preferred drink`,
     errors,
   );
+}
+
+function validateNarrativeExit(
+  guest: Guest,
+  nodeId: string,
+  node: CharacterNode,
+  registry: ContentRegistry,
+  errors: string[],
+) {
+  let exit: ReturnType<typeof resolveNodeExit>;
+
+  try {
+    exit = resolveNodeExit(node);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`[${guest.id}] node ${nodeId} has invalid narrative exit: ${message}`);
+    return;
+  }
+
+  switch (exit.kind) {
+    case 'next':
+      if (!hasNonEmptyString(exit.target)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.next target must be a non-empty string`);
+      }
+      break;
+    case 'observation':
+      if (!hasNonEmptyString(exit.prompt)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.observation prompt must be a non-empty string`);
+      }
+      if (!hasNonEmptyString(exit.continue_node)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.observation continue_node must be a non-empty string`);
+      }
+      if (
+        exit.feature_groups !== undefined &&
+        !Array.isArray(exit.feature_groups)
+      ) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.observation feature_groups must be an array`);
+      }
+      break;
+    case 'mixing': {
+      if (!exit.request || typeof exit.request !== 'object' || Array.isArray(exit.request)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.mixing is missing request`);
+      } else {
+        validateDrinkRequest(guest, nodeId, exit.request, registry, errors);
+      }
+
+      const outcomes = exit.outcomes;
+      if (!outcomes || typeof outcomes !== 'object' || Array.isArray(outcomes)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.mixing is missing outcomes`);
+        return;
+      }
+
+      const hasSuccessTarget = hasNonEmptyString(outcomes.success);
+      const hasFailTarget = hasNonEmptyString(outcomes.fail);
+
+      if (hasOwn(node, 'exit')) {
+        if (!hasSuccessTarget) {
+          errors.push(`[${guest.id}] node ${nodeId} exit.mixing outcomes.success must be a non-empty target`);
+        }
+        if (!hasFailTarget) {
+          errors.push(`[${guest.id}] node ${nodeId} exit.mixing outcomes.fail must be a non-empty target`);
+        }
+      } else if (!hasSuccessTarget && !hasFailTarget) {
+        errors.push(`[${guest.id}] mixing node ${nodeId} must define at least one success or fail target`);
+      }
+      break;
+    }
+    case 'end_visit':
+      break;
+    default:
+      errors.push(
+        `[${guest.id}] node ${nodeId} has unsupported exit kind "${String((exit as { kind?: unknown }).kind)}"`,
+      );
+      return;
+  }
+
+  let targets: string[];
+  try {
+    targets = getExitTargets(exit);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`[${guest.id}] node ${nodeId} cannot enumerate exit targets: ${message}`);
+    return;
+  }
+
+  targets.forEach(target => {
+    if (!hasNonEmptyString(target)) {
+      errors.push(`[${guest.id}] node ${nodeId} exit target must be a non-empty string`);
+    } else if (!guest.nodeMap.has(target)) {
+      errors.push(`[${guest.id}] node ${nodeId} exit points to missing target "${target}"`);
+    }
+  });
 }
 
 function validateRewards(
@@ -457,16 +568,19 @@ function validateCommonNodeReferences(
   registry: ContentRegistry,
   errors: string[],
 ) {
-  if (node.next_node && !guest.nodeMap.has(String(node.next_node))) {
-    errors.push(`[${guest.id}] node ${nodeId} points to missing next_node "${node.next_node}"`);
-  }
-
+  validateNarrativeExit(guest, nodeId, node, registry, errors);
   validateTriggerCondition(guest, nodeId, node.trigger_condition, errors);
   validatePlayerOptions(guest, nodeId, node.player_options, errors);
-  validateObservationTrigger(guest, nodeId, node.trigger_observation, errors);
+  if (!hasOwn(node, 'exit')) {
+    validateObservationTrigger(guest, nodeId, node.trigger_observation, errors);
+  }
   validateStoryUnlocks(guest, nodeId, node, errors);
   validateRewards(guest, nodeId, node.reward, registry, errors);
   validateNodeLlmChatConfig(guest, nodeId, node.llm_chat, errors);
+
+  if (node.diary_note !== undefined && typeof node.diary_note !== 'string') {
+    errors.push(`[${guest.id}] node ${nodeId} diary_note must be a string`);
+  }
 
   if (
     typeof node.unlock_gallery === 'string' &&
@@ -497,15 +611,8 @@ function validateNodeByGroup(
 
   if (group === 'teaching' && node.teaching) {
     validateTeaching(guest, nodeId, node.teaching, registry, errors);
-    if (!hasNonEmptyString(node.next_node)) {
-      errors.push(`[${guest.id}] teaching node ${nodeId} must point to a next_node`);
-    }
-  }
-
-  if (node.drink_request || node.on_mixing_complete || node.on_mixing_fail) {
-    validateDrinkRequest(guest, nodeId, node.drink_request, registry, errors);
-    if (!hasNonEmptyString(node.on_mixing_complete) && !hasNonEmptyString(node.on_mixing_fail)) {
-      errors.push(`[${guest.id}] mixing node ${nodeId} must define on_mixing_complete or on_mixing_fail`);
+    if (!hasNextNarrativeExit(node)) {
+      errors.push(`[${guest.id}] teaching node ${nodeId} must point to a next exit`);
     }
   }
 }
