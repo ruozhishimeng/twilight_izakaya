@@ -1,5 +1,20 @@
 Set-StrictMode -Version Latest
 
+function Test-TwilightNodeDirectory {
+  param([AllowEmptyString()][string]$Candidate)
+
+  if ([string]::IsNullOrWhiteSpace($Candidate)) {
+    return $false
+  }
+
+  try {
+    $nodeExecutable = [System.IO.Path]::Combine($Candidate, 'node.exe')
+    return [System.IO.File]::Exists($nodeExecutable)
+  } catch {
+    return $false
+  }
+}
+
 function Repair-TwilightNodeEnvironment {
   $userProfile = $env:USERPROFILE
   if ([string]::IsNullOrWhiteSpace($userProfile) -and -not [string]::IsNullOrWhiteSpace($env:USERNAME)) {
@@ -48,7 +63,7 @@ function Repair-TwilightNodeEnvironment {
   }
 
   $resolvedNodeDir = $nodeCandidates |
-    Where-Object { Test-Path (Join-Path $_ 'node.exe') } |
+    Where-Object { Test-TwilightNodeDirectory -Candidate $_ } |
     Select-Object -First 1
 
   if ($resolvedNodeDir -and -not ($pathEntries -contains $resolvedNodeDir)) {
