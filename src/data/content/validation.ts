@@ -266,11 +266,16 @@ function validateNodeLlmChatConfig(
   }
 
   const sourceNode = guest.nodeMap.get(nodeId);
+  const hasOptionNext = sourceNode?.player_options?.some(option => hasNonEmptyString(option.next_node));
   if (
     config.entry_mode === 'before_next_node' &&
-    !hasNextNarrativeExit(sourceNode)
+    !hasNextNarrativeExit(sourceNode) &&
+    !hasOptionNext
   ) {
-    errors.push(`[${guest.id}] node ${nodeId} llm_chat.entry_mode=before_next_node requires a next exit`);
+    errors.push(
+      `[${guest.id}] node ${nodeId} llm_chat.entry_mode=before_next_node requires ` +
+      'a node or option next exit',
+    );
   }
 }
 
@@ -289,7 +294,23 @@ function validatePlayerOptions(
     return;
   }
 
+  const inspectOptionCount = playerOptions.filter(option => (
+    (option.branchType ?? option.branch_type) === 'choice'
+  )).length;
+  if (inspectOptionCount > 0 && inspectOptionCount !== playerOptions.length) {
+    errors.push(
+      `[${guest.id}] node ${nodeId} cannot mix branch_type=choice with select-one options`,
+    );
+  }
+
   playerOptions.forEach((option, index) => {
+    const branchType = option.branchType ?? option.branch_type ?? null;
+    if (branchType && !['flavor', 'plot', 'choice'].includes(branchType)) {
+      errors.push(
+        `[${guest.id}] node ${nodeId} option ${index + 1} has unsupported branch_type "${branchType}"`,
+      );
+    }
+
     if (!hasNonEmptyString(option.text) && !hasNonEmptyString(option.option)) {
       errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} is missing text`);
     }
@@ -300,6 +321,16 @@ function validatePlayerOptions(
 
     if (option.fallback_node && !guest.nodeMap.has(String(option.fallback_node))) {
       errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} points to missing fallback_node "${option.fallback_node}"`);
+    }
+
+    if (
+      branchType === 'choice' &&
+      (option.next_node !== undefined || option.fallback_node !== undefined)
+    ) {
+      errors.push(
+        `[${guest.id}] node ${nodeId} option ${index + 1} branch_type=choice ` +
+        'must return to the choice group and cannot define next_node or fallback_node',
+      );
     }
 
     if (option.script_flow && (!Array.isArray(option.script_flow) || option.script_flow.length === 0)) {
@@ -596,8 +627,13 @@ function validateNarrativeExit(
         if (!hasFailTarget) {
           errors.push(`[${guest.id}] node ${nodeId} exit.mixing outcomes.fail must be a non-empty target`);
         }
-      } else if (!hasSuccessTarget && !hasFailTarget) {
-        errors.push(`[${guest.id}] mixing node ${nodeId} must define at least one success or fail target`);
+      } else {
+        if (!hasSuccessTarget) {
+          errors.push(`[${guest.id}] mixing node ${nodeId} must define a success target`);
+        }
+        if (!hasFailTarget && !exit.request.retry_on_fail) {
+          errors.push(`[${guest.id}] mixing node ${nodeId} must define a fail target or retry_on_fail`);
+        }
       }
       break;
     }

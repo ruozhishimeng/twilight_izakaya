@@ -24,9 +24,12 @@ import {
   formatMixedDrinkLabel,
   normalizeStoryUnlockEntries,
   resolveGuestNode,
-  resolveMixingOutcomeNode,
   type ScheduledVisit,
 } from '../app/flowHelpers';
+import {
+  resolveMixingOutcomeNode,
+  shouldRetryMixingFailure,
+} from '../app/narrativeRouting';
 import { selectGameRuntimeView } from '../state/gameSelectors';
 import {
   toGamePhase,
@@ -109,6 +112,7 @@ export function useGameFlowController(
     guest,
     currentGuestData,
     startNodeId,
+    currentNode,
     teachingNode,
     mixingNode,
     availableChatNodes,
@@ -278,8 +282,10 @@ export function useGameFlowController(
     transition(payload.sameDay ? 'dayLoop.intro' : 'dayLoop.daySummary');
   }, [closeTranscript, commitPendingStoryUnlocks, game.journalHistory, patchContext, resetCurrentGuest, transition]);
 
-  const enterTailChatBeforeNodeEnd = useCallback((sourceNode: CharacterNode | null) => {
-    const resumeNodeId = getNextExitTarget(sourceNode);
+  const enterTailChatBeforeNodeEnd = useCallback((
+    sourceNode: CharacterNode | null,
+    resumeNodeId: string,
+  ) => {
     if (!sourceNode || !resumeNodeId) {
       return;
     }
@@ -485,10 +491,13 @@ export function useGameFlowController(
       }
     }
 
-    const nextNodeId = resolveMixingOutcomeNode(guest, activeMixingNode, success);
-    const shouldRetryMixing =
-      !success &&
-      !!(mixingRequest?.retry_on_fail || (!nextNodeId && teachingNode?.teaching));
+    const nextNodeId = resolveMixingOutcomeNode(activeMixingNode, success);
+    const shouldRetryMixing = shouldRetryMixingFailure({
+      success,
+      outcomeNodeId: nextNodeId,
+      retryOnFail: mixingRequest?.retry_on_fail,
+      isTeaching: Boolean(teachingNode?.teaching),
+    });
 
     if (nextUnlockedRecipes !== game.unlockedRecipes) {
       patchContext({
@@ -994,6 +1003,7 @@ export function useGameFlowController(
     guest,
     currentGuestData,
     startNodeId,
+    currentNode,
     teachingNode,
     mixingNode,
     availableChatNodes,

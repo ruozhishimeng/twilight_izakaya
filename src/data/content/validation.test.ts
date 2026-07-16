@@ -140,6 +140,88 @@ test('accepts Aqiang explicit mixing exit with complete request and outcomes', (
   assert.doesNotThrow(() => validateContentRegistry(createRegistry(nodes)));
 });
 
+test('legacy mixing requires an explicit success target and allows retry-only failure', () => {
+  const retryingNodes = [
+    createNode('teaching_mixing', {
+      drink_request: {
+        ...validMixingRequest,
+        retry_on_fail: true,
+      },
+      on_mixing_complete: 'teaching_success',
+    }),
+    createNode('teaching_success'),
+  ];
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry(retryingNodes)));
+
+  const message = getValidationError([
+    createNode('missing_success', {
+      drink_request: validMixingRequest,
+      on_mixing_fail: 'mixing_fail',
+    }),
+    createNode('mixing_fail'),
+  ]);
+  assert.match(message, /must define a success target/);
+});
+
+test('inspect-all choice groups are uniform and return through the node exit', () => {
+  const validNodes = [
+    createNode('inspect_all', {
+      player_options: [
+        { id: 'left', text: '问左边', branch_type: 'choice' },
+        {
+          id: 'right',
+          text: '问右边',
+          branch_type: 'choice',
+          condition: { need_item: 'clue', locked_text: '需要线索' },
+        },
+      ],
+      exit: { kind: 'next', target: 'after_inspection' },
+    }),
+    createNode('after_inspection', { exit: { kind: 'end_visit' } }),
+  ];
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry(validNodes)));
+
+  assert.match(getValidationError([
+    createNode('mixed_choices', {
+      player_options: [
+        { id: 'inspect', text: '逐项问', branch_type: 'choice' },
+        { id: 'leave', text: '直接走', branch_type: 'plot' },
+      ],
+      exit: { kind: 'end_visit' },
+    }),
+  ]), /cannot mix branch_type=choice/);
+
+  assert.match(getValidationError([
+    createNode('inspect_with_target', {
+      player_options: [{
+        id: 'invalid',
+        text: '不该跳转',
+        branch_type: 'choice',
+        next_node: 'target',
+      }],
+      exit: { kind: 'next', target: 'target' },
+    }),
+    createNode('target', { exit: { kind: 'end_visit' } }),
+  ]), /must return to the choice group/);
+});
+
+test('before-next tail chat accepts an option-specific resume target', () => {
+  const nodes = [
+    createNode('tail_source', {
+      llm_chat: { entry_mode: 'before_next_node' },
+      player_options: [{
+        id: 'custom_route',
+        text: '走专属路线',
+        next_node: 'tail_target',
+      }],
+      exit: { kind: 'end_visit' },
+    }),
+    createNode('tail_target', { exit: { kind: 'end_visit' } }),
+  ];
+
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry(nodes)));
+});
+
 test('rejects legacy mixing field when the node has no explicit exit', () => {
   const message = getValidationError([
     createNode('aqiang_003_drink_request', {
