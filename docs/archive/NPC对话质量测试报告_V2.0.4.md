@@ -3,7 +3,7 @@
 > 历史版本报告，仅用于追溯当时的测试状态。
 
 **日期**: 2026-05-16  
-**分支**: codex-npc-dialogue-quality-safety  
+**署名**: ruozhishimeng  
 **模型**: MiniMax-M2.5  
 **测试命令**: `node devtools\npc-dialogue-quality-suite.mjs`  
 **结果文件**: `devtools/debug-output/npc-dialogue-quality-20260516-142035.json`
