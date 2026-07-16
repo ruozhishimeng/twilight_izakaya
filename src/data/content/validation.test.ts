@@ -163,6 +163,40 @@ test('legacy mixing requires an explicit success target and allows retry-only fa
   assert.match(message, /must define a success target/);
 });
 
+test('explicit mixing may use retry-only failure but otherwise requires a fail target', () => {
+  const retryOnlyNodes = [
+    createNode('explicit_retry_mixing', {
+      exit: {
+        kind: 'mixing',
+        request: {
+          ...validMixingRequest,
+          retry_on_fail: true,
+        },
+        outcomes: {
+          success: 'explicit_retry_success',
+          fail: null,
+        },
+      },
+    }),
+    createNode('explicit_retry_success', { exit: { kind: 'end_visit' } }),
+  ];
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry(retryOnlyNodes)));
+
+  assert.match(getValidationError([
+    createNode('explicit_missing_fail', {
+      exit: {
+        kind: 'mixing',
+        request: validMixingRequest,
+        outcomes: {
+          success: 'explicit_success',
+          fail: null,
+        },
+      },
+    }),
+    createNode('explicit_success', { exit: { kind: 'end_visit' } }),
+  ]), /unless retry_on_fail is true/);
+});
+
 test('inspect-all choice groups are uniform and return through the node exit', () => {
   const validNodes = [
     createNode('inspect_all', {
@@ -220,6 +254,24 @@ test('before-next tail chat accepts an option-specific resume target', () => {
   ];
 
   assert.doesNotThrow(() => validateContentRegistry(createRegistry(nodes)));
+});
+
+test('non-null fallback_node is rejected until a condition resolver can execute it', () => {
+  const message = getValidationError([
+    createNode('fallback_source', {
+      player_options: [{
+        id: 'fallback_option',
+        text: '尝试分支',
+        next_node: 'primary_target',
+        fallback_node: 'fallback_target',
+      }],
+      exit: { kind: 'end_visit' },
+    }),
+    createNode('primary_target', { exit: { kind: 'end_visit' } }),
+    createNode('fallback_target', { exit: { kind: 'end_visit' } }),
+  ]);
+
+  assert.match(message, /fallback_node is not executable/);
 });
 
 test('rejects legacy mixing field when the node has no explicit exit', () => {
@@ -338,6 +390,28 @@ test('valid option and node relationship effects pass declaration validation', (
   assert.deepEqual(
     validateNarrativeEffectDeclarations('aqiang', 'aqiang_relationship_event', node),
     [],
+  );
+});
+
+test('relationship effect axes must be registered before content can use them', () => {
+  const node = {
+    event_id: 'unknown_axis',
+    player_options: [{
+      id: 'trust_option',
+      text: '建立信任',
+      effects: [{
+        id: 'trust_up',
+        type: 'relationship.change',
+        target: 'self',
+        axis: 'trust',
+        amount: 1,
+      }],
+    }],
+  } as CharacterNode;
+
+  assert.match(
+    validateNarrativeEffectDeclarations('aqiang', 'unknown_axis', node).join('\n'),
+    /axis "trust" is not registered/,
   );
 });
 

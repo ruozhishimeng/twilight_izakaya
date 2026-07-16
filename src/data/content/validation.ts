@@ -16,6 +16,7 @@ import type {
   TeachingSource,
 } from './types';
 import { getExitTargets, resolveNodeExit } from './narrative';
+import { DEFAULT_RELATIONSHIP_AXES } from '../../state/narrativeEffects';
 
 function hasNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
@@ -319,8 +320,11 @@ function validatePlayerOptions(
       errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} points to missing next_node "${option.next_node}"`);
     }
 
-    if (option.fallback_node && !guest.nodeMap.has(String(option.fallback_node))) {
-      errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} points to missing fallback_node "${option.fallback_node}"`);
+    if (option.fallback_node !== undefined && option.fallback_node !== null) {
+      errors.push(
+        `[${guest.id}] node ${nodeId} option ${index + 1} fallback_node is not executable; ` +
+        'use option.next_node or the node exit',
+      );
     }
 
     if (
@@ -387,6 +391,11 @@ function validateNarrativeEffectsBlock(
     }
     if (effect.axis !== undefined && !hasNonEmptyString(effect.axis)) {
       errors.push(`${effectContext} axis must be a non-empty string`);
+    } else {
+      const axis = hasNonEmptyString(effect.axis) ? effect.axis : 'affection';
+      if (!DEFAULT_RELATIONSHIP_AXES[axis]) {
+        errors.push(`${effectContext} axis "${axis}" is not registered`);
+      }
     }
     if (
       typeof effect.amount !== 'number' ||
@@ -624,8 +633,11 @@ function validateNarrativeExit(
         if (!hasSuccessTarget) {
           errors.push(`[${guest.id}] node ${nodeId} exit.mixing outcomes.success must be a non-empty target`);
         }
-        if (!hasFailTarget) {
-          errors.push(`[${guest.id}] node ${nodeId} exit.mixing outcomes.fail must be a non-empty target`);
+        if (!hasFailTarget && !exit.request.retry_on_fail) {
+          errors.push(
+            `[${guest.id}] node ${nodeId} exit.mixing outcomes.fail must be a ` +
+            'non-empty target unless retry_on_fail is true',
+          );
         }
       } else {
         if (!hasSuccessTarget) {
