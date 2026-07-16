@@ -50,48 +50,6 @@ export function findScheduledVisit(
   return null;
 }
 
-function getDependentOutcomeNodes(nodeMap: Map<string, CharacterNode>, sourceNodeId: string) {
-  return Array.from(nodeMap.values()).filter(node => {
-    const needEvent = node?.trigger_condition?.need_event;
-    return Array.isArray(needEvent) && needEvent.includes(sourceNodeId);
-  });
-}
-
-export function resolveMixingOutcomeNode(
-  guest: Guest,
-  mixingNode: CharacterNode | null,
-  success: boolean,
-) {
-  const explicitNodeId = success
-    ? mixingNode?.on_mixing_complete || mixingNode?.next_node
-    : mixingNode?.on_mixing_fail || mixingNode?.drink_request?.eval_branches?.fail;
-
-  if (explicitNodeId) {
-    return explicitNodeId;
-  }
-
-  const sourceNodeId = mixingNode?.event_id || mixingNode?.id;
-  if (!sourceNodeId) {
-    return null;
-  }
-
-  const outcomeNodes = getDependentOutcomeNodes(guest.nodeMap, sourceNodeId);
-  const priorityPatterns = success
-    ? ['most_loved_success', 'generally_liked_success', 'regular_success']
-    : ['fail', 'regular_success', 'generally_liked_success'];
-
-  for (const pattern of priorityPatterns) {
-    const match = outcomeNodes.find(
-      node => typeof node?.event_id === 'string' && node.event_id.includes(pattern),
-    );
-    if (match?.event_id) {
-      return match.event_id;
-    }
-  }
-
-  return null;
-}
-
 export function findTeachingNodeForMixing(
   guest: Guest,
   teachingCandidate: CharacterNode | null,

@@ -1,9 +1,24 @@
 Set-StrictMode -Version Latest
 
+function Test-TwilightNodeDirectory {
+  param([AllowEmptyString()][string]$Candidate)
+
+  if ([string]::IsNullOrWhiteSpace($Candidate)) {
+    return $false
+  }
+
+  try {
+    $nodeExecutable = [System.IO.Path]::Combine($Candidate, 'node.exe')
+    return [System.IO.File]::Exists($nodeExecutable)
+  } catch {
+    return $false
+  }
+}
+
 function Repair-TwilightNodeEnvironment {
   $userProfile = $env:USERPROFILE
   if ([string]::IsNullOrWhiteSpace($userProfile) -and -not [string]::IsNullOrWhiteSpace($env:USERNAME)) {
-    $userProfile = Join-Path 'C:\Users' $env:USERNAME
+    $userProfile = [System.IO.Path]::Combine('C:\Users', $env:USERNAME)
   }
 
   $windowsRoot = if ([string]::IsNullOrWhiteSpace($env:SystemRoot)) { 'C:\Windows' } else { $env:SystemRoot }
@@ -13,7 +28,7 @@ function Repair-TwilightNodeEnvironment {
   $repairs = [ordered]@{
     SystemRoot = $windowsRoot
     windir = $windowsRoot
-    ComSpec = Join-Path $windowsRoot 'System32\cmd.exe'
+    ComSpec = [System.IO.Path]::Combine($windowsRoot, 'System32', 'cmd.exe')
     APPDATA = $applicationData
     LOCALAPPDATA = $localApplicationData
   }
@@ -39,7 +54,9 @@ function Repair-TwilightNodeEnvironment {
 
   $resolvedLocalAppData = [Environment]::GetEnvironmentVariable('LOCALAPPDATA', 'Process')
   if (-not [string]::IsNullOrWhiteSpace($resolvedLocalAppData)) {
-    $nodeCandidates += Join-Path $resolvedLocalAppData 'Programs\nodejs'
+    try {
+      $nodeCandidates += [System.IO.Path]::Combine($resolvedLocalAppData, 'Programs', 'nodejs')
+    } catch {}
   }
 
   $pathEntries = @()
@@ -48,7 +65,7 @@ function Repair-TwilightNodeEnvironment {
   }
 
   $resolvedNodeDir = $nodeCandidates |
-    Where-Object { Test-Path (Join-Path $_ 'node.exe') } |
+    Where-Object { Test-TwilightNodeDirectory -Candidate $_ } |
     Select-Object -First 1
 
   if ($resolvedNodeDir -and -not ($pathEntries -contains $resolvedNodeDir)) {

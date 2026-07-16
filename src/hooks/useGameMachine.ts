@@ -8,12 +8,17 @@ import {
   type GameRootStateValue,
   type PersistedGameSnapshot,
 } from '../state/gameState';
+import type { NarrativeTransaction } from '../state/narrativeEffects';
 
 export function useGameMachine() {
   const [snapshot, dispatch] = useReducer(reduceGameEvent, undefined, createInitialGameSnapshot);
 
   const transition = useCallback((value: GameRootStateValue) => {
     dispatch({ type: 'TRANSITION', value });
+  }, []);
+
+  const debugJumpToVisit = useCallback((week: number, day: number, guestInDay: number) => {
+    dispatch({ type: 'DEBUG_JUMP', week, day, guestInDay });
   }, []);
 
   const reset = useCallback((value?: GameRootStateValue) => {
@@ -32,6 +37,10 @@ export function useGameMachine() {
     dispatch({ type: 'PATCH_CURRENT_GUEST', patch });
   }, []);
 
+  const applyNarrativeTransaction = useCallback((transaction: NarrativeTransaction) => {
+    dispatch({ type: 'APPLY_NARRATIVE_TRANSACTION', transaction });
+  }, []);
+
   const resetCurrentGuest = useCallback(() => {
     dispatch({ type: 'RESET_CURRENT_GUEST' });
   }, []);
@@ -43,10 +52,12 @@ export function useGameMachine() {
   return {
     snapshot,
     transition,
+    debugJumpToVisit,
     reset,
     loadSnapshot,
     patchContext,
     patchCurrentGuest,
+    applyNarrativeTransaction,
     patchNpcDialogue,
     resetCurrentGuest,
   };

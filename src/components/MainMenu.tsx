@@ -351,7 +351,7 @@ export default function MainMenu({
             <span>
               <span className="block text-2xl font-bold">API 设置</span>
               <span className="mt-1 block text-sm leading-6 text-[#cbb89a]">
-                当前仅支持 MiniMax 密钥，可填写自己的 KEY 或使用作者 KEY。
+                当前仅支持 MiniMax；KEY 仅在本次运行内存中使用。
               </span>
             </span>
           </span>

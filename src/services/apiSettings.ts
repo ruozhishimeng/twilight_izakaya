@@ -1,114 +1,73 @@
-export type ApiKeySource = 'none' | 'author' | 'custom' | 'environment';
+export type ApiKeySource = 'none' | 'custom';
 
 export interface ApiKeyStatus {
   provider: 'minimax';
-  providerLabel: string;
-  supportedProviders: string[];
+  providerLabel: 'MiniMax';
+  supportedProviders: ['MiniMax'];
   configured: boolean;
   source: ApiKeySource;
-  supportsAuthorKey: boolean;
-  model: string;
+  model: 'MiniMax-M2.5';
 }
 
-interface ErrorPayload {
-  error?: string;
-  status?: ApiKeyStatus;
-}
+const MAX_API_KEY_LENGTH = 512;
+const PLACEHOLDER_KEYS = new Set([
+  'yourapikey',
+  'your_api_key',
+  'your-minimax-api-key',
+  'your_minimax_api_key',
+]);
 
-type Fetcher = typeof fetch;
+let currentMiniMaxApiKey = '';
 
-function getErrorMessage(value: unknown): string | null {
-  if (!value || typeof value !== 'object') {
-    return null;
+function normalizeMiniMaxApiKey(rawApiKey: string): string {
+  const apiKey = rawApiKey.trim();
+
+  if (
+    !apiKey ||
+    apiKey.length > MAX_API_KEY_LENGTH ||
+    !/^[\x21-\x7e]+$/.test(apiKey) ||
+    PLACEHOLDER_KEYS.has(apiKey.toLowerCase())
+  ) {
+    throw new Error('请填写有效的 MiniMax API Key。');
   }
 
-  const candidate = value as ErrorPayload;
-  return typeof candidate.error === 'string' ? candidate.error : null;
+  return apiKey;
 }
 
-async function readJson(response: Response): Promise<unknown> {
-  return response.json().catch(() => null);
+export function getMiniMaxApiKeyStatus(): ApiKeyStatus {
+  const configured = currentMiniMaxApiKey.length > 0;
+  return {
+    provider: 'minimax',
+    providerLabel: 'MiniMax',
+    supportedProviders: ['MiniMax'],
+    configured,
+    source: configured ? 'custom' : 'none',
+    model: 'MiniMax-M2.5',
+  };
 }
 
-async function requestApiKeyStatusUpdate(
-  body: Record<string, unknown>,
-  fetcher: Fetcher = fetch,
-): Promise<ApiKeyStatus> {
-  const response = await fetcher('/api/settings/api-key', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  const payload = await readJson(response);
-
-  if (!response.ok) {
-    throw new Error(getErrorMessage(payload) || 'API Key 设置失败。');
-  }
-
-  return payload as ApiKeyStatus;
+export function getMiniMaxApiKeyForRequest(): string {
+  return currentMiniMaxApiKey;
 }
 
-export async function fetchApiKeyStatus(fetcher: Fetcher = fetch): Promise<ApiKeyStatus> {
-  const response = await fetcher('/api/settings/api-key');
-  const payload = await readJson(response);
-
-  if (!response.ok) {
-    throw new Error(getErrorMessage(payload) || '无法读取 API Key 状态。');
-  }
-
-  return payload as ApiKeyStatus;
+export async function fetchApiKeyStatus(): Promise<ApiKeyStatus> {
+  return getMiniMaxApiKeyStatus();
 }
 
-export function saveCustomMiniMaxKey(apiKey: string, fetcher?: Fetcher): Promise<ApiKeyStatus> {
-  return requestApiKeyStatusUpdate(
-    {
-      mode: 'custom',
-      apiKey,
-    },
-    fetcher,
-  );
+export async function saveCustomMiniMaxKey(apiKey: string): Promise<ApiKeyStatus> {
+  currentMiniMaxApiKey = normalizeMiniMaxApiKey(apiKey);
+  return getMiniMaxApiKeyStatus();
 }
 
-export function useAuthorMiniMaxKey(fetcher?: Fetcher): Promise<ApiKeyStatus> {
-  return requestApiKeyStatusUpdate(
-    {
-      mode: 'author',
-    },
-    fetcher,
-  );
-}
-
-export function clearMiniMaxKey(fetcher?: Fetcher): Promise<ApiKeyStatus> {
-  return requestApiKeyStatusUpdate(
-    {
-      mode: 'clear',
-    },
-    fetcher,
-  );
+export async function clearMiniMaxKey(): Promise<ApiKeyStatus> {
+  currentMiniMaxApiKey = '';
+  return getMiniMaxApiKeyStatus();
 }
 
 export function isApiKeyConfiguredForGameStart(status: ApiKeyStatus | null): boolean {
-  return !!status?.configured;
+  return status?.provider === 'minimax' && status.configured && status.source === 'custom';
 }
 
 export function getApiKeySourceLabel(status: ApiKeyStatus | null): string {
-  if (!status?.configured) {
-    return '未配置';
-  }
-
-  if (status.source === 'author') {
-    return '作者 KEY';
-  }
-
-  if (status.source === 'custom') {
-    return '玩家自填 KEY';
-  }
-
-  if (status.source === 'environment') {
-    return '后端环境变量';
-  }
-
-  return '未配置';
+  return status?.configured ? '本次运行的玩家 KEY' : '未配置';
 }

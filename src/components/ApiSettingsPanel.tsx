@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { KeyRound, RefreshCw, ShieldCheck, Trash2, UserRound } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { KeyRound, ShieldCheck, Trash2 } from 'lucide-react';
 import {
   clearMiniMaxKey,
-  fetchApiKeyStatus,
   getApiKeySourceLabel,
+  getMiniMaxApiKeyStatus,
   saveCustomMiniMaxKey,
-  useAuthorMiniMaxKey,
   type ApiKeyStatus,
 } from '../services/apiSettings';
 
@@ -14,16 +13,8 @@ interface Props {
   onStatusChange?: (status: ApiKeyStatus) => void;
 }
 
-interface ApiSettingsLoadingState {
-  isRefreshingStatus: boolean;
-  isSubmitting: boolean;
-}
-
-export function isAuthorKeyButtonDisabled(
-  status: ApiKeyStatus | null,
-  loadingState: ApiSettingsLoadingState,
-): boolean {
-  return loadingState.isSubmitting || status?.supportsAuthorKey === false;
+export function isMiniMaxKeySubmitDisabled(apiKeyInput: string, isSubmitting: boolean): boolean {
+  return isSubmitting || apiKeyInput.trim().length === 0;
 }
 
 const panelClass = 'border-4 border-[#8b5a2b] bg-[#241914] p-5 pixel-rounded';
@@ -34,48 +25,22 @@ const secondaryButtonClass =
   'inline-flex items-center justify-center gap-2 rounded-lg border-4 border-[#1a110c] bg-[#4a3f35] px-4 py-3 text-base font-bold text-[#e8dcc4] transition-colors hover:bg-[#5c4a3d] disabled:cursor-not-allowed disabled:opacity-50';
 
 export default function ApiSettingsPanel({ className = '', onStatusChange }: Props) {
-  const [status, setStatus] = useState<ApiKeyStatus | null>(null);
+  const [status, setStatus] = useState<ApiKeyStatus>(() => getMiniMaxApiKeyStatus());
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isRefreshingStatus, setIsRefreshingStatus] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const statusRequestIdRef = useRef(0);
 
   const applyStatus = useCallback((nextStatus: ApiKeyStatus) => {
     setStatus(nextStatus);
     onStatusChange?.(nextStatus);
   }, [onStatusChange]);
 
-  const loadStatus = useCallback(async () => {
-    const requestId = statusRequestIdRef.current + 1;
-    statusRequestIdRef.current = requestId;
-    setIsRefreshingStatus(true);
-    setErrorMessage(null);
-
-    try {
-      const nextStatus = await fetchApiKeyStatus();
-      if (requestId === statusRequestIdRef.current) {
-        applyStatus(nextStatus);
-      }
-    } catch (error) {
-      if (requestId === statusRequestIdRef.current) {
-        setErrorMessage(error instanceof Error ? error.message : '无法读取 API Key 状态。');
-      }
-    } finally {
-      if (requestId === statusRequestIdRef.current) {
-        setIsRefreshingStatus(false);
-      }
-    }
+  useEffect(() => {
+    applyStatus(getMiniMaxApiKeyStatus());
   }, [applyStatus]);
 
-  useEffect(() => {
-    void loadStatus();
-  }, [loadStatus]);
-
   const beginSubmit = () => {
-    statusRequestIdRef.current += 1;
-    setIsRefreshingStatus(false);
     setIsSubmitting(true);
     setMessage(null);
     setErrorMessage(null);
@@ -88,24 +53,9 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
       const nextStatus = await saveCustomMiniMaxKey(apiKeyInput);
       applyStatus(nextStatus);
       setApiKeyInput('');
-      setMessage('已使用你填写的 MiniMax KEY。');
+      setMessage('MiniMax KEY 已在本次运行中启用。');
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '保存 MiniMax KEY 失败。');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleUseAuthorKey = async () => {
-    beginSubmit();
-
-    try {
-      const nextStatus = await useAuthorMiniMaxKey();
-      applyStatus(nextStatus);
-      setApiKeyInput('');
-      setMessage('已切换为作者 KEY。');
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : '无法使用作者 KEY。');
+      setErrorMessage(error instanceof Error ? error.message : '启用 MiniMax KEY 失败。');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,7 +67,7 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
     try {
       const nextStatus = await clearMiniMaxKey();
       applyStatus(nextStatus);
-      setMessage('已清除当前 KEY。');
+      setMessage('已从本次运行内存中清除 KEY。');
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '清除 KEY 失败。');
     } finally {
@@ -127,20 +77,9 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
 
   return (
     <section className={`${panelClass} ${className}`}>
-      <div className="flex items-center justify-between gap-4 border-b-2 border-[#4a3f35] pb-3 text-[#f3e5c5]">
-        <div className="flex items-center gap-3">
-          <KeyRound size={24} />
-          <h3 className="text-2xl font-bold">API 设置</h3>
-        </div>
-        <button
-          type="button"
-          onClick={() => void loadStatus()}
-          disabled={isRefreshingStatus || isSubmitting}
-          className="rounded-lg p-2 text-[#d8c7a8] transition-colors hover:bg-[#2c1e16] hover:text-amber-200 disabled:opacity-50"
-          title="刷新状态"
-        >
-          <RefreshCw size={20} className={isRefreshingStatus ? 'animate-spin' : ''} />
-        </button>
+      <div className="flex items-center gap-3 border-b-2 border-[#4a3f35] pb-3 text-[#f3e5c5]">
+        <KeyRound size={24} />
+        <h3 className="text-2xl font-bold">API 设置</h3>
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
@@ -148,12 +87,12 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
           <div className={labelClass}>当前供应商</div>
           <div className="mt-2 text-xl font-bold text-[#f3e5c5]">MiniMax</div>
           <div className="mt-1 text-sm text-[#9e8968]">
-            当前仅支持 MiniMax 密钥，模型：{status?.model || 'MiniMax-M2.5'}
+            当前仅支持 MiniMax，模型：{status.model}
           </div>
         </div>
         <div
           className={`rounded-lg border-4 px-4 py-3 text-center ${
-            status?.configured
+            status.configured
               ? 'border-[#4d6b3b] bg-[#24351f] text-[#d9f0c8]'
               : 'border-[#6b3b35] bg-[#351f1c] text-[#f0c8bf]'
           }`}
@@ -171,33 +110,25 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
           onChange={event => setApiKeyInput(event.target.value)}
           placeholder="sk-api-..."
           autoComplete="off"
+          spellCheck={false}
           className={inputClass}
         />
       </label>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <button
           type="button"
           onClick={() => void handleSaveCustomKey()}
-          disabled={isSubmitting || !apiKeyInput.trim()}
+          disabled={isMiniMaxKeySubmitDisabled(apiKeyInput, isSubmitting)}
           className="inline-flex items-center justify-center gap-2 rounded-lg border-4 border-[#1a110c] bg-[#5c8a4a] px-4 py-3 text-base font-bold text-amber-100 transition-colors hover:bg-[#6c9a5a] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ShieldCheck size={20} />
-          保存 KEY
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleUseAuthorKey()}
-          disabled={isAuthorKeyButtonDisabled(status, { isRefreshingStatus, isSubmitting })}
-          className={secondaryButtonClass}
-        >
-          <UserRound size={20} />
-          使用作者的KEY
+          本次运行使用
         </button>
         <button
           type="button"
           onClick={() => void handleClearKey()}
-          disabled={isSubmitting || !status?.configured}
+          disabled={isSubmitting || !status.configured}
           className={secondaryButtonClass}
         >
           <Trash2 size={20} />
@@ -217,9 +148,10 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
       )}
 
       <div className="mt-5 space-y-2 border-t-2 border-[#4a3f35] pt-4 text-sm leading-6 text-[#cbb89a]">
-        <p>KEY 仅用于本地后端调用 NPC 尾声对话，不会进入存档或对话记录。</p>
-        <p>作者 KEY 不会显示明文；如果额度用尽或调用失败，请切换为自己的 MiniMax KEY。</p>
-        <p>未配置 KEY 时，开始新游戏会先提示进入此设置界面。</p>
+        <p>KEY 只保存在当前页面的运行内存中；刷新、关闭或重启后需要重新填写。</p>
+        <p>对话时 KEY 会经同源后端转发给 MiniMax；应用不会把它写入磁盘、存档、业务日志或服务端全局状态。</p>
+        <p>线上部署仍需确保托管平台和反向代理不会记录 Authorization 请求头。</p>
+        <p>建议使用可随时撤销、已设置额度限制的独立 MiniMax KEY。</p>
       </div>
     </section>
   );

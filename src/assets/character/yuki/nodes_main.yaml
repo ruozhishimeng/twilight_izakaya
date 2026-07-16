@@ -151,6 +151,7 @@ nodes:
         id: "R001"
         name: "未竟的生诞"
         formula: ["bc01", "m04", "f03"]
+    on_mixing_complete: yuki_phase1_most_loved_success
     on_mixing_fail: yuki_phase1_regular_success
 
   # ========================================
@@ -330,6 +331,7 @@ nodes:
         id: "R001"
         name: "未竟的生诞"
         formula: ["bc01", "m04", "f03"]
+    on_mixing_complete: yuki_phase2_most_loved_success
     on_mixing_fail: yuki_phase2_regular_success
 
   # ========================================

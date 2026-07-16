@@ -95,7 +95,7 @@ Write-Host ''
 
 $bootstrapCommand = ". '$envScriptPath'; Set-Location '$projectRoot';"
 $backendCommand = "$bootstrapCommand `$env:PORT='$backendPort'; `$env:HOST='$backendHost'; node local-backend.mjs"
-$frontendCommand = "$bootstrapCommand npm.cmd run dev -- --host $frontendHost --port $frontendPort"
+$frontendCommand = "$bootstrapCommand `$env:VITE_BACKEND_TARGET='$backendUrl'; npm.cmd run dev -- --host $frontendHost --port $frontendPort"
 
 Start-Process powershell.exe -WorkingDirectory $projectRoot -ArgumentList @(
   '-NoExit',

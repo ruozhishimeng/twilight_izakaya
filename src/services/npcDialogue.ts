@@ -1,4 +1,5 @@
 import type { NpcDialogueRequest, NpcDialogueResponse } from '../types/npcDialogue';
+import { getMiniMaxApiKeyForRequest } from './apiSettings';
 
 interface ErrorPayload {
   error?: string;
@@ -30,10 +31,16 @@ function isNpcDialogueResponse(value: unknown): value is NpcDialogueResponse {
 export async function requestNpcDialogue(
   payload: NpcDialogueRequest,
 ): Promise<NpcDialogueResponse> {
+  const apiKey = getMiniMaxApiKeyForRequest();
+  if (!apiKey) {
+    throw new Error('请先在 API 设置中填写自己的 MiniMax API Key。');
+  }
+
   const response = await fetch('/api/npc-dialogue', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(payload),
   });

@@ -32,18 +32,34 @@ nodes:
           - 这个人......浑身湿透了。像是从雨里直接跑进来的。
           - 他在赶什么？
     player_options:
-      - option: 「外面雨很大，要不要先擦一擦？」
+      - id: care_about_his_condition
+        option: 「外面雨很大，要不要先擦一擦？」
         text: 「外面雨很大，要不要先擦一擦？」
         branch_type: flavor
+        effects:
+          - id: care_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 3
+            feedback: 阿相注意到了你不带目的的关心。
         script_flow:
           - type: npc
             content:
               - 「不用。我很快就走。」
               - 「......送完这单就走。」
         impact_log: 关心他的状态
-      - option: 「您这是......速运员？这么晚还在跑？」
+      - id: ask_about_his_work
+        option: 「您这是......速运员？这么晚还在跑？」
         text: 「您这是......速运员？这么晚还在跑？」
         branch_type: flavor
+        effects:
+          - id: work_question_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 1
+            feedback: 阿相愿意多回答你一句。
         script_flow:
           - type: npc
             content:
@@ -79,9 +95,17 @@ nodes:
           - 「......不是快递。」
           - 「是......要亲手交给她的东西。」
     player_options:
-      - option: 「是要送给谁吗？」
+      - id: ask_about_recipient
+        option: 「是要送给谁吗？」
         text: 「是要送给谁吗？」
         branch_type: flavor
+        effects:
+          - id: recipient_question_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 2
+            feedback: 提到妹妹时，阿相对你的戒备松动了一点。
         script_flow:
           - type: npc
             content:
@@ -91,9 +115,17 @@ nodes:
             content:
               - 提到"妹妹"的时候，他的语气突然慢了下来。
         impact_log: 询问收件人
-      - option: 「导航怎么不准了？」
+      - id: ask_about_navigation
+        option: 「导航怎么不准了？」
         text: 「导航怎么不准了？」
         branch_type: flavor
+        effects:
+          - id: navigation_question_builds_affection
+            type: relationship.change
+            target: self
+            axis: affection
+            amount: 1
+            feedback: 阿相接受了你对异常细节的追问。
         script_flow:
           - type: npc
             content:
@@ -127,19 +159,20 @@ nodes:
         content:
           - 「让她想起她」......他在说什么？
     player_options: []
-    next_node: null
-    mixing:
-      mode: normal
-      speaker: player
-      player_prompt:
-        - 他下意识地摸了摸胸口的位置，像在确认什么东西还在。那里似乎装着什么硬质的东西——像是一个小盒子。他的手机屏幕碎裂，但导航还在运行。
-      preferred_drink:
-        id: R001
-        name: 未竟的生诞
-        formula: ["bc01", "m04", "f03"]
-      retry_on_fail: true
-      on_success: aqiang_phase1_success
-      on_fail: aqiang_phase1_fail
+    exit:
+      kind: mixing
+      request:
+        mode: normal
+        request_text: 调一杯能让阿相想起妹妹的酒
+        hint: 他下意识地摸了摸胸口的位置，像在确认那个小盒子还在。碎裂的手机屏幕上，导航仍停在最后两公里。
+        retry_on_fail: true
+        preferred_drink:
+          id: R001
+          name: 未竟的生诞
+          formula: ["bc01", "m04", "f03"]
+      outcomes:
+        success: aqiang_phase1_success
+        fail: aqiang_phase1_fail
 
   # ========================================
   # 第一幕：调酒结果
@@ -170,9 +203,15 @@ nodes:
           - 「......她还在等我。」
     player_options: []
     next_node: null
-    diary_note:
-      text:
-        - '一个浑身湿透的速运员，胸口紧紧护着什么东西。他说"最后一单"，说"妹妹还在等"。雨那么大，愿他平安到达。'
+    on_complete:
+      effects:
+        - id: remembered_drink_builds_affection
+          type: relationship.change
+          target: self
+          axis: affection
+          amount: 4
+          feedback: 这杯酒让阿相觉得你理解了他的执念。
+    diary_note: '一个浑身湿透的速运员，胸口紧紧护着什么东西。他说"最后一单"，说"妹妹还在等"。雨那么大，愿他平安到达。'
 
   - event_id: aqiang_phase1_fail
     type: dialogue
@@ -191,9 +230,15 @@ nodes:
           - 「我得走了。」
     player_options: []
     next_node: null
-    diary_note:
-      text:
-        - "阿相喝完就走了。他总是很急，赶着去送那最后一单......胸口的硬物，是送给妹妹的礼物吗？"
+    on_complete:
+      effects:
+        - id: mismatched_drink_reduces_affection
+          type: relationship.change
+          target: self
+          axis: affection
+          amount: -1
+          feedback: 这杯酒没能真正回应阿相的请求。
+    diary_note: "阿相喝完就走了。他总是很急，赶着去送那最后一单......胸口的硬物，是送给妹妹的礼物吗？"
 
   # ========================================
   # 第二幕：破冰 - 一百六十七单
@@ -350,19 +395,20 @@ nodes:
           - 「......我要送到。」
           - 「......一定要送到。」
     player_options: []
-    next_node: null
-    mixing:
-      mode: normal
-      speaker: player
-      player_prompt:
-        - 他说"一百六十七次出发，一百六十七次送达"。他的妹妹想要一架钢琴，但他只能先买得起一个音乐盒。今天是她18岁生日。
-      preferred_drink:
-        id: R024
-        name: 梅酒嗨棒
-        formula: ["bj06", "m01"]
-      retry_on_fail: true
-      on_success: aqiang_phase2_success
-      on_fail: aqiang_phase2_fail
+    exit:
+      kind: mixing
+      request:
+        mode: normal
+        request_text: 为阿相调一杯承载一百六十七次送达的酒
+        hint: 他说一百六十七次出发、一百六十七次送达。妹妹想要钢琴，而他先攒下了一个音乐盒。今天是她十八岁生日。
+        retry_on_fail: true
+        preferred_drink:
+          id: R024
+          name: 梅酒嗨棒
+          formula: ["bj06", "m01"]
+      outcomes:
+        success: aqiang_phase2_success
+        fail: aqiang_phase2_fail
 
   # ========================================
   # 第二幕：调酒结果
@@ -399,9 +445,7 @@ nodes:
       chapters:
         - id: aqiang_story_02
           reason: "阿相与小雪相关的关键情绪在第二阶段完整摊开，成功结果后的对白与日记已经让这段关系具备独立成篇的分量，因此在这里解锁第二篇故事最自然。"
-    diary_note:
-      text:
-        - "阿相喝酒的时候想起了小时候爸爸染布的味道。他说一百六十七单，只为给妹妹买一个音乐盒。今天是她18岁生日......真是个好哥哥。"
+    diary_note: "阿相喝酒的时候想起了小时候爸爸染布的味道。他说一百六十七单，只为给妹妹买一个音乐盒。今天是她18岁生日......真是个好哥哥。"
 
   - event_id: aqiang_phase2_fail
     type: dialogue
@@ -425,9 +469,7 @@ nodes:
       chapters:
         - id: aqiang_story_02
           reason: "即使调酒失败，第二阶段里阿相围绕小雪的情感与动机仍已完整呈现，日记也完成了主角视角的消化，因此仍然应解锁第二篇故事。"
-    diary_note:
-      text:
-        - '阿相说不能再让"她"失望了。他一直在说"就快到了"......但为什么他说的距离，好像永远都走不完？'
+    diary_note: '阿相说不能再让"她"失望了。他一直在说"就快到了"......但为什么他说的距离，好像永远都走不完？'
 
   # ========================================
   # 第三幕：揭露 - 那场雨
@@ -598,19 +640,20 @@ nodes:
           - 「......但我还能送到。」
           - 「......我相信。」
     player_options: []
-    next_node: null
-    mixing:
-      mode: normal
-      speaker: player
-      player_prompt:
-        - 他说"来不及的事"。他提到了那场雨，那声刹车，那句"还好，没有碎"。他的妹妹还在等他——但他好像......永远到不了了。
-      preferred_drink:
-        id: R001
-        name: 未竟的生诞
-        formula: ["bc01", "m04", "f03"]
-      retry_on_fail: true
-      on_success: aqiang_phase3_success
-      on_fail: aqiang_phase3_fail
+    exit:
+      kind: mixing
+      request:
+        mode: normal
+        request_text: 为阿相调一杯关于那些来不及之事的酒
+        hint: 他提到了那场雨、那声刹车和那句“还好，没有碎”。妹妹仍在等他，而他似乎永远也到不了。
+        retry_on_fail: true
+        preferred_drink:
+          id: R001
+          name: 未竟的生诞
+          formula: ["bc01", "m04", "f03"]
+      outcomes:
+        success: aqiang_phase3_success
+        fail: aqiang_phase3_fail
 
   # ========================================
   # 第三幕：调酒结果
@@ -647,9 +690,7 @@ nodes:
           - 第一次，他的眉头松开了。
     player_options: []
     next_node: null
-    diary_note:
-      text:
-        - "阿相终于说出了「对不起」。他说的那场雨、那声刹车、那句「还好，没有碎」......我终于明白了。他一直觉得自己来晚了。但他已经在......"
+    diary_note: "阿相终于说出了「对不起」。他说的那场雨、那声刹车、那句「还好，没有碎」......我终于明白了。他一直觉得自己来晚了。但他已经在......"
 
   - event_id: aqiang_phase3_fail
     type: dialogue
@@ -674,9 +715,7 @@ nodes:
           - 但他的身影......为什么看起来有些透明？
     player_options: []
     next_node: null
-    diary_note:
-      text:
-        - "他要走的时候，我好像看到了什么......他的身影，为什么有些模糊？像是不属于这个世界的人。"
+    diary_note: "他要走的时候，我好像看到了什么......他的身影，为什么有些模糊？像是不属于这个世界的人。"
 
   # ========================================
   # 第四幕：救赎 - 月光
@@ -909,6 +948,4 @@ nodes:
       chapters:
         - id: aqiang_story_03
           reason: "阿相主线在这一终局节点完成了情感与命运上的最终收束，随后通过日记完成主角的再理解，把第三篇故事放在这里解锁能够与整条线自然闭环。"
-    diary_note:
-      text:
-        - '阿相走了。他终于把音乐盒送到了雪手里——不是用一百六十七单，而是用他自己的方式。他说，"你才是那首《月光》"。月光照耀着他们，愿他们永远在一起。'
+    diary_note: '阿相走了。他终于把音乐盒送到了雪手里——不是用一百六十七单，而是用他自己的方式。他说，"你才是那首《月光》"。月光照耀着他们，愿他们永远在一起。'

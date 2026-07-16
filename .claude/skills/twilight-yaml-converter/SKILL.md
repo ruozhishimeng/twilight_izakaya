@@ -733,8 +733,8 @@ npm run content:check
 ## Cross-Reference
 
 - **Requires**: [twilight-narrative](../twilight-narrative/SKILL.md) (STAGE 3 output)
-- **Format Reference**: [状态系统驱动内容规范.md](../../../状态系统驱动内容规范.md) - 运行时字段契约
-- **Template Reference**: [状态系统驱动节点模板.md](../../../状态系统驱动节点模板.md) - 最小脚手架
+- **Format Reference**: [状态系统驱动内容规范.md](../../../docs/状态系统驱动内容规范.md) - 运行时字段契约
+- **Template Reference**: [状态系统驱动节点模板.md](../../../docs/状态系统驱动节点模板.md) - 最小脚手架
 - **Validation Code**: [validation.ts](../../../src/data/content/validation.ts) - 校验规则来源
 - **Next**: STAGE 5 (content:check + fix loop)
 

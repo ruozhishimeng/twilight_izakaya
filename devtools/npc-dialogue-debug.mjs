@@ -315,7 +315,7 @@ async function runDebug(scenario, useMock) {
   }
 
   // ---- STEP 3: Call API / Mock ----
-  printStep(3, useMock ? '本地 Mock 调用' : `API 调用 (minimax:${process.env.MINIMAX_MODEL?.trim() || 'MiniMax-M2.5'})`);
+  printStep(3, useMock ? '本地 Mock 调用' : 'API 调用 (minimax:MiniMax-M2.5)');
 
   let providerResult;
   const apiStartMs = Date.now();
@@ -345,7 +345,10 @@ async function runDebug(scenario, useMock) {
     console.log(`\n📊 模拟用量: promptChars=${providerResult.usage.promptChars}, completionChars=${providerResult.usage.completionChars}`);
   } else {
     try {
-      providerResult = await requestMiniMaxNpcDialogue(promptPayload);
+      providerResult = await requestMiniMaxNpcDialogue({
+        ...promptPayload,
+        apiKey: process.env.MINIMAX_API_KEY,
+      });
       const durationMs = Date.now() - apiStartMs;
       debugRecord.step3_api = {
         mode: 'live',
@@ -567,7 +570,10 @@ async function runInteractive(baseScenario, useMock) {
         usage: mockResponse.usage,
       };
     } else {
-      providerResult = await requestMiniMaxNpcDialogue(promptPayload);
+      providerResult = await requestMiniMaxNpcDialogue({
+        ...promptPayload,
+        apiKey: process.env.MINIMAX_API_KEY,
+      });
     }
 
     const parseResult = parseModelOutput(providerResult.content);

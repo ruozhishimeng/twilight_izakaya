@@ -4,7 +4,7 @@ import { parseModelOutput, validateNpcDialogueResponse } from './responseParser.
 import { buildUnsupportedNpcDialogueResponse, moderateNpcDialogueInput } from './safety.mjs';
 import { validateNpcDialogueRequest } from './schema.mjs';
 
-export async function handleNpcDialogueRequest(body) {
+export async function handleNpcDialogueRequest(body, options = {}) {
   const validation = validateNpcDialogueRequest(body);
 
   if (!validation.ok) {
@@ -26,7 +26,10 @@ export async function handleNpcDialogueRequest(body) {
     }
 
     const promptPayload = buildMiniMaxNpcDialogueMessages(validation.value);
-    const providerResult = await requestMiniMaxNpcDialogue(promptPayload);
+    const providerResult = await requestMiniMaxNpcDialogue({
+      ...promptPayload,
+      apiKey: options.apiKey,
+    });
     const parsedOutput = parseModelOutput(providerResult.content);
     const responseValidation = validateNpcDialogueResponse(parsedOutput);
 

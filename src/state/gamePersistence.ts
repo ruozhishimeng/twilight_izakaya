@@ -3,6 +3,7 @@ import {
   PERSISTED_GAME_SNAPSHOT_VERSION,
   assertGameRootStateValue,
   hydrateCurrentGuestRuntime,
+  hydrateGameContext,
   hydrateNpcDialogueRuntime,
   isGameRootStateValue,
   legacyPhaseToState,
@@ -54,7 +55,10 @@ interface LegacySaveData {
   }>;
 }
 
-type PersistedGameContextV1 = Omit<GameContext, 'npcDialogue' | 'currentGuest'> & {
+type PersistedGameContextV1 = Omit<
+  GameContext,
+  'npcDialogue' | 'currentGuest' | 'narrativeEffects'
+> & {
   currentGuest?: Partial<CurrentGuestRuntime>;
 };
 
@@ -64,7 +68,10 @@ interface PersistedGameSnapshotV1 {
   context: PersistedGameContextV1;
 }
 
-type PersistedGameContextV2 = Omit<GameContext, 'npcDialogue' | 'currentGuest'> & {
+type PersistedGameContextV2 = Omit<
+  GameContext,
+  'npcDialogue' | 'currentGuest' | 'narrativeEffects'
+> & {
   currentGuest?: Partial<CurrentGuestRuntime>;
   npcDialogue?: Partial<NpcDialogueRuntime>;
 };
@@ -73,6 +80,20 @@ interface PersistedGameSnapshotV2 {
   version: 2;
   state: string;
   context: PersistedGameContextV2;
+}
+
+type PersistedGameContextV3 = Omit<GameContext, 'narrativeEffects'>;
+
+interface PersistedGameSnapshotV3 {
+  version: 3;
+  state: string;
+  context: PersistedGameContextV3;
+}
+
+interface PersistedGameSnapshotV4Input {
+  version: 4;
+  state: string;
+  context: Record<string, unknown>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -104,7 +125,25 @@ function isPersistedGameSnapshotV2(value: unknown): value is PersistedGameSnapsh
   return typeof value.state === 'string' && isRecord(value.context);
 }
 
-function isPersistedGameSnapshotV3(value: unknown): value is PersistedGameSnapshot {
+function isPersistedGameSnapshotV3(value: unknown): value is PersistedGameSnapshotV3 {
+  if (
+    !isRecord(value) ||
+    value.version !== 3 ||
+    !('state' in value) ||
+    !('context' in value)
+  ) {
+    return false;
+  }
+
+  return (
+    isGameRootStateValue(value.state) &&
+    isRecord(value.context) &&
+    isRecord(value.context.currentGuest) &&
+    isRecord(value.context.npcDialogue)
+  );
+}
+
+function isPersistedGameSnapshotV4(value: unknown): value is PersistedGameSnapshotV4Input {
   if (
     !isRecord(value) ||
     value.version !== PERSISTED_GAME_SNAPSHOT_VERSION ||
@@ -126,11 +165,11 @@ function migratePersistedSnapshotV1(data: PersistedGameSnapshotV1): PersistedGam
   return {
     version: PERSISTED_GAME_SNAPSHOT_VERSION,
     state: assertGameRootStateValue(data.state),
-    context: {
+    context: hydrateGameContext({
       ...data.context,
       currentGuest: hydrateCurrentGuestRuntime(data.context.currentGuest),
       npcDialogue: hydrateNpcDialogueRuntime(),
-    },
+    }),
   };
 }
 
@@ -138,11 +177,27 @@ function migratePersistedSnapshotV2(data: PersistedGameSnapshotV2): PersistedGam
   return {
     version: PERSISTED_GAME_SNAPSHOT_VERSION,
     state: assertGameRootStateValue(data.state),
-    context: {
+    context: hydrateGameContext({
       ...data.context,
       currentGuest: hydrateCurrentGuestRuntime(data.context.currentGuest),
       npcDialogue: hydrateNpcDialogueRuntime(data.context.npcDialogue),
-    },
+    }),
+  };
+}
+
+function migratePersistedSnapshotV3(data: PersistedGameSnapshotV3): PersistedGameSnapshot {
+  return {
+    version: PERSISTED_GAME_SNAPSHOT_VERSION,
+    state: assertGameRootStateValue(data.state),
+    context: hydrateGameContext(data.context),
+  };
+}
+
+function normalizePersistedSnapshotV4(data: PersistedGameSnapshotV4Input): PersistedGameSnapshot {
+  return {
+    version: PERSISTED_GAME_SNAPSHOT_VERSION,
+    state: assertGameRootStateValue(data.state),
+    context: hydrateGameContext(data.context as Partial<GameContext>),
   };
 }
 
@@ -150,7 +205,7 @@ function migrateLegacySaveData(data: LegacySaveData): PersistedGameSnapshot {
   return {
     version: PERSISTED_GAME_SNAPSHOT_VERSION,
     state: legacyPhaseToState(data.phase, data.showObservation),
-    context: {
+    context: hydrateGameContext({
       week: data.currentWeek,
       day: data.currentDay,
       guestInDay: data.currentGuestInDay,
@@ -185,13 +240,17 @@ function migrateLegacySaveData(data: LegacySaveData): PersistedGameSnapshot {
         challenges: data.currentGuestChallenges || [],
         transcript: data.currentGuestTranscript || [],
       }),
-    },
+    }),
   };
 }
 
 export function normalizePersistedSnapshotData(data: unknown): PersistedGameSnapshot {
+  if (isPersistedGameSnapshotV4(data)) {
+    return normalizePersistedSnapshotV4(data);
+  }
+
   if (isPersistedGameSnapshotV3(data)) {
-    return data;
+    return migratePersistedSnapshotV3(data);
   }
 
   if (isPersistedGameSnapshotV2(data)) {

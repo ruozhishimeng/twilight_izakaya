@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo } from 'react';
-import type { CharacterNode } from '../data/content/types';
+import type { CharacterNode, NodePlayerOption } from '../data/content/types';
+import {
+  getMixingRequest,
+  isMixingExit,
+  resolveNodeExit,
+} from '../data/content/narrative';
+import {
+  compileNodeCompletionNarrativeTransaction,
+  compileOptionNarrativeTransaction,
+} from '../data/content/effects';
+import type { NarrativeTransaction } from '../state/narrativeEffects';
 import {
   contentRegistry,
   findNodeForGuest,
@@ -14,9 +24,12 @@ import {
   formatMixedDrinkLabel,
   normalizeStoryUnlockEntries,
   resolveGuestNode,
-  resolveMixingOutcomeNode,
   type ScheduledVisit,
 } from '../app/flowHelpers';
+import {
+  resolveMixingOutcomeNode,
+  shouldRetryMixingFailure,
+} from '../app/narrativeRouting';
 import { selectGameRuntimeView } from '../state/gameSelectors';
 import {
   toGamePhase,
@@ -34,9 +47,11 @@ import type { NpcDialogueRequest } from '../types/npcDialogue';
 interface GameMachineController {
   snapshot: GameSnapshot;
   transition: (value: GameRootStateValue) => void;
+  debugJumpToVisit: (week: number, day: number, guestInDay: number) => void;
   patchContext: (patch: Partial<GameContext>) => void;
   patchCurrentGuest: (patch: Partial<GameContext['currentGuest']>) => void;
   patchNpcDialogue: (patch: Partial<GameContext['npcDialogue']>) => void;
+  applyNarrativeTransaction: (transaction: NarrativeTransaction) => void;
   resetCurrentGuest: () => void;
 }
 
@@ -58,6 +73,21 @@ function weekdayLabel(day: number) {
   return ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'][day - 1] || `第 ${day} 天`;
 }
 
+function getNextExitTarget(node: MixingCandidate) {
+  if (!node) {
+    return null;
+  }
+  const exit = resolveNodeExit(node);
+  return exit.kind === 'next' ? exit.target : null;
+}
+
+function asMixingNode(node: MixingCandidate) {
+  if (!node) {
+    return null;
+  }
+  return isMixingExit(resolveNodeExit(node)) ? node : null;
+}
+
 export function useGameFlowController(
   machine: GameMachineController,
   options: GameFlowControllerOptions = {},
@@ -65,9 +95,11 @@ export function useGameFlowController(
   const {
     snapshot,
     transition,
+    debugJumpToVisit,
     patchContext,
     patchCurrentGuest,
     patchNpcDialogue,
+    applyNarrativeTransaction,
     resetCurrentGuest,
   } = machine;
   const closeTranscript = options.closeTranscript || (() => {});
@@ -80,12 +112,42 @@ export function useGameFlowController(
     guest,
     currentGuestData,
     startNodeId,
+    currentNode,
     teachingNode,
     mixingNode,
     availableChatNodes,
     canShowTranscriptButton,
     activeAudioNode,
   } = runtime;
+  const visitId = `W${game.week}:D${game.day}:G${game.guestInDay}:${guest.id}`;
+
+  const recordNarrativeOption = useCallback((node: CharacterNode, option: NodePlayerOption) => {
+    const eventId = node.event_id || node.id;
+    if (!eventId || !option.id) {
+      return;
+    }
+
+    applyNarrativeTransaction(compileOptionNarrativeTransaction({
+      guestId: guest.id,
+      eventId,
+      option,
+      visitId,
+    }));
+  }, [applyNarrativeTransaction, guest.id, visitId]);
+
+  const recordNarrativeNodeCompletion = useCallback((node: CharacterNode) => {
+    const eventId = node.event_id || node.id;
+    if (!eventId) {
+      return;
+    }
+
+    applyNarrativeTransaction(compileNodeCompletionNarrativeTransaction({
+      guestId: guest.id,
+      eventId,
+      node,
+      visitId,
+    }));
+  }, [applyNarrativeTransaction, guest.id, visitId]);
 
   const appendCurrentGuestChallenge = useCallback((challenge?: string) => {
     const normalized = challenge?.trim();
@@ -186,13 +248,14 @@ export function useGameFlowController(
       return '未找到可跳转的剧情日期。';
     }
 
-    jumpToVisit(targetVisit);
+    debugJumpToVisit(targetVisit.week, targetVisit.day, targetVisit.guestInDay);
+    closeTranscript();
     if (targetVisit.exact) {
       return `已跳转到第 ${targetVisit.week} 周 ${weekdayLabel(targetVisit.day)}。`;
     }
 
     return `指定日期没有客人，已跳转到最近的第 ${targetVisit.week} 周 ${weekdayLabel(targetVisit.day)}。`;
-  }, [jumpToVisit]);
+  }, [closeTranscript, debugJumpToVisit]);
 
   const finalizeGuestAdvance = useCallback((payload: GuestReflectionState) => {
     resetCurrentGuest();
@@ -219,8 +282,11 @@ export function useGameFlowController(
     transition(payload.sameDay ? 'dayLoop.intro' : 'dayLoop.daySummary');
   }, [closeTranscript, commitPendingStoryUnlocks, game.journalHistory, patchContext, resetCurrentGuest, transition]);
 
-  const enterTailChatBeforeNodeEnd = useCallback((sourceNode: CharacterNode | null) => {
-    if (!sourceNode?.next_node) {
+  const enterTailChatBeforeNodeEnd = useCallback((
+    sourceNode: CharacterNode | null,
+    resumeNodeId: string,
+  ) => {
+    if (!sourceNode || !resumeNodeId) {
       return;
     }
 
@@ -233,7 +299,7 @@ export function useGameFlowController(
       tailChat: {
         ...resolvedTailChat,
         turnsUsed: 0,
-        resumeNodeId: sourceNode.next_node,
+        resumeNodeId,
       },
     });
     patchNpcDialogue({
@@ -246,18 +312,13 @@ export function useGameFlowController(
   }, [guest.id, patchCurrentGuest, patchNpcDialogue, transition]);
 
   const enterMixing = useCallback((teachingCandidate: MixingCandidate, mixingCandidate: MixingCandidate) => {
+    const teachingNextNodeId = getNextExitTarget(teachingCandidate);
     const normalizedMixingNode =
-      ((mixingCandidate?.drink_request ||
-        mixingCandidate?.on_mixing_complete ||
-        mixingCandidate?.on_mixing_fail) &&
-        mixingCandidate) ||
-      (teachingCandidate?.next_node
-        ? findNodeForGuest(teachingCandidate.next_node, guest.id, guest.nodeMap)
+      asMixingNode(mixingCandidate) ||
+      (teachingNextNodeId
+        ? asMixingNode(findNodeForGuest(teachingNextNodeId, guest.id, guest.nodeMap))
         : null) ||
-      ((teachingCandidate?.drink_request ||
-        teachingCandidate?.on_mixing_complete ||
-        teachingCandidate?.on_mixing_fail) &&
-        teachingCandidate) ||
+      asMixingNode(teachingCandidate) ||
       null;
     const normalizedTeachingNode = findTeachingNodeForMixing(
       guest,
@@ -265,6 +326,9 @@ export function useGameFlowController(
       normalizedMixingNode || mixingCandidate,
     );
     const taughtRecipeId = normalizedTeachingNode?.teaching?.recipe?.id;
+    const mixingRequest = normalizedMixingNode
+      ? getMixingRequest(resolveNodeExit(normalizedMixingNode))
+      : null;
 
     if (taughtRecipeId && !game.unlockedRecipes.includes(taughtRecipeId)) {
       patchContext({
@@ -275,7 +339,7 @@ export function useGameFlowController(
     appendCurrentGuestChallenge(
       normalizedTeachingNode?.teaching?.recipe?.name
         ? `向${guest.name}学习「${normalizedTeachingNode.teaching.recipe.name}」`
-        : normalizedMixingNode?.drink_request?.request_text || normalizedMixingNode?.drink_request?.hint,
+        : mixingRequest?.request_text || mixingRequest?.hint,
     );
 
     patchCurrentGuest({
@@ -381,15 +445,20 @@ export function useGameFlowController(
   ]);
 
   const serveDrink = useCallback((ingredients: string[]) => {
+    const teachingNextNodeId = getNextExitTarget(teachingNode);
     const activeMixingNode =
-      mixingNode ||
-      (teachingNode?.next_node ? findNodeForGuest(teachingNode.next_node, guest.id, guest.nodeMap) : null) ||
-      ((teachingNode?.drink_request || teachingNode?.on_mixing_complete || teachingNode?.on_mixing_fail) &&
-        teachingNode) ||
+      asMixingNode(mixingNode) ||
+      (teachingNextNodeId
+        ? asMixingNode(findNodeForGuest(teachingNextNodeId, guest.id, guest.nodeMap))
+        : null) ||
+      asMixingNode(teachingNode) ||
       null;
+    const mixingRequest = activeMixingNode
+      ? getMixingRequest(resolveNodeExit(activeMixingNode))
+      : null;
 
     const idealFormula =
-      activeMixingNode?.drink_request?.preferred_drink?.formula || teachingNode?.teaching?.recipe?.formula || null;
+      mixingRequest?.preferred_drink?.formula || teachingNode?.teaching?.recipe?.formula || null;
     const expectedFormula = idealFormula ? [...idealFormula].filter(Boolean).sort() : null;
     const actualFormula = [...ingredients].filter(Boolean).sort();
     const success =
@@ -422,10 +491,13 @@ export function useGameFlowController(
       }
     }
 
-    const nextNodeId = resolveMixingOutcomeNode(guest, activeMixingNode, success);
-    const shouldRetryMixing =
-      !success &&
-      !!(activeMixingNode?.drink_request?.retry_on_fail || (!nextNodeId && teachingNode?.teaching));
+    const nextNodeId = resolveMixingOutcomeNode(activeMixingNode, success);
+    const shouldRetryMixing = shouldRetryMixingFailure({
+      success,
+      outcomeNodeId: nextNodeId,
+      retryOnFail: mixingRequest?.retry_on_fail,
+      isTeaching: Boolean(teachingNode?.teaching),
+    });
 
     if (nextUnlockedRecipes !== game.unlockedRecipes) {
       patchContext({
@@ -567,9 +639,10 @@ export function useGameFlowController(
 
     if (!game.pendingGuestReflection) {
       const currentNode = resolveGuestNode(guest, game.currentGuest.nodeId);
-      if (currentNode?.next_node) {
+      const nextNodeId = getNextExitTarget(currentNode);
+      if (nextNodeId) {
         patchCurrentGuest({
-          nodeId: currentNode.next_node,
+          nodeId: nextNodeId,
         });
         patchNpcDialogue({
           status: 'idle',
@@ -930,11 +1003,14 @@ export function useGameFlowController(
     guest,
     currentGuestData,
     startNodeId,
+    currentNode,
     teachingNode,
     mixingNode,
     availableChatNodes,
     canShowTranscriptButton,
     activeAudioNode,
+    recordNarrativeOption,
+    recordNarrativeNodeCompletion,
     appendCurrentGuestTranscript,
     debugJump,
     beginGuestArrival,

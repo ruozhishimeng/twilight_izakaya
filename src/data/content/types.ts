@@ -21,7 +21,26 @@ export interface PlayerOptionCondition {
   locked_text: string;
 }
 
+export type NarrativeEffectScopeSource = 'game' | 'visit';
+
+export interface RelationshipChangeEffectSource {
+  id: string;
+  type: 'relationship.change';
+  target: 'self' | string;
+  axis?: string;
+  amount: number;
+  feedback?: string;
+}
+
+export type NarrativeEffectSource = RelationshipChangeEffectSource;
+
+export interface NarrativeEffectBlockSource {
+  effects?: NarrativeEffectSource[];
+  effect_scope?: NarrativeEffectScopeSource;
+}
+
 export interface NodePlayerOption {
+  id?: string;
   option?: string;
   text: string;
   branch_type?: 'flavor' | 'plot' | 'choice' | null;
@@ -33,6 +52,8 @@ export interface NodePlayerOption {
   impact_log?: string;
   trigger_event?: string;
   condition?: PlayerOptionCondition;
+  effects?: NarrativeEffectSource[];
+  effect_scope?: NarrativeEffectScopeSource;
 }
 
 export interface GuestPhase {
@@ -80,6 +101,39 @@ export interface DrinkRequestSource {
   preferred_drink?: PreferredDrinkSource;
   eval_branches?: DrinkRequestEvalBranches;
 }
+
+export interface NarrativeNextExit {
+  kind: 'next';
+  target: string;
+}
+
+export interface NarrativeObservationExit {
+  kind: 'observation';
+  prompt: string;
+  continue_node: string;
+  feature_groups?: string[];
+}
+
+export interface NarrativeMixingOutcomes {
+  success: string | null;
+  fail: string | null;
+}
+
+export interface NarrativeMixingExit {
+  kind: 'mixing';
+  request: DrinkRequestSource;
+  outcomes: NarrativeMixingOutcomes;
+}
+
+export interface NarrativeEndVisitExit {
+  kind: 'end_visit';
+}
+
+export type NarrativeExit =
+  | NarrativeNextExit
+  | NarrativeObservationExit
+  | NarrativeMixingExit
+  | NarrativeEndVisitExit;
 
 export interface TeachingRecipeSource {
   id?: string;
@@ -143,6 +197,7 @@ export interface ResolvedLlmChatConfig {
 export interface CharacterNode {
   event_id?: string;
   id?: string;
+  exit?: NarrativeExit;
   next_node?: string | null;
   trigger_condition?: NodeTriggerCondition;
   script_flow?: ScriptFlowStep[];
@@ -169,6 +224,7 @@ export interface CharacterNode {
   complete_teaching?: boolean;
   game_action?: TeachingGameActionSource;
   llm_chat?: NodeLlmChatSource;
+  on_complete?: NarrativeEffectBlockSource;
   [key: string]: unknown;
 }
 

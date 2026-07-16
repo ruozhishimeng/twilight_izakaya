@@ -15,6 +15,8 @@ import type {
   TeachingRecipeSource,
   TeachingSource,
 } from './types';
+import { getExitTargets, resolveNodeExit } from './narrative';
+import { DEFAULT_RELATIONSHIP_AXES } from '../../state/narrativeEffects';
 
 function hasNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
@@ -22,6 +24,25 @@ function hasNonEmptyString(value: unknown): value is string {
 
 function hasPositiveInteger(value: unknown) {
   return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+function hasOwn(value: object, key: string) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function hasNextNarrativeExit(node: CharacterNode | undefined) {
+  if (!node) {
+    return false;
+  }
+  try {
+    return resolveNodeExit(node).kind === 'next';
+  } catch {
+    return false;
+  }
 }
 
 function nodeRefId(node: CharacterNode) {
@@ -245,8 +266,17 @@ function validateNodeLlmChatConfig(
     errors.push(`[${guest.id}] node ${nodeId} llm_chat.entry_mode must be "before_next_node" or "after_node"`);
   }
 
-  if (config.entry_mode === 'before_next_node' && !hasNonEmptyString(guest.nodeMap.get(nodeId)?.next_node)) {
-    errors.push(`[${guest.id}] node ${nodeId} llm_chat.entry_mode=before_next_node requires next_node`);
+  const sourceNode = guest.nodeMap.get(nodeId);
+  const hasOptionNext = sourceNode?.player_options?.some(option => hasNonEmptyString(option.next_node));
+  if (
+    config.entry_mode === 'before_next_node' &&
+    !hasNextNarrativeExit(sourceNode) &&
+    !hasOptionNext
+  ) {
+    errors.push(
+      `[${guest.id}] node ${nodeId} llm_chat.entry_mode=before_next_node requires ` +
+      'a node or option next exit',
+    );
   }
 }
 
@@ -265,7 +295,23 @@ function validatePlayerOptions(
     return;
   }
 
+  const inspectOptionCount = playerOptions.filter(option => (
+    (option.branchType ?? option.branch_type) === 'choice'
+  )).length;
+  if (inspectOptionCount > 0 && inspectOptionCount !== playerOptions.length) {
+    errors.push(
+      `[${guest.id}] node ${nodeId} cannot mix branch_type=choice with select-one options`,
+    );
+  }
+
   playerOptions.forEach((option, index) => {
+    const branchType = option.branchType ?? option.branch_type ?? null;
+    if (branchType && !['flavor', 'plot', 'choice'].includes(branchType)) {
+      errors.push(
+        `[${guest.id}] node ${nodeId} option ${index + 1} has unsupported branch_type "${branchType}"`,
+      );
+    }
+
     if (!hasNonEmptyString(option.text) && !hasNonEmptyString(option.option)) {
       errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} is missing text`);
     }
@@ -274,14 +320,140 @@ function validatePlayerOptions(
       errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} points to missing next_node "${option.next_node}"`);
     }
 
-    if (option.fallback_node && !guest.nodeMap.has(String(option.fallback_node))) {
-      errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} points to missing fallback_node "${option.fallback_node}"`);
+    if (option.fallback_node !== undefined && option.fallback_node !== null) {
+      errors.push(
+        `[${guest.id}] node ${nodeId} option ${index + 1} fallback_node is not executable; ` +
+        'use option.next_node or the node exit',
+      );
+    }
+
+    if (
+      branchType === 'choice' &&
+      (option.next_node !== undefined || option.fallback_node !== undefined)
+    ) {
+      errors.push(
+        `[${guest.id}] node ${nodeId} option ${index + 1} branch_type=choice ` +
+        'must return to the choice group and cannot define next_node or fallback_node',
+      );
     }
 
     if (option.script_flow && (!Array.isArray(option.script_flow) || option.script_flow.length === 0)) {
       errors.push(`[${guest.id}] node ${nodeId} option ${index + 1} script_flow must be a non-empty array`);
     }
   });
+}
+
+function validateNarrativeEffectScope(
+  value: unknown,
+  context: string,
+  errors: string[],
+) {
+  if (value !== undefined && value !== 'game' && value !== 'visit') {
+    errors.push(`${context} effect_scope must be "game" or "visit"`);
+  }
+}
+
+function validateNarrativeEffectsBlock(
+  value: unknown,
+  context: string,
+  errors: string[],
+) {
+  if (value === undefined) {
+    return;
+  }
+  if (!Array.isArray(value)) {
+    errors.push(`${context} effects must be an array`);
+    return;
+  }
+
+  const effectIds = new Set<string>();
+  value.forEach((effect, index) => {
+    const effectContext = `${context} effect ${index + 1}`;
+    if (!isRecord(effect)) {
+      errors.push(`${effectContext} must be an object`);
+      return;
+    }
+
+    const effectId = effect.id;
+    if (!hasNonEmptyString(effectId)) {
+      errors.push(`${effectContext} id must be a non-empty string`);
+    } else if (effectIds.has(effectId)) {
+      errors.push(`${context} contains duplicate effect id "${effectId}"`);
+    } else {
+      effectIds.add(effectId);
+    }
+
+    if (effect.type !== 'relationship.change') {
+      errors.push(`${effectContext} type must be "relationship.change"`);
+    }
+    if (!hasNonEmptyString(effect.target)) {
+      errors.push(`${effectContext} target must be a non-empty string`);
+    }
+    if (effect.axis !== undefined && !hasNonEmptyString(effect.axis)) {
+      errors.push(`${effectContext} axis must be a non-empty string`);
+    } else {
+      const axis = hasNonEmptyString(effect.axis) ? effect.axis : 'affection';
+      if (!DEFAULT_RELATIONSHIP_AXES[axis]) {
+        errors.push(`${effectContext} axis "${axis}" is not registered`);
+      }
+    }
+    if (
+      typeof effect.amount !== 'number' ||
+      !Number.isFinite(effect.amount) ||
+      effect.amount === 0
+    ) {
+      errors.push(`${effectContext} amount must be a finite non-zero number`);
+    }
+    if (effect.feedback !== undefined && !hasNonEmptyString(effect.feedback)) {
+      errors.push(`${effectContext} feedback must be a non-empty string`);
+    }
+  });
+}
+
+export function validateNarrativeEffectDeclarations(
+  guestId: string,
+  nodeId: string,
+  node: CharacterNode,
+): string[] {
+  const errors: string[] = [];
+  const optionIds = new Set<string>();
+
+  if (Array.isArray(node.player_options)) {
+    node.player_options.forEach((option, index) => {
+      const context = `[${guestId}] node ${nodeId} option ${index + 1}`;
+      const optionId = option.id;
+      const definesEffects = hasOwn(option, 'effects');
+
+      if (optionId !== undefined && !hasNonEmptyString(optionId)) {
+        errors.push(`${context} id must be a non-empty string`);
+      } else if (hasNonEmptyString(optionId)) {
+        if (optionIds.has(optionId)) {
+          errors.push(`[${guestId}] node ${nodeId} contains duplicate option id "${optionId}"`);
+        } else {
+          optionIds.add(optionId);
+        }
+      }
+
+      if (definesEffects && !hasNonEmptyString(optionId)) {
+        errors.push(`${context} with effects requires a stable id`);
+      }
+
+      validateNarrativeEffectScope(option.effect_scope, context, errors);
+      validateNarrativeEffectsBlock(option.effects, context, errors);
+    });
+  }
+
+  if (node.on_complete !== undefined) {
+    const context = `[${guestId}] node ${nodeId} on_complete`;
+    if (!isRecord(node.on_complete)) {
+      errors.push(`${context} must be an object`);
+    } else {
+      validateNarrativeEffectScope(node.on_complete.effect_scope, context, errors);
+      validateNarrativeEffectsBlock(node.on_complete.effects, context, errors);
+    }
+  }
+
+  return errors;
 }
 
 function validateObservationTrigger(
@@ -386,10 +558,9 @@ function validateDrinkRequest(
     return;
   }
 
-  if (
-    drinkRequest.preferred_drink.id &&
-    !registry.recipeIds.has(String(drinkRequest.preferred_drink.id))
-  ) {
+  if (!hasNonEmptyString(drinkRequest.preferred_drink.id)) {
+    errors.push(`[${guest.id}] node ${nodeId} preferred drink is missing id`);
+  } else if (!registry.recipeIds.has(String(drinkRequest.preferred_drink.id))) {
     errors.push(`[${guest.id}] node ${nodeId} preferred drink id "${drinkRequest.preferred_drink.id}" is unknown`);
   }
 
@@ -403,6 +574,106 @@ function validateDrinkRequest(
     `[${guest.id}] node ${nodeId} preferred drink`,
     errors,
   );
+}
+
+function validateNarrativeExit(
+  guest: Guest,
+  nodeId: string,
+  node: CharacterNode,
+  registry: ContentRegistry,
+  errors: string[],
+) {
+  let exit: ReturnType<typeof resolveNodeExit>;
+
+  try {
+    exit = resolveNodeExit(node);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`[${guest.id}] node ${nodeId} has invalid narrative exit: ${message}`);
+    return;
+  }
+
+  switch (exit.kind) {
+    case 'next':
+      if (!hasNonEmptyString(exit.target)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.next target must be a non-empty string`);
+      }
+      break;
+    case 'observation':
+      if (!hasNonEmptyString(exit.prompt)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.observation prompt must be a non-empty string`);
+      }
+      if (!hasNonEmptyString(exit.continue_node)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.observation continue_node must be a non-empty string`);
+      }
+      if (
+        exit.feature_groups !== undefined &&
+        !Array.isArray(exit.feature_groups)
+      ) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.observation feature_groups must be an array`);
+      }
+      break;
+    case 'mixing': {
+      if (!exit.request || typeof exit.request !== 'object' || Array.isArray(exit.request)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.mixing is missing request`);
+      } else {
+        validateDrinkRequest(guest, nodeId, exit.request, registry, errors);
+      }
+
+      const outcomes = exit.outcomes;
+      if (!outcomes || typeof outcomes !== 'object' || Array.isArray(outcomes)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.mixing is missing outcomes`);
+        return;
+      }
+
+      const hasSuccessTarget = hasNonEmptyString(outcomes.success);
+      const hasFailTarget = hasNonEmptyString(outcomes.fail);
+
+      if (hasOwn(node, 'exit')) {
+        if (!hasSuccessTarget) {
+          errors.push(`[${guest.id}] node ${nodeId} exit.mixing outcomes.success must be a non-empty target`);
+        }
+        if (!hasFailTarget && !exit.request.retry_on_fail) {
+          errors.push(
+            `[${guest.id}] node ${nodeId} exit.mixing outcomes.fail must be a ` +
+            'non-empty target unless retry_on_fail is true',
+          );
+        }
+      } else {
+        if (!hasSuccessTarget) {
+          errors.push(`[${guest.id}] mixing node ${nodeId} must define a success target`);
+        }
+        if (!hasFailTarget && !exit.request.retry_on_fail) {
+          errors.push(`[${guest.id}] mixing node ${nodeId} must define a fail target or retry_on_fail`);
+        }
+      }
+      break;
+    }
+    case 'end_visit':
+      break;
+    default:
+      errors.push(
+        `[${guest.id}] node ${nodeId} has unsupported exit kind "${String((exit as { kind?: unknown }).kind)}"`,
+      );
+      return;
+  }
+
+  let targets: string[];
+  try {
+    targets = getExitTargets(exit);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    errors.push(`[${guest.id}] node ${nodeId} cannot enumerate exit targets: ${message}`);
+    return;
+  }
+
+  targets.forEach(target => {
+    if (!hasNonEmptyString(target)) {
+      errors.push(`[${guest.id}] node ${nodeId} exit target must be a non-empty string`);
+    } else if (!guest.nodeMap.has(target)) {
+      errors.push(`[${guest.id}] node ${nodeId} exit points to missing target "${target}"`);
+    }
+  });
 }
 
 function validateRewards(
@@ -457,16 +728,20 @@ function validateCommonNodeReferences(
   registry: ContentRegistry,
   errors: string[],
 ) {
-  if (node.next_node && !guest.nodeMap.has(String(node.next_node))) {
-    errors.push(`[${guest.id}] node ${nodeId} points to missing next_node "${node.next_node}"`);
-  }
-
+  validateNarrativeExit(guest, nodeId, node, registry, errors);
   validateTriggerCondition(guest, nodeId, node.trigger_condition, errors);
   validatePlayerOptions(guest, nodeId, node.player_options, errors);
-  validateObservationTrigger(guest, nodeId, node.trigger_observation, errors);
+  errors.push(...validateNarrativeEffectDeclarations(guest.id, nodeId, node));
+  if (!hasOwn(node, 'exit')) {
+    validateObservationTrigger(guest, nodeId, node.trigger_observation, errors);
+  }
   validateStoryUnlocks(guest, nodeId, node, errors);
   validateRewards(guest, nodeId, node.reward, registry, errors);
   validateNodeLlmChatConfig(guest, nodeId, node.llm_chat, errors);
+
+  if (node.diary_note !== undefined && typeof node.diary_note !== 'string') {
+    errors.push(`[${guest.id}] node ${nodeId} diary_note must be a string`);
+  }
 
   if (
     typeof node.unlock_gallery === 'string' &&
@@ -497,15 +772,8 @@ function validateNodeByGroup(
 
   if (group === 'teaching' && node.teaching) {
     validateTeaching(guest, nodeId, node.teaching, registry, errors);
-    if (!hasNonEmptyString(node.next_node)) {
-      errors.push(`[${guest.id}] teaching node ${nodeId} must point to a next_node`);
-    }
-  }
-
-  if (node.drink_request || node.on_mixing_complete || node.on_mixing_fail) {
-    validateDrinkRequest(guest, nodeId, node.drink_request, registry, errors);
-    if (!hasNonEmptyString(node.on_mixing_complete) && !hasNonEmptyString(node.on_mixing_fail)) {
-      errors.push(`[${guest.id}] mixing node ${nodeId} must define on_mixing_complete or on_mixing_fail`);
+    if (!hasNextNarrativeExit(node)) {
+      errors.push(`[${guest.id}] teaching node ${nodeId} must point to a next exit`);
     }
   }
 }

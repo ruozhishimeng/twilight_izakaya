@@ -1,6 +1,6 @@
 # MiniMax 对话模块说明
 
-更新时间：2026-04-19  
+更新时间：2026-07-15
 文档定位：面向项目开发者的实现与调试说明  
 适用范围：当前仅覆盖 NPC 尾声 AI 对话 MVP
 
@@ -43,61 +43,52 @@
 先开后端：
 
 ```powershell
-Set-Location 'F:\twilight_izakaya'
+Set-Location '<仓库目录>'
 npm run dev:backend
 ```
 
 再开前端：
 
 ```powershell
-Set-Location 'F:\twilight_izakaya'
+Set-Location '<仓库目录>'
 npm run dev
 ```
 
 推荐同时验证：
 
 ```powershell
-Set-Location 'F:\twilight_izakaya'
+Set-Location '<仓库目录>'
 npm run content:check
 npm run lint
 ```
 
-## 4. 需要哪些环境变量
+## 4. 可选环境变量
 
-在项目根目录 `.env` 中配置：
+生产游戏不从环境变量读取 MiniMax Key、模型或 API 地址。当前模型固定为 `MiniMax-M2.5`，上游固定为 MiniMax 官方 API。部署或本地调试只可按需配置非敏感服务参数：
 
 ```env
-MINIMAX_API_KEY="YOUR_MINIMAX_API_KEY"
-TWILIGHT_AUTHOR_MINIMAX_API_KEY=""
-MINIMAX_MODEL="MiniMax-M2.5"
-MINIMAX_BASE_URL="https://api.minimaxi.com"
+HOST="127.0.0.1"
+PORT="3001"
 MINIMAX_TIMEOUT_MS="20000"
 ```
 
-说明：
-
-- `MINIMAX_API_KEY`：玩家或本地后端当前使用的 MiniMax key
-- `TWILIGHT_AUTHOR_MINIMAX_API_KEY`：可选，供“使用作者的KEY”按钮切换，公开构建不要随包暴露
-- `MINIMAX_MODEL`：当前默认 `MiniMax-M2.5`
-- `MINIMAX_BASE_URL`：默认官方地址
-- `MINIMAX_TIMEOUT_MS`：后端请求超时
-- 当前后端调用温度为 `0.35`，优先保证 NPC 回复结构稳定和 JSON 可解析
+`MINIMAX_TIMEOUT_MS` 控制上游请求超时；当前后端调用温度为 `0.35`，优先保证 NPC 回复结构稳定和 JSON 可解析。
 
 ## 5. API 设置入口与密钥边界
 
 游戏内设置已经提供 API 设置入口：
 
 - 当前只支持 MiniMax 密钥
-- 玩家可以填写自己的 MiniMax KEY
-- 也可以点击“使用作者的KEY”，由后端切换到预配置的作者 key
+- 玩家必须填写自己的 MiniMax Key
+- Key 只保存在当前页面的 JavaScript 运行内存，刷新、关闭或重启后需要重新填写
 
-边界仍然是：
+安全边界：
 
-- 作者 KEY 不返回给浏览器，也不在界面显示明文
-- 玩家自填 KEY 只提交给本地后端，不写入 IndexedDB、localStorage、存档或对话记录
-- 桌面版会写入用户数据目录 `config.json`
-- 浏览器请求只打本地 `/api/npc-dialogue` 与 `/api/settings/api-key`
-- 后端代发 MiniMax 请求
+- Key 不写入源码、`.env`、`config.json`、IndexedDB、localStorage、sessionStorage、存档或对话记录
+- 前端仅在调用同源 `/api/npc-dialogue` 时通过 `Authorization: Bearer` 携带 Key；请求体和响应体都不含 Key
+- Express、Vercel 和 Electron 后端按请求显式传递 Key，不使用服务端全局状态或环境变量回退
+- 项目不提供作者 Key，也不再提供 `/api/settings/api-key`
+- 应用代码不主动记录 Authorization；线上部署方仍须在托管平台、CDN 和反向代理层配置请求头脱敏
 
 ## 6. 前端发什么
 
@@ -240,13 +231,12 @@ MINIMAX_TIMEOUT_MS="20000"
 表现：
 
 - `/api/npc-dialogue` 返回：
-  - `未配置 MINIMAX_API_KEY，无法调用对话服务。`
+  - `请先填写自己的 MiniMax API Key。`
 
 排查：
 
-- 根目录 `.env` 是否存在
-- 是否写入了 `MINIMAX_API_KEY`
-- 或者是否已在游戏设置的 API 设置页填写 KEY / 使用作者 KEY
+- 是否已在游戏设置的 API 设置页填写自己的 MiniMax Key
+- 页面是否刚刚刷新或程序是否已经重启；这两种情况都需要重新填写
 
 ### 10.3 密钥无效
 
@@ -292,7 +282,7 @@ MINIMAX_TIMEOUT_MS="20000"
 批量质量测试命令：
 
 ```powershell
-Set-Location 'F:\twilight_izakaya'
+Set-Location '<仓库目录>'
 node devtools\npc-dialogue-quality-suite.mjs
 ```
 

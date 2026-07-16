@@ -6,6 +6,7 @@ import Diary from './components/Diary';
 import IntroSequence from './components/IntroSequence';
 import MainMenu, { type MainMenuMode } from './components/MainMenu';
 import MixingPhase from './components/MixingPhase';
+import NarrativeDebugPanel from './components/NarrativeDebugPanel';
 import ObservationPhase from './components/ObservationPhase';
 import ResultPhase from './components/ResultPhase';
 import RewardPhase from './components/RewardPhase';
@@ -16,6 +17,7 @@ import TailChatPhase from './components/TailChatPhase';
 import {
   GUESTS,
 } from './data/gameData';
+import { getMixingRequest, resolveNodeExit } from './data/content/narrative';
 import { useGameFlowController } from './hooks/useGameFlowController';
 import { useImagePreloader } from './hooks/useImagePreloader';
 import { useGameMachine } from './hooks/useGameMachine';
@@ -119,7 +121,7 @@ function ApiKeyRequiredDialog({
         </div>
         <div className="mt-5 space-y-3 text-base leading-7 text-[#d8c7a8]">
           <p>{message}</p>
-          <p>当前对话模块仅支持 MiniMax。你可以填写自己的 KEY，也可以在设置中选择“使用作者的KEY”。</p>
+          <p>当前对话模块仅支持 MiniMax，请填写你自己的 KEY；KEY 只在本次运行内存中使用。</p>
         </div>
         <div className="mt-7 flex gap-4">
           <button
@@ -147,10 +149,12 @@ export default function App() {
   const {
     snapshot,
     transition: transitionTo,
+    debugJumpToVisit,
     reset,
     loadSnapshot,
     patchContext,
     patchCurrentGuest,
+    applyNarrativeTransaction,
     patchNpcDialogue,
     resetCurrentGuest,
   } = useGameMachine();
@@ -172,11 +176,14 @@ export default function App() {
     guest,
     currentGuestData,
     startNodeId,
+    currentNode,
     teachingNode,
     mixingNode,
     availableChatNodes,
     canShowTranscriptButton,
     activeAudioNode,
+    recordNarrativeOption,
+    recordNarrativeNodeCompletion,
     appendCurrentGuestTranscript,
     debugJump,
     beginGuestArrival,
@@ -200,8 +207,10 @@ export default function App() {
     {
       snapshot,
       transition: transitionTo,
+      debugJumpToVisit,
       patchContext,
       patchCurrentGuest,
+      applyNarrativeTransaction,
       patchNpcDialogue,
       resetCurrentGuest,
     },
@@ -210,6 +219,9 @@ export default function App() {
       playSfx,
     },
   );
+  const activeMixingRequest = mixingNode
+    ? getMixingRequest(resolveNodeExit(mixingNode)) || undefined
+    : undefined;
 
   const handleSave = useCallback(async (slotId: string, slotName: string) => {
     await saveSystem.saveGame(slotId, slotName, createPersistedSnapshot(snapshot));
@@ -328,7 +340,7 @@ export default function App() {
       return false;
     } catch (error) {
       const detail = error instanceof Error ? error.message : '无法读取 API KEY 状态。';
-      setApiKeyPromptMessage(`${detail} 请先进入 API 设置确认本地后端与 KEY 配置。`);
+      setApiKeyPromptMessage(`${detail} 请先进入 API 设置填写自己的 MiniMax KEY。`);
       return false;
     } finally {
       setIsCheckingApiKey(false);
@@ -568,6 +580,8 @@ export default function App() {
                 onEnterMixing={enterMixing}
                 onEnterObservation={enterObservation}
                 onEnterTailChatBeforeNextNode={enterTailChatBeforeNodeEnd}
+                onOptionSelected={recordNarrativeOption}
+                onNodeCompleted={recordNarrativeNodeCompletion}
                 onComplete={completeConversation}
                 onReward={rewardGuest}
                 showReward={snapshot.value === 'dayLoop.guest.reward'}
@@ -591,7 +605,7 @@ export default function App() {
                 onServe={serveDrink}
                 inventory={game.inventory}
                 promptOverride={game.currentGuest.mixingPromptOverride}
-                mixingRequest={mixingNode?.drink_request}
+                mixingRequest={activeMixingRequest}
                 teaching={teachingNode?.teaching}
               />
             )}
@@ -671,6 +685,7 @@ export default function App() {
           unlockedStoryChapters={game.unlockedStoryChapters}
           inventory={game.inventory}
           unlockedRecipes={game.unlockedRecipes}
+          narrativeEffects={game.narrativeEffects}
         />
       )}
 
@@ -685,6 +700,14 @@ export default function App() {
           currentPhase={currentPhase}
           currentWeek={game.week}
           currentDay={game.day}
+          debugInspector={isDebugMode ? (
+            <NarrativeDebugPanel
+              context={game}
+              state={snapshot.value}
+              guest={guest}
+              currentNode={currentNode}
+            />
+          ) : undefined}
         />
       )}
 

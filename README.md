@@ -1,42 +1,49 @@
 # 黄昏居酒屋
 
-《黄昏居酒屋》是一个基于 React + Vite + Electron 的叙事调酒游戏。玩家在夜晚的吧台后接待来客、调制饮品，并在尾声阶段与 NPC 进行 AI 对话。
+《黄昏居酒屋》是一个基于 React、Vite 和 Electron 的叙事调酒游戏。玩家在夜晚的吧台后接待来客、调制饮品，并在尾声阶段与 NPC 进行 AI 对话。
 
-当前说明对应版本：`V2.0.7`
+当前说明对应版本：`V2.0.10`
 
 ## 运行形态
 
-- 本地开发版：前端 Vite + 本地 Node 后端，适合开发和调试。
-- 桌面封包版：Electron portable 包，适合 Windows 本地分发。
-- Vercel 线上版：静态前端 + `/api` Serverless Functions，适合部署到公网测试。
+- 本地开发版：前端 Vite + 本地 Node 后端。
+- 桌面封包版：Electron portable 包，面向 Windows 本地运行。
+- Vercel 线上版：静态前端 + `/api` Serverless Function。
+
+三种形态使用同一套 MiniMax BYOK 规则：项目不提供、不内置作者 Key；玩家在每次运行中填写自己的 MiniMax Key。
+
+## 玩家 Key 的安全边界
+
+- 当前只支持 MiniMax，模型固定为 `MiniMax-M2.5`，上游固定为 MiniMax 官方 API。
+- Key 只保存在当前页面的 JavaScript 运行内存中；刷新、关闭或重启后需要重新填写。
+- 应用代码不会把 Key 写入源码、桌面包、`config.json`、localStorage、sessionStorage、游戏存档、业务日志或服务端全局状态。
+- 每次 NPC 对话请求通过同源后端转发给 MiniMax，Key 只存在于该次请求的 `Authorization` 头和上游调用中。
+- 线上部署方仍需确保托管平台、CDN 和反向代理对 Authorization 请求头进行脱敏且不记录。
+- 建议玩家使用独立、可撤销、已设置额度限制的 MiniMax Key。
+- 线上部署必须使用 HTTPS。
+
+旧桌面版本可能曾将玩家 Key 写入用户目录的 `config.json`；新版本启动时会删除其中的旧 `MINIMAX_API_KEY` 字段，并要求玩家重新填写。
 
 ## 快速开始
 
 ### 玩家使用桌面包
 
-从 `release/` 目录取得 `黄昏居酒屋-2.0.7-win-x64.exe` 后直接双击运行。桌面版会在本机启动内置后端，存档和玩家自填 KEY 都保存在本机。
-
-如果封包时内置了作者 KEY，玩家可以在游戏内 `设置 -> API 设置` 点击 `使用作者的KEY`。如果作者 KEY 不可用，也可以填写自己的 MiniMax KEY。
+从 `release/` 目录取得 portable 程序后直接运行，在 `设置 -> API 设置` 中填写自己的 MiniMax Key。Key 只在本次程序运行期间有效。
 
 ### 开发者本地运行
 
-环境要求：
-
-- Windows
-- Node.js 18 或更高版本
-- 已安装 npm 依赖
-
-首次安装：
+环境要求：Windows、Node.js 18 或更高版本、npm。
 
 ```bash
 npm install
 ```
 
-复制 `.env.example` 为 `.env`，至少配置：
+不需要在 `.env` 中配置 API Key。可选配置只有本地服务参数和上游请求超时：
 
 ```env
-MINIMAX_API_KEY="你的 MiniMax API Key"
-MINIMAX_MODEL="MiniMax-M2.5"
+HOST="127.0.0.1"
+PORT="3001"
+MINIMAX_TIMEOUT_MS="20000"
 ```
 
 一键启动：
@@ -45,140 +52,76 @@ MINIMAX_MODEL="MiniMax-M2.5"
 黄昏居酒屋.bat
 ```
 
-手动启动：
+或打开两个终端分别启动：
 
 ```bash
 npm run dev
+```
+
+另一个终端：
+
+```bash
 node local-backend.mjs
 ```
 
-一键脚本会自动寻找可用端口，默认优先使用前端 `3000`、后端 `3001`。
+进入游戏后由玩家在 API 设置中填写 Key。一键脚本默认优先使用前端 `3000`、后端 `3001`。
 
-## API KEY 配置
-
-当前 AI 对话仅支持 MiniMax。相关 KEY 只应存在于后端、桌面主进程或 Vercel 环境变量中，不要使用 `VITE_` 前缀。
-
-### 本地开发
-
-`.env` 支持以下变量：
-
-```env
-MINIMAX_API_KEY="玩家或作者的 MiniMax API Key"
-TWILIGHT_AUTHOR_MINIMAX_API_KEY="可选：作者 KEY"
-AUTHOR_MINIMAX_API_KEY="可选：作者 KEY 兼容变量"
-MINIMAX_MODEL="MiniMax-M2.5"
-MINIMAX_BASE_URL="https://api.minimaxi.com"
-MINIMAX_TIMEOUT_MS="20000"
-```
-
-作者 KEY 优先级：
-
-1. `TWILIGHT_AUTHOR_MINIMAX_API_KEY`
-2. `AUTHOR_MINIMAX_API_KEY`
-3. `MINIMAX_API_KEY`
-
-本地后端会把 `MINIMAX_API_KEY` 作为兜底作者 KEY，因此开发时只配置 `MINIMAX_API_KEY` 也可以测试 `使用作者的KEY`。
-
-### 桌面封包
-
-普通封包：
+## 桌面封包
 
 ```bash
 npm run desktop:pack
 ```
 
-带作者 KEY 的封包：
+桌面包不会包含作者 Key，也不存在带作者 Key 的封包命令。Electron 内置后端只负责把当前玩家请求转发给 MiniMax。
 
-```bash
-npm run desktop:pack:author
-```
+## Vercel 部署
 
-`desktop:pack:author` 会从本地 `.env` 读取作者 KEY，临时生成 `electron/author-key.local.json`，运行 Electron 打包后立刻删除该临时文件。该文件已加入 `.gitignore`，不要手动提交。
+Vercel 不需要配置 `MINIMAX_API_KEY`、作者 Key、模型或 API Base URL。玩家 Key 随当前 NPC 请求到达函数，并直接传给 MiniMax，不依赖跨函数内存或环境变量。
 
-注意：桌面包内置作者 KEY 有被提取的风险。只有在接受该风险的分发场景中才使用 `desktop:pack:author`。
-
-### Vercel 线上版
-
-Vercel 项目需要配置环境变量：
+可以保留可选的请求超时：
 
 ```env
-MINIMAX_API_KEY="你的 MiniMax API Key"
-TWILIGHT_AUTHOR_MINIMAX_API_KEY="推荐：同一个作者 KEY 或单独作者 KEY"
-MINIMAX_MODEL="MiniMax-M2.5"
-MINIMAX_BASE_URL="https://api.minimaxi.com"
 MINIMAX_TIMEOUT_MS="20000"
 ```
 
-最小可用配置是 `MINIMAX_API_KEY`。推荐同时配置 `TWILIGHT_AUTHOR_MINIMAX_API_KEY`，这样 `/api/settings/api-key` 会明确报告作者 KEY 可用。
-
-环境变量修改后需要重新部署。部署后可先访问：
-
-```text
-https://你的域名/api/settings/api-key
-```
-
-预期返回 JSON 中包含：
-
-```json
-{
-  "configured": true,
-  "source": "author",
-  "supportsAuthorKey": true
-}
-```
-
-响应不应包含 KEY 明文。
+部署后，未携带玩家 Key 的 `POST /api/npc-dialogue` 应返回 `401`。项目不再提供 `/api/settings/api-key` 状态接口。
 
 ## 常用命令
 
 ```bash
 npm run content:check
 npm run lint
+npm test
 npm run build
 npm run desktop:dev
 npm run desktop:pack
-npm run desktop:pack:author
-```
-
-关键测试命令：
-
-```bash
-node --import tsx --test server/backendApp.test.mjs server/apiSettings/state.test.mjs server/apiSettings/route.test.mjs server/apiSettings/handler.test.mjs server/npcDialogue/provider.test.mjs server/npcDialogue/responseParser.test.mjs server/npcDialogue/safety.test.mjs server/npcDialogue/handler.test.mjs server/vercelFunctions.test.mjs src/services/apiSettings.test.ts src/components/ApiSettingsPanel.test.ts scripts/desktopAuthorKey.test.mjs
 ```
 
 ## 项目入口
 
-- `src/`：React 游戏前端。
-- `server/`：本地后端、API 设置、NPC 对话处理与 MiniMax 调用。
+- `src/`：React 游戏前端和当前运行内存中的 BYOK 状态。
+- `server/`：本地后端、NPC 对话处理与 MiniMax 调用。
 - `api/`：Vercel Functions 入口。
-- `electron/`：Electron 桌面主进程。
-- `scripts/`：内容校验、Node 环境准备和桌面封包辅助脚本。
+- `electron/`：Electron 桌面主进程和旧明文配置迁移。
+- `scripts/`：内容校验和 Node 环境准备。
+- `docs/`：项目规范、系统说明、审查清单及历史文档索引。
 - `twilight_izakaya_launcher.ps1` / `黄昏居酒屋.bat`：Windows 本地一键启动入口。
+- [`docs/代码审查问题清单.md`](docs/代码审查问题清单.md)：代码审查问题、优先级、状态与验收条件的唯一清单。
 
 ## 常见问题
 
-### 开始新游戏时提示未配置 KEY
+### 开始游戏时提示未配置 Key
 
-进入 `设置 -> API 设置`，选择 `使用作者的KEY` 或填写自己的 MiniMax KEY。线上版需要确认 Vercel 环境变量已配置并重新部署。
+进入 `设置 -> API 设置`，填写自己的 MiniMax Key，并点击“本次运行使用”。刷新或重启后需要重新填写，这是当前“不在磁盘保存明文 Key”策略的预期行为。
 
-### 点击“使用作者的KEY”失败
+### MiniMax 提示 Key 无效或未授权
 
-说明当前后端没有可用作者 KEY，或作者 KEY 已失效。可以改填自己的 MiniMax KEY，也可以检查 `.env`、桌面封包流程或 Vercel 环境变量。
+清除当前 Key 后重新填写，确认 Key 尚未撤销、拥有可用额度，并且来自 MiniMax。服务端不会回显或保留该 Key。
 
-### 桌面包没有作者 KEY
+### 旧版本曾经分发过带作者 Key 的桌面包
 
-确认使用的是：
-
-```bash
-npm run desktop:pack:author
-```
-
-而不是普通的 `npm run desktop:pack`。封包前 `.env` 中必须有有效的作者 KEY。
+仅删除新版本代码不能保护旧包中的凭据。应立即在 MiniMax 后台撤销或轮换旧 Key，并删除部署平台中遗留的 `TWILIGHT_AUTHOR_MINIMAX_API_KEY`、`AUTHOR_MINIMAX_API_KEY` 和 `MINIMAX_API_KEY`。
 
 ### 端口被占用
 
-一键启动脚本会自动寻找空闲端口。桌面版固定使用 `127.0.0.1:37621`，如果提示端口占用，请先确认是否已经打开了一个桌面版实例。
-
-### 浏览器没有自动打开
-
-本地一键启动时如果浏览器没有打开，可以复制终端输出的前端地址手动访问。
+一键启动脚本会自动寻找空闲端口。桌面版目前固定使用 `127.0.0.1:37621`；如果提示端口占用，请确认是否已经运行了另一个桌面版实例。
