@@ -6,6 +6,7 @@ import Diary from './components/Diary';
 import IntroSequence from './components/IntroSequence';
 import MainMenu, { type MainMenuMode } from './components/MainMenu';
 import MixingPhase from './components/MixingPhase';
+import NarrativeDebugPanel from './components/NarrativeDebugPanel';
 import ObservationPhase from './components/ObservationPhase';
 import ResultPhase from './components/ResultPhase';
 import RewardPhase from './components/RewardPhase';
@@ -175,6 +176,7 @@ export default function App() {
     guest,
     currentGuestData,
     startNodeId,
+    currentNode,
     teachingNode,
     mixingNode,
     availableChatNodes,
@@ -698,6 +700,14 @@ export default function App() {
           currentPhase={currentPhase}
           currentWeek={game.week}
           currentDay={game.day}
+          debugInspector={isDebugMode ? (
+            <NarrativeDebugPanel
+              context={game}
+              state={snapshot.value}
+              guest={guest}
+              currentNode={currentNode}
+            />
+          ) : undefined}
         />
       )}
 

@@ -17,6 +17,7 @@ interface Props {
   currentPhase: GamePhase;
   currentWeek: number;
   currentDay: number;
+  debugInspector?: React.ReactNode;
 }
 
 type ModalMode = 'main' | 'save' | 'load' | 'api' | 'debug';
@@ -59,6 +60,7 @@ export default function SettingsModal({
   currentPhase,
   currentWeek,
   currentDay,
+  debugInspector,
 }: Props) {
   const { settings: audioSettings, setSettings: setAudioSettings } = useAudioSystem();
   const [mode, setMode] = useState<ModalMode>('main');
@@ -407,6 +409,8 @@ export default function SettingsModal({
           )}
         </select>
       </div>
+
+      {debugInspector}
 
       {message && (
         <div className="rounded-lg border-4 border-[#1a110c] bg-[#253323] px-4 py-3 text-center text-lg font-bold text-amber-100">
