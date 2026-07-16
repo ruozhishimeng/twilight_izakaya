@@ -16,3 +16,6 @@ coverage/
 
 # ====== 调试输出 ======
 /devtools/debug-output/
+
+# ====== 浏览器自动化临时输出 ======
+/.playwright-cli/
