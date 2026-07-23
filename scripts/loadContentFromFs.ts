@@ -11,6 +11,7 @@ import type {
   RecipesCatalog,
   ScheduleData,
 } from '../src/data/content/types';
+import type { DialoguePolicyDocument } from '../src/data/dialogue/types';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const defaultRepoRoot = path.resolve(scriptDirectory, '..');
@@ -85,6 +86,11 @@ export function loadContentSourceFromFs(
   const characters: Record<string, ParsedCharacterSource> = {};
 
   walkDirectory(characterRoot, filePath => {
+    if (path.basename(filePath) === 'dialogue_policy.yaml') {
+      ensureCharacter(characters, path.dirname(filePath)).dialoguePolicy =
+        loadYamlDocument<DialoguePolicyDocument>(filePath);
+      return;
+    }
     if (filePath.endsWith('character_meta.yaml')) {
       ensureCharacter(characters, path.dirname(filePath)).meta =
         loadYamlDocument<ParsedCharacterSource['meta']>(filePath);

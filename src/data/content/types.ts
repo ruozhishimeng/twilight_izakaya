@@ -1,5 +1,6 @@
 import type { JournalReward } from '../../types/journal';
 import type { NodeAudioConfig } from '../../systems/audioCatalog';
+import type { DialoguePolicyDocument } from '../dialogue/types';
 
 export interface Feature {
   id: string;
@@ -398,6 +399,7 @@ export interface ParsedCharacterSource {
   nodesHidden?: CharacterNodeDocument;
   observations?: ObservationsDocument;
   gallery?: GalleryDocument;
+  dialoguePolicy?: DialoguePolicyDocument;
   images: Record<string, string>;
 }
 
