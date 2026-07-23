@@ -96,6 +96,12 @@ interface PersistedGameSnapshotV4Input {
   context: Record<string, unknown>;
 }
 
+interface PersistedGameSnapshotV5Input {
+  version: 5;
+  state: string;
+  context: Record<string, unknown>;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object';
 }
@@ -146,7 +152,7 @@ function isPersistedGameSnapshotV3(value: unknown): value is PersistedGameSnapsh
 function isPersistedGameSnapshotV4(value: unknown): value is PersistedGameSnapshotV4Input {
   if (
     !isRecord(value) ||
-    value.version !== PERSISTED_GAME_SNAPSHOT_VERSION ||
+    value.version !== 4 ||
     !('state' in value) ||
     !('context' in value)
   ) {
@@ -159,6 +165,12 @@ function isPersistedGameSnapshotV4(value: unknown): value is PersistedGameSnapsh
     isRecord(value.context.currentGuest) &&
     isRecord(value.context.npcDialogue)
   );
+}
+
+function isPersistedGameSnapshotV5(value: unknown): value is PersistedGameSnapshotV5Input {
+  return isRecord(value) && value.version === PERSISTED_GAME_SNAPSHOT_VERSION &&
+    typeof value.state === 'string' && isGameRootStateValue(value.state) &&
+    isRecord(value.context) && isRecord(value.context.currentGuest) && isRecord(value.context.npcDialogue);
 }
 
 function migratePersistedSnapshotV1(data: PersistedGameSnapshotV1): PersistedGameSnapshot {
@@ -193,7 +205,15 @@ function migratePersistedSnapshotV3(data: PersistedGameSnapshotV3): PersistedGam
   };
 }
 
-function normalizePersistedSnapshotV4(data: PersistedGameSnapshotV4Input): PersistedGameSnapshot {
+function migratePersistedSnapshotV4(data: PersistedGameSnapshotV4Input): PersistedGameSnapshot {
+  return {
+    version: PERSISTED_GAME_SNAPSHOT_VERSION,
+    state: assertGameRootStateValue(data.state),
+    context: hydrateGameContext(data.context as Partial<GameContext>),
+  };
+}
+
+function normalizePersistedSnapshotV5(data: PersistedGameSnapshotV5Input): PersistedGameSnapshot {
   return {
     version: PERSISTED_GAME_SNAPSHOT_VERSION,
     state: assertGameRootStateValue(data.state),
@@ -245,8 +265,12 @@ function migrateLegacySaveData(data: LegacySaveData): PersistedGameSnapshot {
 }
 
 export function normalizePersistedSnapshotData(data: unknown): PersistedGameSnapshot {
+  if (isPersistedGameSnapshotV5(data)) {
+    return normalizePersistedSnapshotV5(data);
+  }
+
   if (isPersistedGameSnapshotV4(data)) {
-    return normalizePersistedSnapshotV4(data);
+    return migratePersistedSnapshotV4(data);
   }
 
   if (isPersistedGameSnapshotV3(data)) {

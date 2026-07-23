@@ -104,7 +104,8 @@ test('normalization preserves authored non-ID sequence order', () => {
 
 test('public progress and turn-compilation contracts are available to TypeScript callers', () => {
   const snapshot: DialogueProgressSnapshot = {
-    playerText: '你好', relationshipValues: { affection: 0 }, completedEventIds: [], selectedOptionIds: [], unlockedChapterIds: [], currentNodeId: null, observedFeatureIds: [], lastDrinkSuccess: null, recentTranscript: [],
+    guestId: 'aqiang', week: 1, day: 1, guestInDay: 1, turnIndex: 1,
+    playerText: '你好', relationshipValues: { affection: 0 }, completedEventIds: [], selectedOptionIds: [], unlockedChapterIds: [], currentNodeId: null, observedFeatureIds: [], lastDrink: null, recentTranscript: [],
   };
   const compilation: DialogueTurnCompilation | undefined = undefined;
   assert.equal(snapshot.currentNodeId, null);

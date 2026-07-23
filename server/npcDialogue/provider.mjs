@@ -54,7 +54,9 @@ export class MiniMaxProviderError extends Error {
   }
 }
 
-export async function requestMiniMaxNpcDialogue({ messages, promptChars, apiKey }) {
+export async function requestMiniMaxNpcDialogue({
+  messages, promptChars, apiKey, signal, temperature = 0.35, topP = 0.9,
+}) {
   if (!apiKey) {
     throw new MiniMaxProviderError('请先填写自己的 MiniMax API Key。', {
       status: 401,
@@ -64,9 +66,20 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars, apiKey 
 
   const timeoutMs = parseTimeout(process.env.MINIMAX_TIMEOUT_MS);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  let abortSource = signal?.aborted ? 'external' : null;
+  const abortFromExternal = () => {
+    if (abortSource === null) abortSource = 'external';
+    controller.abort();
+  };
+  if (signal?.aborted) controller.abort();
+  else signal?.addEventListener('abort', abortFromExternal, { once: true });
+  const timeout = setTimeout(() => {
+    if (abortSource === null) abortSource = 'timeout';
+    controller.abort();
+  }, timeoutMs);
 
   let response;
+  let rawText;
   try {
     response = await fetch(`${MINIMAX_BASE_URL}/v1/text/chatcompletion_v2`, {
       method: 'POST',
@@ -77,14 +90,21 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars, apiKey 
       body: JSON.stringify({
         model: MINIMAX_MODEL,
         stream: false,
-        temperature: 0.35,
-        top_p: 0.9,
+        temperature,
+        top_p: topP,
         messages,
       }),
       signal: controller.signal,
     });
+    rawText = await response.text();
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
+      if (abortSource === 'external') {
+        throw new MiniMaxProviderError('对话请求已取消。', {
+          status: 499,
+          code: 'request_aborted',
+        });
+      }
       throw new MiniMaxProviderError('对话服务请求超时。', {
         status: 504,
         code: 'request_timeout',
@@ -97,9 +117,9 @@ export async function requestMiniMaxNpcDialogue({ messages, promptChars, apiKey 
     });
   } finally {
     clearTimeout(timeout);
+    signal?.removeEventListener('abort', abortFromExternal);
   }
 
-  const rawText = await response.text();
   let payload;
 
   try {

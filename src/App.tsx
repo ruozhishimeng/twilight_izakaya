@@ -28,6 +28,7 @@ import {
 import { saveSystem } from './systems/SaveSystem';
 import { useAudioSystem } from './systems/audioSystem';
 import { fetchApiKeyStatus, isApiKeyConfiguredForGameStart } from './services/apiSettings';
+import { advanceTailChatPlayback } from './app/tailChatPlayback';
 
 type ViteImportMeta = ImportMeta & {
   env?: {
@@ -45,18 +46,21 @@ type TailChatPlaybackState =
       playerText: '';
       npcLines: string[];
       npcIndex: 0;
+      endChatAfterPlayback: false;
     }
   | {
       stage: 'player';
       playerText: string;
       npcLines: string[];
       npcIndex: 0;
+      endChatAfterPlayback: boolean;
     }
   | {
       stage: 'npc';
       playerText: string;
       npcLines: string[];
       npcIndex: number;
+      endChatAfterPlayback: boolean;
     };
 
 const INITIAL_TAIL_CHAT_PLAYBACK: TailChatPlaybackState = {
@@ -64,6 +68,7 @@ const INITIAL_TAIL_CHAT_PLAYBACK: TailChatPlaybackState = {
   playerText: '',
   npcLines: [],
   npcIndex: 0,
+  endChatAfterPlayback: false,
 };
 
 function GuestReflectionOverlay({
@@ -156,6 +161,7 @@ export default function App() {
     patchCurrentGuest,
     applyNarrativeTransaction,
     patchNpcDialogue,
+    appendCurrentGuestTranscriptEntries,
     resetCurrentGuest,
   } = useGameMachine();
   const [isDiaryOpen, setIsDiaryOpen] = useState(false);
@@ -182,6 +188,8 @@ export default function App() {
     availableChatNodes,
     canShowTranscriptButton,
     activeAudioNode,
+    dialogueDiagnostics,
+    cancelNpcDialogueRequests,
     recordNarrativeOption,
     recordNarrativeNodeCompletion,
     appendCurrentGuestTranscript,
@@ -212,11 +220,13 @@ export default function App() {
       patchCurrentGuest,
       applyNarrativeTransaction,
       patchNpcDialogue,
+      appendCurrentGuestTranscriptEntries,
       resetCurrentGuest,
     },
     {
       closeTranscript: () => setIsTranscriptOpen(false),
       playSfx,
+      debugDialogue: isDebugMode,
     },
   );
   const activeMixingRequest = mixingNode
@@ -233,12 +243,13 @@ export default function App() {
       return;
     }
 
+    cancelNpcDialogueRequests();
     loadSnapshot(slot.data);
     setIsDiaryOpen(false);
     setIsBookOpen(false);
     setIsSettingsOpen(false);
     setIsTranscriptOpen(false);
-  }, [loadSnapshot]);
+  }, [cancelNpcDialogueRequests, loadSnapshot]);
 
   const imagesToPreload = useMemo(() => {
     const urls = ['/assets/back_grounds/main_page.png', '/assets/back_grounds/table.png'];
@@ -367,20 +378,22 @@ export default function App() {
       return;
     }
 
+    cancelNpcDialogueRequests();
     reset('introSequence');
     setIsDiaryOpen(false);
     setIsBookOpen(false);
     setIsSettingsOpen(false);
     setIsTranscriptOpen(false);
-  }, [reset, verifyApiKeyBeforeStart]);
+  }, [cancelNpcDialogueRequests, reset, verifyApiKeyBeforeStart]);
 
   const handleReturnToMenu = useCallback(() => {
+    cancelNpcDialogueRequests();
     reset('mainMenu');
     setIsDiaryOpen(false);
     setIsBookOpen(false);
     setIsSettingsOpen(false);
     setIsTranscriptOpen(false);
-  }, [reset]);
+  }, [cancelNpcDialogueRequests, reset]);
 
   const handleTailChatSend = useCallback(async () => {
     const result = await sendTailChatMessage(tailChatInput);
@@ -391,31 +404,29 @@ export default function App() {
         playerText: result.playerText,
         npcLines: result.replyLines,
         npcIndex: 0,
+        endChatAfterPlayback: result.endChat,
       });
     }
   }, [sendTailChatMessage, tailChatInput]);
 
   const handleTailChatAdvance = useCallback(() => {
-    setTailChatPlayback(previous => {
-      if (previous.stage === 'player') {
-        return {
-          stage: 'npc',
-          playerText: previous.playerText,
-          npcLines: previous.npcLines,
-          npcIndex: 0,
-        };
-      }
-
-      if (previous.stage === 'npc' && previous.npcIndex < previous.npcLines.length - 1) {
-        return {
-          ...previous,
-          npcIndex: previous.npcIndex + 1,
-        };
-      }
-
-      return INITIAL_TAIL_CHAT_PLAYBACK;
+    if (tailChatPlayback.stage === 'input') return;
+    const action = advanceTailChatPlayback(tailChatPlayback);
+    if (action.action === 'close_session') {
+      setTailChatPlayback(INITIAL_TAIL_CHAT_PLAYBACK);
+      leaveTailChatSession();
+      return;
+    }
+    if (action.action === 'input') {
+      setTailChatPlayback(INITIAL_TAIL_CHAT_PLAYBACK);
+      return;
+    }
+    setTailChatPlayback(previous => previous.stage === 'input' ? previous : {
+      ...previous,
+      stage: 'npc',
+      npcIndex: action.npcIndex,
     });
-  }, []);
+  }, [leaveTailChatSession, tailChatPlayback]);
 
   if (!imagesPreloaded) {
     return (
@@ -636,6 +647,7 @@ export default function App() {
                 portraitUrl={tailChatPortraitUrl}
                 turnsUsed={game.currentGuest.tailChat.turnsUsed}
                 maxTurns={game.currentGuest.tailChat.maxTurns}
+                closed={game.currentGuest.tailChat.closed}
                 displayText={tailChatDisplayText}
                 inputValue={tailChatInput}
                 sessionStage={tailChatPlayback.stage}
@@ -706,6 +718,7 @@ export default function App() {
               state={snapshot.value}
               guest={guest}
               currentNode={currentNode}
+              dialogueDiagnostics={dialogueDiagnostics}
             />
           ) : undefined}
         />

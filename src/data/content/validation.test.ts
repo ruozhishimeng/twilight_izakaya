@@ -256,6 +256,19 @@ test('before-next tail chat accepts an option-specific resume target', () => {
   assert.doesNotThrow(() => validateContentRegistry(createRegistry(nodes)));
 });
 
+test('after-node tail chat accepts node/end exits and rejects observation or mixing exits', () => {
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry([
+    createNode('tail_after_end', { llm_chat: { entry_mode: 'after_node' }, exit: { kind: 'end_visit' } }),
+  ])));
+  assert.match(getValidationError([
+    createNode('tail_after_observation', {
+      llm_chat: { entry_mode: 'after_node' },
+      exit: { kind: 'observation', prompt: '看', continue_node: 'target' },
+    }),
+    createNode('target', { exit: { kind: 'end_visit' } }),
+  ]), /after_node.*observation|observation.*after_node/i);
+});
+
 test('non-null fallback_node is rejected until a condition resolver can execute it', () => {
   const message = getValidationError([
     createNode('fallback_source', {

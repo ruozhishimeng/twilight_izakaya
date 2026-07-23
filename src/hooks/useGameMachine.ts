@@ -6,6 +6,7 @@ import {
   type GameSnapshot,
   type GameContext,
   type GameRootStateValue,
+  type GuestTranscriptEntry,
   type PersistedGameSnapshot,
 } from '../state/gameState';
 import type { NarrativeTransaction } from '../state/narrativeEffects';
@@ -49,6 +50,10 @@ export function useGameMachine() {
     dispatch({ type: 'PATCH_NPC_DIALOGUE', patch });
   }, []);
 
+  const appendCurrentGuestTranscriptEntries = useCallback((entries: GuestTranscriptEntry[]) => {
+    dispatch({ type: 'APPEND_CURRENT_GUEST_TRANSCRIPT', entries });
+  }, []);
+
   return {
     snapshot,
     transition,
@@ -59,6 +64,7 @@ export function useGameMachine() {
     patchCurrentGuest,
     applyNarrativeTransaction,
     patchNpcDialogue,
+    appendCurrentGuestTranscriptEntries,
     resetCurrentGuest,
   };
 }

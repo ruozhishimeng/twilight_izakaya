@@ -6,8 +6,41 @@ import {
   createInitialNarrativeEffectsState,
   createNarrativeTransaction,
   getRelationshipValue,
+  selectNarrativeFactIds,
   type RelationshipAxisRegistry,
 } from './narrativeEffects';
+
+test('narrative fact ids come from receipt sources, not transaction keys', () => {
+  const eventReceipt = createNarrativeTransaction({
+    scope: 'game',
+    source: { guestId: 'aqiang', eventId: 'aqiang_phase1_success' },
+    effects: [],
+  });
+  const optionReceipt = createNarrativeTransaction({
+    scope: 'visit',
+    source: {
+      guestId: 'aqiang',
+      eventId: 'aqiang_001_dialogue_main',
+      optionId: 'care_about_his_condition',
+      visitId: 'W1:D1:G1:aqiang',
+    },
+    effects: [],
+  });
+  const foreignReceipt = createNarrativeTransaction({
+    scope: 'game',
+    source: { guestId: 'yuki', eventId: 'yuki_phase1_success' },
+    effects: [],
+  });
+  const afterEvent = applyNarrativeTransaction(createInitialNarrativeEffectsState(), eventReceipt);
+  const afterOption = applyNarrativeTransaction(afterEvent.nextState, optionReceipt);
+  const stateWithReceipts = applyNarrativeTransaction(afterOption.nextState, foreignReceipt).nextState;
+
+  const selected = selectNarrativeFactIds(stateWithReceipts, 'aqiang');
+  assert.deepEqual(selected, {
+    completedEventIds: ['aqiang_phase1_success'],
+    selectedOptionIds: ['aqiang/aqiang_001_dialogue_main/care_about_his_condition'],
+  });
+});
 
 test('relationship transactions apply positive and negative affection changes', () => {
   const initial = createInitialNarrativeEffectsState();

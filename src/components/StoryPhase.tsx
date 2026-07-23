@@ -11,6 +11,7 @@ import {
   getNarrativeOptionKey,
   interpretNodeCompletion,
   type NarrativeDirective,
+  type TailChatResume,
 } from '../data/content/interpreter';
 import type { Guest, CharacterNode } from '../data/gameData';
 import type { GuestTranscriptEntry } from '../state/gameState';
@@ -92,7 +93,7 @@ interface Props {
   onNodeChange: (nodeId: string) => void;
   onEnterMixing: (teachingNode: CharacterNode | null, mixingNode: CharacterNode) => void;
   onEnterObservation: (trigger: NarrativeObservationExit) => void;
-  onEnterTailChatBeforeNextNode?: (node: CharacterNode, resumeNodeId: string) => void;
+  onEnterTailChatBeforeNextNode?: (node: CharacterNode, resume: TailChatResume) => void;
   onOptionSelected?: (node: CharacterNode, option: NodePlayerOption) => void;
   onNodeCompleted?: (node: CharacterNode) => void;
   onComplete: () => void;
@@ -265,9 +266,11 @@ export default function StoryPhase({
         return;
       case 'tail_chat':
         if (onEnterTailChatBeforeNextNode) {
-          onEnterTailChatBeforeNextNode(currentNode, directive.resumeNodeId);
+          onEnterTailChatBeforeNextNode(currentNode, directive.resume);
+        } else if (directive.resume.kind === 'node') {
+          onNodeChange(directive.resume.nodeId);
         } else {
-          onNodeChange(directive.resumeNodeId);
+          onComplete();
         }
         return;
       case 'observation':

@@ -286,6 +286,30 @@ export function getRelationshipValue(
   );
 }
 
+export function selectNarrativeFactIds(
+  state: NarrativeEffectsState,
+  guestId: string,
+): { completedEventIds: string[]; selectedOptionIds: string[] } {
+  const completedEventIds = new Set<string>();
+  const selectedOptionIds = new Set<string>();
+
+  Object.values(state.appliedTransactions).forEach(receipt => {
+    if (receipt.source.guestId !== guestId) return;
+    if (receipt.source.optionId) {
+      selectedOptionIds.add(
+        `${receipt.source.guestId}/${receipt.source.eventId}/${receipt.source.optionId}`,
+      );
+    } else {
+      completedEventIds.add(receipt.source.eventId);
+    }
+  });
+
+  return {
+    completedEventIds: [...completedEventIds].sort(),
+    selectedOptionIds: [...selectedOptionIds].sort(),
+  };
+}
+
 function assertTransaction(transaction: NarrativeTransaction) {
   requireNonEmptyString(transaction.id, 'transaction.id');
   requireNonEmptyString(transaction.source.guestId, 'source.guestId');

@@ -278,6 +278,18 @@ function validateNodeLlmChatConfig(
       'a node or option next exit',
     );
   }
+  if (config.entry_mode === 'after_node' && sourceNode) {
+    try {
+      const exitKind = resolveNodeExit(sourceNode).kind;
+      if (exitKind !== 'next' && exitKind !== 'end_visit') {
+        errors.push(
+          `[${guest.id}] node ${nodeId} llm_chat.entry_mode=after_node cannot wrap ${exitKind} exits`,
+        );
+      }
+    } catch {
+      // Exit validation reports the structural error separately.
+    }
+  }
 }
 
 function validatePlayerOptions(

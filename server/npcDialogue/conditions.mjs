@@ -12,7 +12,7 @@ export function matchesDialogueCondition(condition, snapshot = {}) {
   if ('unlocked_chapter' in condition) return includes('unlockedChapterIds', condition.unlocked_chapter);
   if ('current_node' in condition) return snapshot.currentNodeId === condition.current_node;
   if ('observed_feature' in condition) return includes('observedFeatureIds', condition.observed_feature);
-  if ('last_drink_success' in condition) return snapshot.lastDrinkSuccess === condition.last_drink_success;
+  if ('last_drink_success' in condition) return (snapshot.lastDrink?.isSuccess ?? snapshot.lastDrinkSuccess ?? null) === condition.last_drink_success;
   return false;
 }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CharacterNode, NodePlayerOption } from '../data/content/types';
 import {
   getMixingRequest,
@@ -39,10 +39,16 @@ import {
   type GuestReflectionState,
   type GuestTranscriptEntry,
   type StoryUnlockEntry,
+  type TailChatResume,
 } from '../state/gameState';
 import type { JournalReward } from '../types/journal';
 import { requestNpcDialogue } from '../services/npcDialogue';
-import type { NpcDialogueRequest } from '../types/npcDialogue';
+import {
+  NpcDialogueRequestCoordinator,
+  canInteractWithTailChat,
+} from '../services/npcDialogueSession';
+import { buildDialogueProgressSnapshot } from '../state/dialogueProgress';
+import type { DialogueTurnDiagnostics } from '../types/npcDialogue';
 
 interface GameMachineController {
   snapshot: GameSnapshot;
@@ -51,6 +57,7 @@ interface GameMachineController {
   patchContext: (patch: Partial<GameContext>) => void;
   patchCurrentGuest: (patch: Partial<GameContext['currentGuest']>) => void;
   patchNpcDialogue: (patch: Partial<GameContext['npcDialogue']>) => void;
+  appendCurrentGuestTranscriptEntries: (entries: GuestTranscriptEntry[]) => void;
   applyNarrativeTransaction: (transaction: NarrativeTransaction) => void;
   resetCurrentGuest: () => void;
 }
@@ -58,6 +65,7 @@ interface GameMachineController {
 interface GameFlowControllerOptions {
   closeTranscript?: () => void;
   playSfx?: (soundId: string) => void;
+  debugDialogue?: boolean;
 }
 
 type MixingCandidate = CharacterNode | null | undefined;
@@ -99,11 +107,16 @@ export function useGameFlowController(
     patchContext,
     patchCurrentGuest,
     patchNpcDialogue,
+    appendCurrentGuestTranscriptEntries,
     applyNarrativeTransaction,
     resetCurrentGuest,
   } = machine;
   const closeTranscript = options.closeTranscript || (() => {});
   const playSfx = options.playSfx || (() => {});
+  const requestCoordinatorRef = useRef(new NpcDialogueRequestCoordinator());
+  const snapshotRef = useRef(snapshot);
+  snapshotRef.current = snapshot;
+  const [dialogueDiagnostics, setDialogueDiagnostics] = useState<DialogueTurnDiagnostics | null>(null);
 
   const game = snapshot.context;
   const currentPhase = toGamePhase(snapshot.value);
@@ -120,6 +133,14 @@ export function useGameFlowController(
     activeAudioNode,
   } = runtime;
   const visitId = `W${game.week}:D${game.day}:G${game.guestInDay}:${guest.id}`;
+
+  useEffect(() => {
+    if (snapshot.value !== 'dayLoop.guest.llmChatSession') {
+      requestCoordinatorRef.current.cancel();
+    }
+  }, [snapshot.value]);
+
+  useEffect(() => () => requestCoordinatorRef.current.cancel(), []);
 
   const recordNarrativeOption = useCallback((node: CharacterNode, option: NodePlayerOption) => {
     const eventId = node.event_id || node.id;
@@ -197,16 +218,15 @@ export function useGameFlowController(
   }, [game.pendingStoryUnlocks, game.unlockedStoryChapters, patchContext]);
 
   const appendCurrentGuestTranscript = useCallback((entry: GuestTranscriptEntry) => {
-    if (!entry.text.trim() || game.currentGuest.transcript.some(item => item.key === entry.key)) {
-      return;
-    }
+    appendCurrentGuestTranscriptEntries([entry]);
+  }, [appendCurrentGuestTranscriptEntries]);
 
-    patchCurrentGuest({
-      transcript: [...game.currentGuest.transcript, entry],
-    });
-  }, [game.currentGuest.transcript, patchCurrentGuest]);
+  const cancelNpcDialogueRequests = useCallback(() => {
+    requestCoordinatorRef.current.cancel();
+  }, []);
 
   const jumpToVisit = useCallback((targetVisit: ScheduledVisit) => {
+    requestCoordinatorRef.current.cancel();
     patchContext({
       week: targetVisit.week,
       day: targetVisit.day,
@@ -222,6 +242,7 @@ export function useGameFlowController(
   }, [closeTranscript, patchContext, resetCurrentGuest, transition]);
 
   const debugJump = useCallback(async (week: number, day: number, guestInDay = 1) => {
+    requestCoordinatorRef.current.cancel();
     const normalizedWeek = Math.max(1, Math.floor(week) || 1);
     const normalizedDay = Math.min(DAYS_PER_WEEK, Math.max(1, Math.floor(day) || 1));
     const normalizedGuestInDay = Math.max(1, Math.floor(guestInDay) || 1);
@@ -258,6 +279,7 @@ export function useGameFlowController(
   }, [closeTranscript, debugJumpToVisit]);
 
   const finalizeGuestAdvance = useCallback((payload: GuestReflectionState) => {
+    requestCoordinatorRef.current.cancel();
     resetCurrentGuest();
     closeTranscript();
 
@@ -284,9 +306,9 @@ export function useGameFlowController(
 
   const enterTailChatBeforeNodeEnd = useCallback((
     sourceNode: CharacterNode | null,
-    resumeNodeId: string,
+    resume: TailChatResume,
   ) => {
-    if (!sourceNode || !resumeNodeId) {
+    if (!sourceNode || !resume) {
       return;
     }
 
@@ -299,7 +321,8 @@ export function useGameFlowController(
       tailChat: {
         ...resolvedTailChat,
         turnsUsed: 0,
-        resumeNodeId,
+        resume,
+        closed: false,
       },
     });
     patchNpcDialogue({
@@ -516,6 +539,7 @@ export function useGameFlowController(
       isNewRecipe,
       drinkLabel,
       lastDrinkResult: {
+        recipeId: matchedRecipe?.id ?? null,
         label: drinkLabel,
         mixedDrinkName,
         isSuccess: success,
@@ -526,6 +550,7 @@ export function useGameFlowController(
   }, [game.unlockedRecipes, guest, mixingNode, patchContext, patchCurrentGuest, teachingNode, transition]);
 
   const nextGuest = useCallback(() => {
+    requestCoordinatorRef.current.cancel();
     const currentStoryNode = resolveGuestNode(guest, game.currentGuest.nodeId);
     const currentDiaryNote = currentStoryNode?.diary_note;
     const currentStoryUnlocks = normalizeStoryUnlockEntries(currentStoryNode);
@@ -619,14 +644,15 @@ export function useGameFlowController(
   ]);
 
   const finishTailChatLobby = useCallback(() => {
-    const resumeNodeId = game.currentGuest.tailChat.resumeNodeId;
+    requestCoordinatorRef.current.cancel();
+    const resume = game.currentGuest.tailChat.resume;
 
-    if (resumeNodeId) {
+    if (resume?.kind === 'node') {
       patchCurrentGuest({
-        nodeId: resumeNodeId,
+        nodeId: resume.nodeId,
         tailChat: {
           ...game.currentGuest.tailChat,
-          resumeNodeId: null,
+          resume: null,
         },
       });
       patchNpcDialogue({
@@ -634,6 +660,15 @@ export function useGameFlowController(
         errorMessage: null,
       });
       transition('dayLoop.guest.story');
+      return;
+    }
+
+    if (resume?.kind === 'end_visit') {
+      patchCurrentGuest({
+        tailChat: { ...game.currentGuest.tailChat, resume: null },
+      });
+      patchNpcDialogue({ status: 'idle', errorMessage: null });
+      nextGuest();
       return;
     }
 
@@ -700,6 +735,14 @@ export function useGameFlowController(
       return;
     }
 
+    if (tailChat.closed) {
+      patchNpcDialogue({
+        status: 'idle', errorMessage: null, turnCount: tailChat.turnsUsed,
+        lastReplyLines: [tailChat.exhaustedMessage],
+      });
+      return;
+    }
+
     patchNpcDialogue({
       status: 'idle',
       errorMessage: null,
@@ -713,12 +756,17 @@ export function useGameFlowController(
   }, [game.currentGuest.tailChat, game.npcDialogue.lastReplyLines, patchNpcDialogue, transition]);
 
   const leaveTailChatSession = useCallback(() => {
+    requestCoordinatorRef.current.cancel();
     transition('dayLoop.guest.llmChatLobby');
   }, [transition]);
 
   const sendTailChatMessage = useCallback(async (rawPlayerText: string) => {
     const playerText = rawPlayerText.trim();
-    if (snapshot.value !== 'dayLoop.guest.llmChatSession') {
+    if (!canInteractWithTailChat({
+      state: snapshot.value,
+      closed: game.currentGuest.tailChat.closed,
+      status: game.npcDialogue.status,
+    })) {
       return { ok: false as const };
     }
 
@@ -748,107 +796,84 @@ export function useGameFlowController(
       return { ok: false as const };
     }
 
-    const nextTurnIndex = game.currentGuest.tailChat.turnsUsed + 1;
-    const baseInfo = guest.meta.base_info || {};
-    const requestPayload: NpcDialogueRequest = {
-      state: 'dayLoop.guest.llmChatSession',
-      guestId: guest.id,
-      guestName: guest.name,
-      guestProfile: {
-        identity: [
-          guest.name,
-          typeof baseInfo.type === 'string' && baseInfo.type.trim() ? baseInfo.type.trim() : guest.type,
-          typeof baseInfo.age === 'string' && baseInfo.age.trim() ? `年龄：${baseInfo.age.trim()}` : null,
-        ]
-          .filter(Boolean)
-          .join('，'),
-        personality:
-          (typeof guest.meta.personality === 'string' && guest.meta.personality.trim()) ||
-          '性格信息未补全，请保持克制、自然并贴近当前剧情状态。',
-        description:
-          (typeof baseInfo.description === 'string' && baseInfo.description.trim()) ||
-          (typeof guest.meta.description === 'string' && guest.meta.description.trim()) ||
-          `${guest.name}是店里的${guest.type}客人。`,
-      },
-      playerText,
-      week: game.week,
-      day: game.day,
-      guestInDay: game.guestInDay,
-      currentNodeId: game.currentGuest.nodeId,
-      observedFeatures: game.currentGuest.discoveredFeatures,
-      recentTranscript: game.currentGuest.transcript
-        .slice(-8)
-        .map(entry => ({
-          speaker: entry.speaker,
-          text: entry.text,
-        })),
-      lastDrink: game.currentGuest.lastDrinkResult,
-      turnIndex: nextTurnIndex,
+    const progress = buildDialogueProgressSnapshot({ snapshot, guest, playerText });
+    const nextTurnIndex = progress.turnIndex;
+    const requestPayload = {
+      ...progress,
+      state: 'dayLoop.guest.llmChatSession' as const,
+      ...(options.debugDialogue === true ? { debug: true } : {}),
     };
+    const lease = requestCoordinatorRef.current.begin(visitId);
 
     patchNpcDialogue({
       status: 'requesting',
       errorMessage: null,
     });
-    let replyLines: string[];
+    let response;
 
     try {
-      const response = await requestNpcDialogue(requestPayload);
-      replyLines = response.replyLines;
+      response = await requestNpcDialogue(requestPayload, { signal: lease.signal });
     } catch (error) {
+      if (!requestCoordinatorRef.current.isCurrent(lease) || lease.signal.aborted ||
+          (error instanceof Error && error.name === 'AbortError')) {
+        return { ok: false as const };
+      }
       patchNpcDialogue({
         status: 'error',
         errorMessage: error instanceof Error ? error.message : '本地对话服务暂时不可用。',
       });
+      requestCoordinatorRef.current.finish(lease);
       return { ok: false as const };
     }
 
-    appendCurrentGuestTranscript({
-      key: `llm-chat:${nextTurnIndex}:player`,
-      speaker: '我',
-      text: playerText,
-    });
+    const latestSnapshot = snapshotRef.current;
+    const latestGuest = selectGameRuntimeView(latestSnapshot).guest;
+    const latestVisitId = `W${latestSnapshot.context.week}:D${latestSnapshot.context.day}:G${latestSnapshot.context.guestInDay}:${latestGuest.id}`;
+    if (!requestCoordinatorRef.current.isCurrent(lease) || latestGuest.id !== guest.id ||
+        latestVisitId !== visitId || latestSnapshot.value !== 'dayLoop.guest.llmChatSession') {
+      return { ok: false as const };
+    }
 
-    replyLines.forEach((line, lineIndex) => {
-      appendCurrentGuestTranscript({
-        key: `llm-chat:${nextTurnIndex}:npc:${lineIndex}`,
-        speaker: guest.name,
-        text: line,
-      });
-    });
+    appendCurrentGuestTranscriptEntries([
+      { key: `llm-chat:${nextTurnIndex}:player`, speaker: '我', text: playerText },
+      ...response.replyLines.map((line, lineIndex) => ({
+        key: `llm-chat:${nextTurnIndex}:npc:${lineIndex}`, speaker: guest.name, text: line,
+      })),
+    ]);
 
     patchCurrentGuest({
       tailChat: {
-        ...game.currentGuest.tailChat,
+        ...latestSnapshot.context.currentGuest.tailChat,
         turnsUsed: nextTurnIndex,
+        closed: response.endChat,
       },
     });
     patchNpcDialogue({
       status: 'idle',
       errorMessage: null,
       turnCount: nextTurnIndex,
-      lastReplyLines: replyLines,
+      lastReplyLines: response.replyLines,
     });
+    setDialogueDiagnostics(response.diagnostics || null);
+    requestCoordinatorRef.current.finish(lease);
     return {
       ok: true as const,
       playerText,
-      replyLines,
+      replyLines: response.replyLines,
+      endChat: response.endChat,
+      diagnostics: response.diagnostics,
     };
   }, [
-    appendCurrentGuestTranscript,
-    game.currentGuest.discoveredFeatures,
-    game.currentGuest.lastDrinkResult,
-    game.currentGuest.nodeId,
+    appendCurrentGuestTranscriptEntries,
     game.currentGuest.tailChat,
-    game.currentGuest.transcript,
-    game.day,
-    game.guestInDay,
-    game.week,
+    game.npcDialogue.status,
     guest.id,
     guest.name,
+    options.debugDialogue,
     patchCurrentGuest,
     patchNpcDialogue,
-    snapshot.value,
+    snapshot,
+    visitId,
   ]);
 
   const completeConversation = useCallback(() => {
@@ -897,6 +922,7 @@ export function useGameFlowController(
   ]);
 
   const beginGuestArrival = useCallback(() => {
+    requestCoordinatorRef.current.cancel();
     if (!startNodeId) {
       return;
     }
@@ -1009,6 +1035,8 @@ export function useGameFlowController(
     availableChatNodes,
     canShowTranscriptButton,
     activeAudioNode,
+    dialogueDiagnostics,
+    cancelNpcDialogueRequests,
     recordNarrativeOption,
     recordNarrativeNodeCompletion,
     appendCurrentGuestTranscript,

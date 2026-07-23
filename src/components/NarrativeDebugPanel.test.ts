@@ -150,3 +150,22 @@ test('debug snapshot distinguishes a declared next exit from the tail-chat runti
     targets: ['after_tail_chat'],
   });
 });
+
+test('debug snapshot includes only the supplied safe dialogue diagnostics', () => {
+  const dialogueDiagnostics = {
+    sessionId: 'W1:D1:G1:aqiang', requestId: 1, characterId: 'aqiang',
+    relationshipPosture: 'affection:6', topicIds: ['general'], cognition: 'known' as const,
+    disclosureLevel: 'open' as const, responseMode: 'direct_answer' as const, repetitionLevel: 1 as const,
+    allowedFactIds: ['surface'], hintableFactIds: [], protectedTopicIds: [],
+    actorDraftLinesRedacted: ['「【受保护内容】。」'], directorVerdict: 'pass' as const,
+    directorViolations: [], finalSource: 'director' as const, fallbackReason: null,
+    stages: [{ stage: 'actor' as const, durationMs: 3 }],
+  };
+  const snapshot = buildNarrativeDebugSnapshot({
+    context: createInitialGameContext(), state: 'dayLoop.guest.llmChatSession', guest,
+    currentNode: null, dialogueDiagnostics,
+  });
+  assert.deepEqual(snapshot.dialogueTurn, dialogueDiagnostics);
+  assert.equal(JSON.stringify(snapshot).includes('Authorization'), false);
+  assert.equal(JSON.stringify(snapshot).includes('apiKey'), false);
+});

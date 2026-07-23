@@ -1,119 +1,77 @@
-import { strict as assert } from 'node:assert';
-import { test } from 'node:test';
-import { parseModelOutput, validateNpcDialogueResponse } from './responseParser.mjs';
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {
+  isCompoundReplyLine,
+  normalizeReplyLines,
+  parseModelOutput,
+  validateNpcDialogueResponse,
+} from './responseParser.mjs';
 
-test('validateNpcDialogueResponse splits adjacent quoted speeches into separate reply lines', () => {
-  const parsed = parseModelOutput(JSON.stringify({
-    replyLines: ['「没关系。」「能喝就行。」'],
-    mood: 'steady',
-    endChat: false,
-  }));
-  const validation = validateNpcDialogueResponse(parsed);
-
-  assert.equal(validation.ok, true);
-  assert.deepEqual(validation.value.replyLines, [
-    '「没关系。」',
-    '「能喝就行。」',
-  ]);
+test('strict parser rejects Markdown-fenced JSON', () => {
+  const parsed = parseModelOutput('```json\n{"replyLines":["「别问。」"]}\n```');
+  assert.deepEqual(parsed, {
+    ok: false,
+    code: 'invalid_json',
+    error: '模型返回格式无效。',
+  });
 });
 
-test('validateNpcDialogueResponse removes orphan punctuation after an opening quote', () => {
-  const parsed = parseModelOutput(JSON.stringify({
-    replyLines: ['「，每年都是他帮我过生日。」'],
-    mood: 'guarded',
-    endChat: false,
-  }));
-  const validation = validateNpcDialogueResponse(parsed);
+test('strict parser returns local structured errors without plain-text or malformed recovery', () => {
+  assert.deepEqual(parseModelOutput('「别问。」'), {
+    ok: false,
+    code: 'invalid_json',
+    error: '模型返回格式无效。',
+  });
+  assert.equal(parseModelOutput('{"replyLines":["「别问。」"]').ok, false);
+});
 
-  assert.equal(validation.ok, true);
-  assert.deepEqual(validation.value.replyLines, [
+test('reply normalization preserves punctuation repair after strict structure passes', () => {
+  assert.deepEqual(normalizeReplyLines(['「，每年都是他帮我过生日。', '》《謝謝。']), [
     '「每年都是他帮我过生日。」',
-  ]);
-});
-
-test('validateNpcDialogueResponse normalizes common traditional characters and stray closing quotes', () => {
-  const parsed = parseModelOutput(JSON.stringify({
-    replyLines: ['」「你心里想的是什麼？」', '《謝謝。'],
-    mood: 'warm',
-    endChat: false,
-  }));
-  const validation = validateNpcDialogueResponse(parsed);
-
-  assert.equal(validation.ok, true);
-  assert.deepEqual(validation.value.replyLines, [
-    '「你心里想的是什么？」',
     '「谢谢。」',
   ]);
-});
-
-test('parseModelOutput recovers malformed JSON when reply lines and mood are still readable', () => {
-  const parsed = parseModelOutput(
-    '{"replyLines":["（他抬起眼看了看你愣了一下）","「......还好。」","「就是有点冷。」”（他顿了顿，又补充道）《謝謝。","mood":"warm","endChat":false}',
-  );
-  const validation = validateNpcDialogueResponse(parsed);
-
-  assert.equal(validation.ok, true);
-  assert.equal(validation.value.mood, 'warm');
-  assert.equal(validation.value.endChat, false);
-  assert.deepEqual(validation.value.replyLines, [
-    '（他抬起眼看了看你愣了一下）',
-    '「......还好。」',
-    '「就是有点冷。」',
-    '（他顿了顿，又补充道）',
-    '「谢谢。」',
+  assert.deepEqual(normalizeReplyLines(['「没关系。」「能喝就行。」']), [
+    '「没关系。」「能喝就行。」',
   ]);
 });
 
-test('validateNpcDialogueResponse keeps the first five normalized lines when the model over-answers', () => {
-  const parsed = parseModelOutput(JSON.stringify({
-    replyLines: [
-      '（她攥紧杯子）',
-      '「他会回来的。」',
-      '（声音低下去）',
-      '「我只是还没等到。」',
-      '「我想说谢谢。」',
-      '「还有对不起。」',
-    ],
-    mood: 'guarded',
-    endChat: false,
-  }));
-  const validation = validateNpcDialogueResponse(parsed);
-
-  assert.equal(validation.ok, true);
-  assert.deepEqual(validation.value.replyLines, [
-    '（她攥紧杯子）',
-    '「他会回来的。」',
-    '（声音低下去）',
-    '「我只是还没等到。」',
-    '「我想说谢谢。」',
+test('one supplied reply line is never expanded into action and speech segments', () => {
+  assert.deepEqual(normalizeReplyLines(['（低头）「这事别问。」']), [
+    '（低头）「这事别问。」',
   ]);
 });
 
-test('validateNpcDialogueResponse accepts a single string replyLines value', () => {
-  const parsed = parseModelOutput(JSON.stringify({
-    replyLines: '「今晚的酒，慢慢喝就好。」',
-    mood: 'warm',
-    endChat: false,
-  }));
-  const validation = validateNpcDialogueResponse(parsed);
+test('compound detection counts only top-level reply units', () => {
+  const compounds = [
+    '（低头）「这事别问。」',
+    '「这事别问。」（低头）',
+    '「这事别问。」「喝一杯吧。」',
+    '（低头）（叹气）',
+    '（低头）这事别问。',
+    '「这事别问。」然后转身离开',
+  ];
+  assert.deepEqual(compounds.map(isCompoundReplyLine), compounds.map(() => true));
 
-  assert.equal(validation.ok, true);
-  assert.deepEqual(validation.value.replyLines, [
-    '「今晚的酒，慢慢喝就好。」',
-  ]);
+  assert.equal(isCompoundReplyLine('「《黄昏》这本书不错。」'), false);
+  assert.equal(isCompoundReplyLine('「他说：“这事别问。”」'), false);
+  assert.equal(isCompoundReplyLine('（低头）'), false);
+  assert.equal(isCompoundReplyLine('这事别问。'), false);
 });
 
-test('validateNpcDialogueResponse recovers common alternate reply text fields', () => {
-  const parsed = parseModelOutput(JSON.stringify({
-    replyLines: [],
-    reply: '「别急。」',
-    mood: 'steady',
-    endChat: false,
-  }));
-  const validation = validateNpcDialogueResponse(parsed);
-
-  assert.equal(validation.ok, true);
-  assert.deepEqual(validation.value.replyLines, [
-    '「别急。」',
-  ]);
+test('legacy one-stage response validation rejects alternate keys and coercions', () => {
+  assert.equal(validateNpcDialogueResponse({
+    replyLines: [], reply: '「别急。」', mood: 'steady', endChat: false,
+  }).ok, false);
+  assert.equal(validateNpcDialogueResponse({
+    replyLines: '「别急。」', mood: 'steady', endChat: false,
+  }).ok, false);
+  assert.equal(validateNpcDialogueResponse({
+    replyLines: ['「别急。」'], mood: 'steady', endChat: false, nextNode: 'secret',
+  }).ok, false);
+  assert.equal(validateNpcDialogueResponse({
+    replyLines: ['「别急。」「喝一杯吧。」'], mood: 'steady', endChat: false,
+  }).ok, false);
+  assert.equal(validateNpcDialogueResponse({
+    replyLines: ['「《黄昏》这本书不错。」'], mood: 'steady', endChat: false,
+  }).ok, true);
 });

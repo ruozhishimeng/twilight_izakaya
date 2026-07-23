@@ -7,6 +7,7 @@ import {
 import { getExitTargets, resolveNodeExit } from '../data/content/narrative';
 import type { CharacterNode, Guest, NarrativeExit } from '../data/content/types';
 import type { GameContext, GameRootStateValue } from '../state/gameState';
+import type { DialogueTurnDiagnostics } from '../types/npcDialogue';
 import {
   DEFAULT_RELATIONSHIP_AXIS_ID,
   getRelationshipValue,
@@ -59,6 +60,7 @@ export interface NarrativeDebugSnapshot {
     appliedTransactions: number;
   };
   recentTransactions: NarrativeDebugTransaction[];
+  dialogueTurn: DialogueTurnDiagnostics | null;
 }
 
 export interface BuildNarrativeDebugSnapshotInput {
@@ -66,6 +68,7 @@ export interface BuildNarrativeDebugSnapshotInput {
   state: GameRootStateValue;
   guest: Guest;
   currentNode: CharacterNode | null | undefined;
+  dialogueDiagnostics?: DialogueTurnDiagnostics | null;
 }
 
 function messageFromError(error: unknown) {
@@ -111,7 +114,10 @@ function buildDebugDirective(
       case 'node':
         return { kind: directive.kind, targets: [directive.nodeId] };
       case 'tail_chat':
-        return { kind: directive.kind, targets: [directive.resumeNodeId] };
+        return {
+          kind: directive.kind,
+          targets: directive.resume.kind === 'node' ? [directive.resume.nodeId] : [],
+        };
       case 'observation':
         return { kind: directive.kind, targets: [directive.continueNodeId] };
       case 'mixing':
@@ -153,6 +159,7 @@ export function buildNarrativeDebugSnapshot({
   state,
   guest,
   currentNode,
+  dialogueDiagnostics = null,
 }: BuildNarrativeDebugSnapshotInput): NarrativeDebugSnapshot {
   const effects = context.narrativeEffects;
   const recentTransactions = Object.values(effects.appliedTransactions)
@@ -191,6 +198,7 @@ export function buildNarrativeDebugSnapshot({
       appliedTransactions: Object.keys(effects.appliedTransactions).length,
     },
     recentTransactions,
+    dialogueTurn: dialogueDiagnostics,
   };
 }
 
@@ -207,11 +215,12 @@ export default function NarrativeDebugPanel({
   state,
   guest,
   currentNode,
+  dialogueDiagnostics,
   className = '',
 }: NarrativeDebugPanelProps) {
   const snapshot = useMemo(
-    () => buildNarrativeDebugSnapshot({ context, state, guest, currentNode }),
-    [context, currentNode, guest, state],
+    () => buildNarrativeDebugSnapshot({ context, state, guest, currentNode, dialogueDiagnostics }),
+    [context, currentNode, dialogueDiagnostics, guest, state],
   );
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
@@ -340,6 +349,22 @@ export default function NarrativeDebugPanel({
               <div className="mt-1 font-bold text-[#d8c7ab]">{value}</div>
             </div>
           ))}
+        </section>
+
+        <section className="border-2 border-[#4c3a2e] bg-[#17100c] p-3 pixel-rounded-sm">
+          <h3 className="mb-2 font-bold text-[#f0c986]">最近模型回合（脱敏）</h3>
+          {snapshot.dialogueTurn ? (
+            <div className="grid grid-cols-[84px_1fr] gap-x-2 gap-y-1.5 break-all">
+              <span className="text-[#a98a68]">来源</span><code>{snapshot.dialogueTurn.finalSource}</code>
+              <span className="text-[#a98a68]">裁决</span><code>{snapshot.dialogueTurn.directorVerdict}</code>
+              <span className="text-[#a98a68]">响应模式</span><code>{snapshot.dialogueTurn.responseMode}</code>
+              <span className="text-[#a98a68]">话题</span><code>{snapshot.dialogueTurn.topicIds.join(', ') || '—'}</code>
+              <span className="text-[#a98a68]">演员草稿</span>
+              <span>{snapshot.dialogueTurn.actorDraftLinesRedacted.join(' / ') || '—'}</span>
+            </div>
+          ) : (
+            <div className="py-2 text-center text-[#7f705e]">暂无安全诊断</div>
+          )}
         </section>
 
         <section className="border-2 border-[#4c3a2e] bg-[#17100c] p-3 pixel-rounded-sm">

@@ -1,37 +1,17 @@
+import type {
+  DialogueCognition,
+  DialogueDisclosureLevel,
+  DialogueMood,
+  DialogueProgressSnapshot,
+  DialogueResponseMode,
+} from '../data/dialogue/types';
+
+export type { DialogueProgressSnapshot } from '../data/dialogue/types';
 export type NpcDialogueState = 'dayLoop.guest.llmChatSession';
 
-export interface NpcDialogueTranscriptEntry {
-  speaker: string;
-  text: string;
-}
-
-export interface NpcDialogueRequestLastDrink {
-  label?: string;
-  mixedDrinkName?: string;
-  isSuccess: boolean;
-  sourceNodeId?: string | null;
-}
-
-export interface NpcDialogueGuestProfile {
-  identity: string;
-  personality: string;
-  description: string;
-}
-
-export interface NpcDialogueRequest {
+export interface NpcDialogueRequest extends DialogueProgressSnapshot {
   state: NpcDialogueState;
-  guestId: string;
-  guestName: string;
-  guestProfile: NpcDialogueGuestProfile;
-  playerText: string;
-  week: number;
-  day: number;
-  guestInDay: number;
-  currentNodeId: string | null;
-  observedFeatures: string[];
-  recentTranscript: NpcDialogueTranscriptEntry[];
-  lastDrink: NpcDialogueRequestLastDrink | null;
-  turnIndex: number;
+  debug?: boolean;
 }
 
 export interface NpcDialogueUsage {
@@ -43,9 +23,31 @@ export interface NpcDialogueUsage {
   completionChars: number;
 }
 
+export interface DialogueTurnDiagnostics {
+  sessionId: string;
+  requestId: number;
+  characterId: string;
+  relationshipPosture: string;
+  topicIds: string[];
+  cognition: DialogueCognition;
+  disclosureLevel: DialogueDisclosureLevel;
+  responseMode: DialogueResponseMode;
+  repetitionLevel: 1 | 2 | 3;
+  allowedFactIds: string[];
+  hintableFactIds: string[];
+  protectedTopicIds: string[];
+  actorDraftLinesRedacted: string[];
+  directorVerdict: 'pass' | 'revise' | 'failed' | 'skipped';
+  directorViolations: string[];
+  finalSource: 'director' | 'actor' | 'fallback' | 'local-safety';
+  fallbackReason: string | null;
+  stages: Array<{ stage: 'actor' | 'director'; durationMs: number; usage?: NpcDialogueUsage }>;
+}
+
 export interface NpcDialogueResponse {
   replyLines: string[];
-  mood: 'steady' | 'warm' | 'guarded' | 'awkward' | 'cryptic' | 'nostalgic';
+  mood: DialogueMood;
   endChat: boolean;
   usage?: NpcDialogueUsage;
+  diagnostics?: DialogueTurnDiagnostics;
 }

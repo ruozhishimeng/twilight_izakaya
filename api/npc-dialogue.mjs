@@ -28,6 +28,8 @@ export default {
 
     const result = await handleNpcDialogueRequest(body, {
       apiKey: auth.apiKey,
+      signal: request.signal,
+      includeDebug: body?.debug === true,
     });
     return jsonResponse(result.status, result.body);
   },

@@ -260,7 +260,7 @@ test('before-next tail chat is an explicit interpreter step with the exact resum
   });
   assert.deepEqual(interpretNodeCompletion(chatNode, 'id:custom_route'), {
     kind: 'tail_chat',
-    resumeNodeId: 'custom_target',
+    resume: { kind: 'node', nodeId: 'custom_target' },
   });
 
   const nodes = nodeMap([
@@ -276,11 +276,35 @@ test('before-next tail chat is an explicit interpreter step with the exact resum
   assert.deepEqual(tailChat.state, {
     kind: 'tail_chat',
     sourceNodeId: 'chat_source',
-    resumeNodeId: 'custom_target',
+    resume: { kind: 'node', nodeId: 'custom_target' },
   });
   assert.deepEqual(stepNarrativeInterpreter(nodes, tailChat.state, {
     type: 'complete_tail_chat',
   }).state, { kind: 'node', nodeId: 'custom_target' });
+});
+
+test('after-node tail chat wraps either a node or end-visit resume exactly once', () => {
+  const nextSource = node('after_next_source', {
+    llm_chat: { entry_mode: 'after_node' },
+    exit: { kind: 'next', target: 'after_target' },
+  });
+  const endSource = node('after_end_source', {
+    llm_chat: { entry_mode: 'after_node' },
+    exit: { kind: 'end_visit' },
+  });
+  assert.deepEqual(interpretNodeCompletion(nextSource), {
+    kind: 'tail_chat', resume: { kind: 'node', nodeId: 'after_target' },
+  });
+  assert.deepEqual(interpretNodeCompletion(endSource), {
+    kind: 'tail_chat', resume: { kind: 'end_visit' },
+  });
+  const nodes = nodeMap([endSource]);
+  const tail = stepNarrativeInterpreter(nodes, createNarrativeInterpreterState('after_end_source'), {
+    type: 'complete_node',
+  });
+  assert.deepEqual(stepNarrativeInterpreter(nodes, tail.state, {
+    type: 'complete_tail_chat',
+  }).state, { kind: 'end_visit', sourceNodeId: 'after_end_source' });
 });
 
 test('enumerateNarrativePaths traverses every option and both mixing outcomes', () => {

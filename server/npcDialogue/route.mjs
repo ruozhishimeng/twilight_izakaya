@@ -9,9 +9,25 @@ export function registerNpcDialogueRoute(app) {
       return;
     }
 
-    const result = await handleNpcDialogueRequest(req.body, {
-      apiKey: auth.apiKey,
-    });
-    res.status(result.status).json(result.body);
+    const controller = new AbortController();
+    const abortRequest = () => controller.abort();
+    const abortOnUnfinishedClose = () => {
+      if (!res.writableEnded) controller.abort();
+    };
+    req.once('aborted', abortRequest);
+    res.once('close', abortOnUnfinishedClose);
+    try {
+      const result = await handleNpcDialogueRequest(req.body, {
+        apiKey: auth.apiKey,
+        signal: controller.signal,
+        includeDebug: req.body?.debug === true,
+      });
+      if (!res.destroyed && !res.writableEnded) {
+        res.status(result.status).json(result.body);
+      }
+    } finally {
+      req.off('aborted', abortRequest);
+      res.off('close', abortOnUnfinishedClose);
+    }
   });
 }

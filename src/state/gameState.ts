@@ -83,6 +83,11 @@ export interface GuestReflectionState {
   daySummary: DailySummary | null;
 }
 
+export type TailChatResume =
+  | { kind: 'node'; nodeId: string }
+  | { kind: 'end_visit' }
+  | null;
+
 export interface TailChatRuntime {
   enabled: boolean;
   turnsUsed: number;
@@ -90,10 +95,12 @@ export interface TailChatRuntime {
   entryStatusText: string;
   blockedMessage: string;
   exhaustedMessage: string;
-  resumeNodeId: string | null;
+  resume: TailChatResume;
+  closed: boolean;
 }
 
 export interface LastDrinkResult {
+  recipeId?: string | null;
   label?: string;
   mixedDrinkName?: string;
   isSuccess: boolean;
@@ -170,9 +177,10 @@ export type GameEvent =
   | { type: 'PATCH_CURRENT_GUEST'; patch: Partial<CurrentGuestRuntime> }
   | { type: 'RESET_CURRENT_GUEST' }
   | { type: 'APPLY_NARRATIVE_TRANSACTION'; transaction: NarrativeTransaction }
+  | { type: 'APPEND_CURRENT_GUEST_TRANSCRIPT'; entries: GuestTranscriptEntry[] }
   | { type: 'PATCH_NPC_DIALOGUE'; patch: Partial<NpcDialogueRuntime> };
 
-export const PERSISTED_GAME_SNAPSHOT_VERSION = 4;
+export const PERSISTED_GAME_SNAPSHOT_VERSION = 5;
 
 export function isGameRootStateValue(value: unknown): value is GameRootStateValue {
   return typeof value === 'string' && GAME_ROOT_STATE_VALUES.includes(value as GameRootStateValue);
@@ -194,7 +202,8 @@ export function createInitialTailChatRuntime(): TailChatRuntime {
     entryStatusText: '不说话可太无聊了……',
     blockedMessage: '现在还是不太适合聊天……',
     exhaustedMessage: '聊得够多了……',
-    resumeNodeId: null,
+    resume: null,
+    closed: false,
   };
 }
 
@@ -260,19 +269,52 @@ export function hydrateCurrentGuestRuntime(
 ): CurrentGuestRuntime {
   const base = createEmptyCurrentGuestRuntime();
   const next = currentGuest || {};
+  const legacyTailChat = (next.tailChat || {}) as Partial<TailChatRuntime> & {
+    resumeNodeId?: string | null;
+  };
+  const resume = legacyTailChat.resume !== undefined
+    ? legacyTailChat.resume
+    : typeof legacyTailChat.resumeNodeId === 'string' && legacyTailChat.resumeNodeId.trim()
+      ? { kind: 'node' as const, nodeId: legacyTailChat.resumeNodeId.trim() }
+      : null;
+  const { resumeNodeId: _legacyResumeNodeId, ...tailChat } = legacyTailChat;
 
   return {
-    ...base,
-    ...next,
+    nodeId: next.nodeId ?? base.nodeId,
+    returnNodeId: next.returnNodeId ?? base.returnNodeId,
+    rewardReturnState: next.rewardReturnState ?? base.rewardReturnState,
     discoveredFeatures: Array.isArray(next.discoveredFeatures) ? next.discoveredFeatures : base.discoveredFeatures,
+    teachingNodeId: next.teachingNodeId ?? base.teachingNodeId,
+    mixingNodeId: next.mixingNodeId ?? base.mixingNodeId,
+    observationRequest: next.observationRequest ?? base.observationRequest,
     pendingRewards: Array.isArray(next.pendingRewards) ? next.pendingRewards : base.pendingRewards,
     pendingRewardNewIds: Array.isArray(next.pendingRewardNewIds) ? next.pendingRewardNewIds : base.pendingRewardNewIds,
+    pendingMixingRetry: typeof next.pendingMixingRetry === 'boolean'
+      ? next.pendingMixingRetry
+      : base.pendingMixingRetry,
+    mixingPromptOverride: next.mixingPromptOverride,
+    isSuccess: typeof next.isSuccess === 'boolean' ? next.isSuccess : base.isSuccess,
+    mixedDrinkName: next.mixedDrinkName,
+    isNewRecipe: typeof next.isNewRecipe === 'boolean' ? next.isNewRecipe : base.isNewRecipe,
     rewards: Array.isArray(next.rewards) ? next.rewards : base.rewards,
+    drinkLabel: next.drinkLabel,
     challenges: Array.isArray(next.challenges) ? next.challenges : base.challenges,
     transcript: Array.isArray(next.transcript) ? next.transcript : base.transcript,
     tailChat: {
-      ...base.tailChat,
-      ...(next.tailChat || {}),
+      enabled: typeof tailChat.enabled === 'boolean' ? tailChat.enabled : base.tailChat.enabled,
+      turnsUsed: typeof tailChat.turnsUsed === 'number' ? tailChat.turnsUsed : base.tailChat.turnsUsed,
+      maxTurns: typeof tailChat.maxTurns === 'number' ? tailChat.maxTurns : base.tailChat.maxTurns,
+      entryStatusText: typeof tailChat.entryStatusText === 'string'
+        ? tailChat.entryStatusText
+        : base.tailChat.entryStatusText,
+      blockedMessage: typeof tailChat.blockedMessage === 'string'
+        ? tailChat.blockedMessage
+        : base.tailChat.blockedMessage,
+      exhaustedMessage: typeof tailChat.exhaustedMessage === 'string'
+        ? tailChat.exhaustedMessage
+        : base.tailChat.exhaustedMessage,
+      resume,
+      closed: legacyTailChat.closed === true,
     },
     lastDrinkResult: next.lastDrinkResult || deriveLastDrinkResultFromCurrentGuest(next),
   };
@@ -285,8 +327,9 @@ export function hydrateNpcDialogueRuntime(
   const next = npcDialogue || {};
 
   return {
-    ...base,
-    ...next,
+    status: next.status === 'error' ? 'error' : 'idle',
+    errorMessage: null,
+    turnCount: typeof next.turnCount === 'number' ? next.turnCount : base.turnCount,
     lastReplyLines: Array.isArray(next.lastReplyLines) ? next.lastReplyLines : base.lastReplyLines,
   };
 }
@@ -298,9 +341,21 @@ export function hydrateGameContext(
   const next = context || {};
 
   return {
-    ...base,
-    ...next,
+    week: typeof next.week === 'number' ? next.week : base.week,
+    day: typeof next.day === 'number' ? next.day : base.day,
+    guestInDay: typeof next.guestInDay === 'number' ? next.guestInDay : base.guestInDay,
+    characterProgress: next.characterProgress || base.characterProgress,
+    characterObservations: next.characterObservations || base.characterObservations,
     narrativeEffects: hydrateNarrativeEffectsState(next.narrativeEffects),
+    pendingStoryUnlocks: next.pendingStoryUnlocks || base.pendingStoryUnlocks,
+    unlockedStoryChapters: next.unlockedStoryChapters || base.unlockedStoryChapters,
+    unlockedRecipes: Array.isArray(next.unlockedRecipes) ? next.unlockedRecipes : base.unlockedRecipes,
+    inventory: Array.isArray(next.inventory) ? next.inventory : base.inventory,
+    currentDayRecords: Array.isArray(next.currentDayRecords) ? next.currentDayRecords : base.currentDayRecords,
+    journalHistory: Array.isArray(next.journalHistory) ? next.journalHistory : base.journalHistory,
+    pendingDaySummary: next.pendingDaySummary ?? base.pendingDaySummary,
+    pendingGuestReflection: next.pendingGuestReflection ?? base.pendingGuestReflection,
+    guestInterludeText: next.guestInterludeText,
     currentGuest: hydrateCurrentGuestRuntime(next.currentGuest),
     npcDialogue: hydrateNpcDialogueRuntime(next.npcDialogue),
   };
@@ -336,10 +391,11 @@ export function createInitialGameSnapshot(): GameSnapshot {
 }
 
 export function createPersistedSnapshot(snapshot: GameSnapshot): PersistedGameSnapshot {
+  const context = hydrateGameContext(snapshot.context);
   return {
     version: PERSISTED_GAME_SNAPSHOT_VERSION,
     state: snapshot.value,
-    context: snapshot.context,
+    context,
   };
 }
 
@@ -347,10 +403,14 @@ export function hydrateLoadedGameSnapshot(
   snapshot: PersistedGameSnapshot | GameSnapshot,
 ): GameSnapshot {
   const state = 'state' in snapshot ? snapshot.state : snapshot.value;
+  const context = hydrateGameContext(snapshot.context);
+  const value = assertGameRootStateValue(state);
 
   return {
-    value: assertGameRootStateValue(state),
-    context: hydrateGameContext(snapshot.context),
+    value: value === 'dayLoop.guest.llmChatSession' && context.currentGuest.tailChat.closed
+      ? 'dayLoop.guest.llmChatLobby'
+      : value,
+    context,
   };
 }
 
@@ -438,6 +498,25 @@ export function reduceGameEvent(snapshot: GameSnapshot, event: GameEvent): GameS
         context: {
           ...snapshot.context,
           narrativeEffects: result.nextState,
+        },
+      };
+    }
+    case 'APPEND_CURRENT_GUEST_TRANSCRIPT': {
+      const existingKeys = new Set(snapshot.context.currentGuest.transcript.map(entry => entry.key));
+      const entries = event.entries.filter(entry => {
+        if (!entry.text.trim() || !entry.key.trim() || existingKeys.has(entry.key)) return false;
+        existingKeys.add(entry.key);
+        return true;
+      });
+      if (entries.length === 0) return snapshot;
+      return {
+        ...snapshot,
+        context: {
+          ...snapshot.context,
+          currentGuest: {
+            ...snapshot.context.currentGuest,
+            transcript: [...snapshot.context.currentGuest.transcript, ...entries],
+          },
         },
       };
     }

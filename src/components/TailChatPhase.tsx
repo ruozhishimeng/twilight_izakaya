@@ -1,4 +1,5 @@
 import React from 'react';
+import { canInteractWithTailChat } from '../services/npcDialogueSession';
 import PixelDialogueBox from './PixelDialogueBox';
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
   portraitUrl?: string;
   turnsUsed: number;
   maxTurns: number;
+  closed: boolean;
   displayText: string;
   inputValue: string;
   sessionStage?: 'input' | 'player' | 'npc';
@@ -28,6 +30,7 @@ export default function TailChatPhase({
   portraitUrl,
   turnsUsed,
   maxTurns,
+  closed,
   displayText,
   inputValue,
   sessionStage = 'input',
@@ -40,7 +43,11 @@ export default function TailChatPhase({
   onSend,
   onFinish,
 }: Props) {
-  const canStillChat = turnsUsed < maxTurns;
+  const canStillChat = turnsUsed < maxTurns && canInteractWithTailChat({
+    state: 'dayLoop.guest.llmChatSession',
+    closed,
+    status: isRequesting ? 'requesting' : 'idle',
+  });
   const showPortrait = Boolean(portraitUrl);
 
   const renderShell = (content: React.ReactNode) => (
@@ -69,6 +76,8 @@ export default function TailChatPhase({
           {
             label: '聊一聊',
             onClick: onStartChat,
+            disabled: closed || !canStillChat,
+            disabledReason: closed ? '本次谈话已经结束。' : '今天已经聊得够多了。',
           },
           {
             label: '继续',

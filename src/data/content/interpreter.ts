@@ -37,9 +37,13 @@ export interface NodeDirective {
   nodeId: string;
 }
 
+export type TailChatResume =
+  | { kind: 'node'; nodeId: string }
+  | { kind: 'end_visit' };
+
 export interface TailChatDirective {
   kind: 'tail_chat';
-  resumeNodeId: string;
+  resume: TailChatResume;
 }
 
 export interface ObservationDirective {
@@ -82,7 +86,7 @@ export type NarrativeInterpreterState =
       exit: NarrativeMixingExit;
       retryCount: number;
     }
-  | { kind: 'tail_chat'; sourceNodeId: string; resumeNodeId: string }
+  | { kind: 'tail_chat'; sourceNodeId: string; resume: TailChatResume }
   | { kind: 'end_visit'; sourceNodeId: string | null };
 
 export type NarrativeInterpreterAction =
@@ -317,14 +321,18 @@ function selectNarrativeChoice(
 
 function withTailChat(
   node: CharacterNode,
-  directive: NodeDirective,
-): NodeDirective | TailChatDirective {
-  if (node.llm_chat?.entry_mode !== 'before_next_node') {
+  directive: NodeDirective | EndVisitDirective,
+): NodeDirective | EndVisitDirective | TailChatDirective {
+  const mode = node.llm_chat?.entry_mode;
+  if ((mode !== 'before_next_node' && mode !== 'after_node') ||
+      (mode === 'before_next_node' && directive.kind !== 'node')) {
     return directive;
   }
   return {
     kind: 'tail_chat',
-    resumeNodeId: directive.nodeId,
+    resume: directive.kind === 'node'
+      ? { kind: 'node', nodeId: directive.nodeId }
+      : { kind: 'end_visit' },
   };
 }
 
@@ -360,7 +368,7 @@ export function interpretNodeExit(node: CharacterNode): NarrativeDirective {
       };
     }
     case 'end_visit':
-      return { kind: 'end_visit' };
+      return withTailChat(node, { kind: 'end_visit' });
     default: {
       const unsupported: never = exit;
       throw new Error(
@@ -440,7 +448,7 @@ export function interpretNodeCompletion(
 
   if (hasOwn(selected.option, 'next_node') && selected.option.next_node !== undefined) {
     if (selected.option.next_node === null) {
-      return { kind: 'end_visit' };
+      return withTailChat(node, { kind: 'end_visit' });
     }
     return withTailChat(node, {
       kind: 'node',
@@ -480,7 +488,7 @@ function stateFromDirective(
       return {
         kind: 'tail_chat',
         sourceNodeId,
-        resumeNodeId: directive.resumeNodeId,
+        resume: directive.resume,
       };
     case 'observation':
       return {
@@ -559,9 +567,13 @@ export function stepNarrativeInterpreter(
     }
     case 'tail_chat': {
       requireActionType(state, action, 'complete_tail_chat');
+      if (state.resume.kind === 'end_visit') {
+        const directive: EndVisitDirective = { kind: 'end_visit' };
+        return { state: { kind: 'end_visit', sourceNodeId: state.sourceNodeId }, directive };
+      }
       const directive: NodeDirective = {
         kind: 'node',
-        nodeId: requireNonEmptyString(state.resumeNodeId, 'tail chat resumeNodeId'),
+        nodeId: requireNonEmptyString(state.resume.nodeId, 'tail chat resume nodeId'),
       };
       requireExistingTarget(
         nodeMap,
@@ -649,7 +661,7 @@ function stateKey(state: NarrativeInterpreterState) {
     case 'mixing':
       return `mixing:${state.sourceNodeId}:retry=${state.retryCount}`;
     case 'tail_chat':
-      return `tail_chat:${state.sourceNodeId}:${state.resumeNodeId}`;
+      return `tail_chat:${state.sourceNodeId}:${state.resume.kind === 'node' ? state.resume.nodeId : 'end_visit'}`;
     case 'end_visit':
       return `end_visit:${state.sourceNodeId || ''}`;
   }
@@ -664,7 +676,7 @@ function targetFromDirective(directive: NarrativeDirective) {
     case 'node':
       return directive.nodeId;
     case 'tail_chat':
-      return directive.resumeNodeId;
+      return directive.resume.kind === 'node' ? directive.resume.nodeId : undefined;
     case 'observation':
       return directive.continueNodeId;
     default:

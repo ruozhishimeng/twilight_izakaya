@@ -18,7 +18,7 @@ function resolveTopic(topic, snapshot) {
 }
 function topicFromOffTopic(policy) { return policy.topics.find(topic => topic.id === 'off_topic') || policy.topics.find(topic => topic.id === policy.default_topic_id) || policy.topics[0]; }
 function repetitionFor(topic, playerText, transcript, baseMode) {
-  const normalizedEntries = (transcript || []).filter(entry => String(entry?.speaker || '').toLowerCase() === 'player').map(entry => normalizedCueText(entry.text));
+  const normalizedEntries = (transcript || []).filter(entry => String(entry?.role || entry?.speaker || '').toLowerCase() === 'player').map(entry => normalizedCueText(entry.text));
   const cues = (topic.cues || []).map(normalizedCueText).filter(Boolean);
   const prior = cues.length ? normalizedEntries.filter(entry => cues.some(cue => entry.includes(cue))).length : 0;
   const level = Math.min(3, prior + 1);
@@ -50,10 +50,11 @@ export function compileDialogueTurnContext(character, snapshot = {}, options) {
   });
   const protectedTopics = resolved.map(entry => ({ topicId: entry.topic.id, cognition: entry.cognition, rule: entry.rule.level, forbiddenConceptIds: [...(entry.rule.protected_concept_ids || [])] }));
   const protectedLexemes = [...new Set(protectedTopics.flatMap(topic => topic.forbiddenConceptIds.flatMap(id => conceptById.get(id)?.lexemes || [])))];
-  const recentStyleSummary = (snapshot.recentTranscript || []).slice(-3).map(entry => `${String(entry.speaker || 'player')}: ${String(entry.text || '').slice(0, 80)}`);
+  const recentStyleSummary = (snapshot.recentTranscript || []).slice(-3).map(entry => `${String(entry.role || entry.speaker || 'player')}: ${String(entry.text || '').slice(0, 80)}`);
   const protectedExamplesMaterial = protectedMaterial(policy);
   const relevantExamples = policy.examples.filter(example => example.kind === 'positive' && resolved.some(entry => entry.topic.id === example.topic_id) && example.response_mode === repetition.responseMode && !protectedExamplesMaterial.some(material => String(example.player_text).includes(material) || example.reply_lines.some(line => String(line).includes(material))));
   return {
+    character,
     actorContext: { characterIdentity: character.publicIdentity, voiceProfile: policy.voice, sceneSummary: character.nodeScenes?.[snapshot.currentNodeId] || '', relationshipPosture: `affection:${Number(snapshot.relationshipValues?.affection || 0)}`, cognitionStates: resolved.map(entry => ({ topicId: entry.topic.id, state: entry.cognition })), allowedFacts, hintableFacts, responseMode: repetition.responseMode, refusalEscalation: Math.min(3, repetition.level), recentStyleSummary, relevantExamples },
     directorContext: { voiceProfile: policy.voice, allowedFactIds: allowedFacts.map(fact => fact.id), hintableFactIds: hintableFacts.map(fact => fact.id), protectedTopics: protectedTopics.map(topic => ({ ...topic, rule: topic.forbiddenConceptIds.map(id => conceptById.get(id)?.capsule).filter(Boolean).join('\n') || topic.rule })), recentStyleSummary },
     guardRules: { protectedLexemes, bannedPhrases: [...policy.voice.banned_phrases], allowedMoods: ['steady', 'warm', 'guarded', 'awkward', 'cryptic', 'nostalgic'] },
