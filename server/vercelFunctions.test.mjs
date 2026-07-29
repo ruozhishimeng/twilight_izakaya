@@ -3,6 +3,7 @@ import { afterEach, test } from 'node:test';
 import npcDialogueHandler from '../api/npc-dialogue.mjs';
 
 const originalFetch = globalThis.fetch;
+const originalEnvironmentApiKey = process.env.MINIMAX_API_KEY;
 const BASE_REQUEST = {
   state: 'dayLoop.guest.llmChatSession', guestId: 'aqiang', playerText: '这杯酒有什么讲究吗？',
   week: 1, day: 1, guestInDay: 1, currentNodeId: 'aqiang_001_dialogue_main',
@@ -10,7 +11,11 @@ const BASE_REQUEST = {
   unlockedChapterIds: [], observedFeatureIds: [], recentTranscript: [], lastDrink: null, turnIndex: 1,
 };
 
-afterEach(() => { globalThis.fetch = originalFetch; });
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+  if (originalEnvironmentApiKey === undefined) delete process.env.MINIMAX_API_KEY;
+  else process.env.MINIMAX_API_KEY = originalEnvironmentApiKey;
+});
 
 function createNpcRequest(apiKey, body = BASE_REQUEST) {
   const headers = { 'Content-Type': 'application/json' };
@@ -20,14 +25,34 @@ function createNpcRequest(apiKey, body = BASE_REQUEST) {
   });
 }
 
-test('Vercel NPC function requires a player-supplied MiniMax key', async () => {
+test('Vercel NPC function uses the server author key when the player sends none', async () => {
+  process.env.MINIMAX_API_KEY = 'server-author-key';
+  const seenAuthorizations = [];
+  globalThis.fetch = async (_url, options) => {
+    seenAuthorizations.push(options.headers.Authorization);
+    const requestBody = JSON.parse(options.body);
+    const isActor = requestBody.messages[0].content.includes('角色演员');
+    const content = isActor
+      ? { replyLines: ['「草稿。」'], mood: 'steady', addressedTopics: ['general'], responseMode: 'direct_answer', usedFactIds: [] }
+      : { verdict: 'pass', violations: [], finalReplyLines: ['「晚上好。」'], mood: 'steady' };
+    return new Response(JSON.stringify({
+      base_resp: { status_code: 0, status_msg: 'success' },
+      choices: [{ message: { content: JSON.stringify(content) } }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
   const response = await npcDialogueHandler.fetch(createNpcRequest(''));
   const body = await response.json();
-  assert.equal(response.status, 401);
-  assert.match(body.error, /MiniMax API Key/);
+  assert.equal(response.status, 200);
+  assert.equal(Array.isArray(body.replyLines), true);
+  assert.equal(body.replyLines.length > 0, true);
+  assert.equal(seenAuthorizations.length > 0, true);
+  assert.equal(seenAuthorizations.every(value => value === 'Bearer server-author-key'), true);
+  assert.equal(JSON.stringify(body).includes('server-author-key'), false);
 });
 
 test('Vercel NPC function keeps both two-call chains request-scoped', async () => {
+  process.env.MINIMAX_API_KEY = 'server-author-key-must-not-win';
   const seenAuthorizations = [];
   globalThis.fetch = async (_url, options) => {
     const authorization = options.headers.Authorization;

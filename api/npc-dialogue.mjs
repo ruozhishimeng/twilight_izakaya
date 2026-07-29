@@ -1,5 +1,5 @@
 import { handleNpcDialogueRequest } from '../server/npcDialogue/handler.mjs';
-import { parseMiniMaxAuthorizationHeader } from '../server/npcDialogue/apiKey.mjs';
+import { resolveMiniMaxApiKey } from '../server/npcDialogue/apiKey.mjs';
 import { jsonResponse, readJsonRequest } from './_utils/http.mjs';
 
 export default {
@@ -10,7 +10,10 @@ export default {
       });
     }
 
-    const auth = parseMiniMaxAuthorizationHeader(request.headers.get('authorization'));
+    const auth = resolveMiniMaxApiKey(
+      request.headers.get('authorization'),
+      process.env.MINIMAX_API_KEY,
+    );
     if (!auth.ok) {
       return jsonResponse(401, {
         error: auth.error,

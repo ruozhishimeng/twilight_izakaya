@@ -148,6 +148,7 @@ export default function ApiSettingsPanel({ className = '', onStatusChange }: Pro
       )}
 
       <div className="mt-5 space-y-2 border-t-2 border-[#4a3f35] pt-4 text-sm leading-6 text-[#cbb89a]">
+        <p>不填写玩家 KEY 时，线上版会使用站点服务端配置的公共额度；填写后，本次运行优先使用你的 KEY。</p>
         <p>KEY 只保存在当前页面的运行内存中；刷新、关闭或重启后需要重新填写。</p>
         <p>对话时 KEY 会经同源后端转发给 MiniMax；应用不会把它写入磁盘、存档、业务日志或服务端全局状态。</p>
         <p>线上部署仍需确保托管平台和反向代理不会记录 Authorization 请求头。</p>

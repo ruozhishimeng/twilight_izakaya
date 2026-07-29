@@ -125,10 +125,12 @@ export async function requestNpcDialogue(
   options: { signal?: AbortSignal } = {},
 ): Promise<NpcDialogueResponse> {
   const apiKey = getMiniMaxApiKeyForRequest();
-  if (!apiKey) throw new Error('请先在 API 设置中填写自己的 MiniMax API Key。');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
   const response = await fetch('/api/npc-dialogue', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    headers,
     body: JSON.stringify(payload),
     signal: options.signal,
   });

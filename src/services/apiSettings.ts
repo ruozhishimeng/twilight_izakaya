@@ -65,9 +65,9 @@ export async function clearMiniMaxKey(): Promise<ApiKeyStatus> {
 }
 
 export function isApiKeyConfiguredForGameStart(status: ApiKeyStatus | null): boolean {
-  return status?.provider === 'minimax' && status.configured && status.source === 'custom';
+  return status?.provider === 'minimax';
 }
 
 export function getApiKeySourceLabel(status: ApiKeyStatus | null): string {
-  return status?.configured ? '本次运行的玩家 KEY' : '未配置';
+  return status?.configured ? '本次运行的玩家 KEY' : '未使用玩家 KEY';
 }

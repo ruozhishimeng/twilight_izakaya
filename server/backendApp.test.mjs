@@ -1,6 +1,13 @@
 import { strict as assert } from 'node:assert';
-import { test } from 'node:test';
+import { afterEach, test } from 'node:test';
 import { startBackendServer } from './backendApp.mjs';
+
+const originalEnvironmentApiKey = process.env.MINIMAX_API_KEY;
+
+afterEach(() => {
+  if (originalEnvironmentApiKey === undefined) delete process.env.MINIMAX_API_KEY;
+  else process.env.MINIMAX_API_KEY = originalEnvironmentApiKey;
+});
 
 const SAFE_LOCAL_FILTER_REQUEST = {
   state: 'dayLoop.guest.llmChatSession',
@@ -20,7 +27,8 @@ const SAFE_LOCAL_FILTER_REQUEST = {
   turnIndex: 1,
 };
 
-test('local backend accepts only request-scoped player keys and exposes no settings endpoint', async () => {
+test('local backend accepts a server author key or a request-scoped player key and exposes no settings endpoint', async () => {
+  process.env.MINIMAX_API_KEY = 'local-author-key';
   const runtime = await startBackendServer({
     host: '127.0.0.1',
     port: 0,
@@ -34,7 +42,7 @@ test('local backend accepts only request-scoped player keys and exposes no setti
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(SAFE_LOCAL_FILTER_REQUEST),
     });
-    assert.equal(missingKeyResponse.status, 401);
+    assert.equal(missingKeyResponse.status, 200);
 
     const keyedResponse = await fetch(`${baseUrl}/api/npc-dialogue`, {
       method: 'POST',

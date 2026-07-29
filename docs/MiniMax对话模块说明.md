@@ -62,32 +62,35 @@ npm run content:check
 npm run lint
 ```
 
-## 4. 可选环境变量
+## 4. 环境变量
 
-生产游戏不从环境变量读取 MiniMax Key、模型或 API 地址。当前模型固定为 `MiniMax-M2.5`，上游固定为 MiniMax 官方 API。部署或本地调试只可按需配置非敏感服务参数：
+线上版从服务端环境变量读取作者 Key，让未填写玩家 Key 的访客也能调用 NPC 对话。当前模型固定为 `MiniMax-M2.5`，上游固定为 MiniMax 官方 API：
 
 ```env
+MINIMAX_API_KEY="your-server-only-minimax-key"
 HOST="127.0.0.1"
 PORT="3001"
 MINIMAX_TIMEOUT_MS="20000"
 ```
 
-`MINIMAX_TIMEOUT_MS` 控制上游请求超时；当前后端调用温度为 `0.35`，优先保证 NPC 回复结构稳定和 JSON 可解析。
+`MINIMAX_API_KEY` 只允许配置在 `.env.local` 或 Vercel Environment Variables，不能提交到仓库，也不能使用 `NEXT_PUBLIC_` 前缀。`MINIMAX_TIMEOUT_MS` 控制上游请求超时；当前后端调用温度为 `0.35`，优先保证 NPC 回复结构稳定和 JSON 可解析。
 
 ## 5. API 设置入口与密钥边界
 
 游戏内设置已经提供 API 设置入口：
 
 - 当前只支持 MiniMax 密钥
-- 玩家必须填写自己的 MiniMax Key
-- Key 只保存在当前页面的 JavaScript 运行内存，刷新、关闭或重启后需要重新填写
+- 线上访客可以不填写 Key，服务端使用作者 Key
+- 玩家可以填写自己的 MiniMax Key 作为本次运行的优先覆盖项
+- 玩家 Key 只保存在当前页面的 JavaScript 运行内存，刷新、关闭或重启后需要重新填写
 
 安全边界：
 
-- Key 不写入源码、`.env`、`config.json`、IndexedDB、localStorage、sessionStorage、存档或对话记录
-- 前端仅在调用同源 `/api/npc-dialogue` 时通过 `Authorization: Bearer` 携带 Key；请求体和响应体都不含 Key
-- Express、Vercel 和 Electron 后端按请求显式传递 Key，不使用服务端全局状态或环境变量回退
-- 项目不提供作者 Key，也不再提供 `/api/settings/api-key`
+- 作者 Key 不进入源码、桌面包、浏览器、响应或日志，只保存在服务端 `MINIMAX_API_KEY`
+- 玩家 Key 不写入 `config.json`、IndexedDB、localStorage、sessionStorage、存档或对话记录
+- 前端仅在玩家填写 Key 时通过 `Authorization: Bearer` 携带；请求体和响应体都不含 Key
+- Express 与 Vercel 入口按“玩家 Key 优先、服务端 Key 回退”解析，再把最终 Key 作为 request-scoped 参数传给 handler/provider
+- 项目不提供 `/api/settings/api-key`
 - 应用代码不主动记录 Authorization；线上部署方仍须在托管平台、CDN 和反向代理层配置请求头脱敏
 
 ## 6. 前端发什么
@@ -235,8 +238,9 @@ MINIMAX_TIMEOUT_MS="20000"
 
 排查：
 
-- 是否已在游戏设置的 API 设置页填写自己的 MiniMax Key
-- 页面是否刚刚刷新或程序是否已经重启；这两种情况都需要重新填写
+- 线上 Vercel 当前环境是否配置 `MINIMAX_API_KEY`
+- 配置环境变量后是否重新部署
+- 或者是否已在游戏设置页填写自己的 MiniMax Key
 
 ### 10.3 密钥无效
 

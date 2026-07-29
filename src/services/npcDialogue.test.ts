@@ -33,11 +33,20 @@ test('requestNpcDialogue sends the player key only in Authorization', async () =
   assert.equal(JSON.stringify(response).includes('player-sensitive-key'), false);
 });
 
-test('requestNpcDialogue fails locally when no player key is configured', async () => {
-  let fetchCalled = false;
-  globalThis.fetch = async () => { fetchCalled = true; throw new Error('fetch should not be called'); };
-  await assert.rejects(() => requestNpcDialogue(REQUEST), /填写自己的 MiniMax API Key/);
-  assert.equal(fetchCalled, false);
+test('requestNpcDialogue omits Authorization when the server should use its author key', async () => {
+  let requestOptions: RequestInit | undefined;
+  globalThis.fetch = async (_input, options) => {
+    requestOptions = options;
+    return new Response(JSON.stringify({ replyLines: ['「晚上好。」'], mood: 'steady', endChat: false }), {
+      status: 200, headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  await requestNpcDialogue(REQUEST);
+
+  const headers = requestOptions?.headers as Record<string, string>;
+  assert.equal(headers['Content-Type'], 'application/json');
+  assert.equal('Authorization' in headers, false);
 });
 
 test('frontend forwards AbortSignal and rejects response-side state fields', async () => {

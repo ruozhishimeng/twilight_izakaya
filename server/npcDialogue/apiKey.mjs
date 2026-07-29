@@ -55,3 +55,11 @@ export function parseMiniMaxAuthorizationHeader(rawHeader) {
 
   return validateMiniMaxApiKey(match[1]);
 }
+
+export function resolveMiniMaxApiKey(rawHeader, environmentApiKey) {
+  if (rawHeader !== null && rawHeader !== undefined) {
+    return parseMiniMaxAuthorizationHeader(rawHeader);
+  }
+
+  return validateMiniMaxApiKey(environmentApiKey);
+}

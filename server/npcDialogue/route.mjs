@@ -1,9 +1,12 @@
 import { handleNpcDialogueRequest } from './handler.mjs';
-import { parseMiniMaxAuthorizationHeader } from './apiKey.mjs';
+import { resolveMiniMaxApiKey } from './apiKey.mjs';
 
 export function registerNpcDialogueRoute(app) {
   app.post('/api/npc-dialogue', async (req, res) => {
-    const auth = parseMiniMaxAuthorizationHeader(req.get('authorization'));
+    const auth = resolveMiniMaxApiKey(
+      req.get('authorization'),
+      process.env.MINIMAX_API_KEY,
+    );
     if (!auth.ok) {
       res.status(401).json({ error: auth.error });
       return;

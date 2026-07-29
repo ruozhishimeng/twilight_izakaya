@@ -13,11 +13,12 @@ afterEach(async () => {
   await clearMiniMaxKey();
 });
 
-test('MiniMax BYOK state starts empty and only accepts a player-supplied key', async () => {
+test('game start does not require a player-supplied key when the server can provide one', async () => {
   const emptyStatus = await fetchApiKeyStatus();
   assert.equal(emptyStatus.provider, 'minimax');
   assert.deepEqual(emptyStatus.supportedProviders, ['MiniMax']);
-  assert.equal(isApiKeyConfiguredForGameStart(emptyStatus), false);
+  assert.equal(isApiKeyConfiguredForGameStart(emptyStatus), true);
+  assert.equal(getApiKeySourceLabel(emptyStatus), '未使用玩家 KEY');
 
   const configuredStatus = await saveCustomMiniMaxKey('  player-minimax-key  ');
   assert.equal(configuredStatus.configured, true);
@@ -35,7 +36,7 @@ test('clearMiniMaxKey removes the in-memory request credential immediately', asy
   assert.equal(status.configured, false);
   assert.equal(status.source, 'none');
   assert.equal(getMiniMaxApiKeyForRequest(), '');
-  assert.equal(getApiKeySourceLabel(status), '未配置');
+  assert.equal(getApiKeySourceLabel(status), '未使用玩家 KEY');
 });
 
 test('saveCustomMiniMaxKey rejects placeholders, whitespace, Unicode and empty values', async () => {

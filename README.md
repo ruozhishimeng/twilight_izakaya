@@ -10,16 +10,18 @@
 - 桌面封包版：Electron portable 包，面向 Windows 本地运行。
 - Vercel 线上版：静态前端 + `/api` Serverless Function。
 
-三种形态使用同一套 MiniMax BYOK 规则：项目不提供、不内置作者 Key；玩家在每次运行中填写自己的 MiniMax Key。
+Vercel 线上版默认使用部署方在服务端配置的 MiniMax Key，让访客无需准备 Key 即可游玩。玩家仍可在本次运行中填写自己的 Key，并仅对自己的请求优先使用。桌面包不内置作者 Key。
 
-## 玩家 Key 的安全边界
+## Key 的安全边界
 
 - 当前只支持 MiniMax，模型固定为 `MiniMax-M2.5`，上游固定为 MiniMax 官方 API。
-- Key 只保存在当前页面的 JavaScript 运行内存中；刷新、关闭或重启后需要重新填写。
-- 应用代码不会把 Key 写入源码、桌面包、`config.json`、localStorage、sessionStorage、游戏存档、业务日志或服务端全局状态。
-- 每次 NPC 对话请求通过同源后端转发给 MiniMax，Key 只存在于该次请求的 `Authorization` 头和上游调用中。
+- 作者 Key 只允许保存在服务端 `MINIMAX_API_KEY` 环境变量中；不得使用 `NEXT_PUBLIC_` 前缀，不会进入浏览器 bundle。
+- 玩家自带 Key 只保存在当前页面的 JavaScript 运行内存中；刷新、关闭或重启后需要重新填写。
+- 应用代码不会把 Key 写入源码、桌面包、`config.json`、localStorage、sessionStorage、游戏存档或业务日志。
+- 每次 NPC 对话请求都把最终选中的 Key 作为 request-scoped 参数传给 MiniMax：玩家 Key 优先；没有玩家 Key 时回退到服务端作者 Key。
+- Key 不会出现在请求体、响应体或诊断数据中。
 - 线上部署方仍需确保托管平台、CDN 和反向代理对 Authorization 请求头进行脱敏且不记录。
-- 建议玩家使用独立、可撤销、已设置额度限制的 MiniMax Key。
+- 作者 Key 应使用独立、可撤销、已设置额度限制的凭据；公网部署还应配置费用告警和速率限制。
 - 线上部署必须使用 HTTPS。
 
 旧桌面版本可能曾将玩家 Key 写入用户目录的 `config.json`；新版本启动时会删除其中的旧 `MINIMAX_API_KEY` 字段，并要求玩家重新填写。
@@ -38,9 +40,10 @@
 npm install
 ```
 
-不需要在 `.env` 中配置 API Key。可选配置只有本地服务参数和上游请求超时：
+如需让本地浏览器在不填写玩家 Key 时也能调用模型，把作者 Key 写入不会提交的 `.env.local`；否则可以继续在游戏内填写玩家 Key：
 
 ```env
+MINIMAX_API_KEY="your-server-only-minimax-key"
 HOST="127.0.0.1"
 PORT="3001"
 MINIMAX_TIMEOUT_MS="20000"
@@ -64,7 +67,7 @@ npm run dev
 node local-backend.mjs
 ```
 
-进入游戏后由玩家在 API 设置中填写 Key。一键脚本默认优先使用前端 `3000`、后端 `3001`。
+玩家 Key 是可选覆盖项。一键脚本默认优先使用前端 `3000`、后端 `3001`。
 
 ## 桌面封包
 
@@ -72,11 +75,17 @@ node local-backend.mjs
 npm run desktop:pack
 ```
 
-桌面包不会包含作者 Key，也不存在带作者 Key 的封包命令。Electron 内置后端只负责把当前玩家请求转发给 MiniMax。
+桌面包不会包含作者 Key，也不存在带作者 Key 的封包命令。Electron 内置后端可使用玩家本次运行填写的 Key；只有开发者在启动环境中显式设置 `MINIMAX_API_KEY` 时才会使用服务端回退。
 
 ## Vercel 部署
 
-Vercel 不需要配置 `MINIMAX_API_KEY`、作者 Key、模型或 API Base URL。玩家 Key 随当前 NPC 请求到达函数，并直接传给 MiniMax，不依赖跨函数内存或环境变量。
+在 Vercel 项目的 `Settings -> Environment Variables` 中添加服务端敏感变量：
+
+```env
+MINIMAX_API_KEY="your-server-only-minimax-key"
+```
+
+至少勾选 `Production`；需要让预览部署也可试玩时再勾选 `Preview`。保存后必须重新部署，旧 deployment 不会自动获得新值。模型和 API Base URL 仍固定在服务端代码中。
 
 可以保留可选的请求超时：
 
@@ -84,7 +93,7 @@ Vercel 不需要配置 `MINIMAX_API_KEY`、作者 Key、模型或 API Base URL�
 MINIMAX_TIMEOUT_MS="20000"
 ```
 
-部署后，未携带玩家 Key 的 `POST /api/npc-dialogue` 应返回 `401`。项目不再提供 `/api/settings/api-key` 状态接口。
+部署后，未携带玩家 Key 的 `POST /api/npc-dialogue` 会使用 `MINIMAX_API_KEY`；携带合法玩家 Key 时使用玩家 Key。两种路径都不会回显凭据，项目也不提供 `/api/settings/api-key` 明文或状态接口。
 
 ## 常用命令
 
@@ -110,9 +119,9 @@ npm run desktop:pack
 
 ## 常见问题
 
-### 开始游戏时提示未配置 Key
+### NPC 对话提示未配置 Key
 
-进入 `设置 -> API 设置`，填写自己的 MiniMax Key，并点击“本次运行使用”。刷新或重启后需要重新填写，这是当前“不在磁盘保存明文 Key”策略的预期行为。
+线上部署请确认 Vercel 的 `MINIMAX_API_KEY` 已配置到当前环境并在配置后重新部署。也可以进入 `设置 -> API 设置`，填写自己的 MiniMax Key 作为本次运行的覆盖项。
 
 ### MiniMax 提示 Key 无效或未授权
 
@@ -120,7 +129,7 @@ npm run desktop:pack
 
 ### 旧版本曾经分发过带作者 Key 的桌面包
 
-仅删除新版本代码不能保护旧包中的凭据。应立即在 MiniMax 后台撤销或轮换旧 Key，并删除部署平台中遗留的 `TWILIGHT_AUTHOR_MINIMAX_API_KEY`、`AUTHOR_MINIMAX_API_KEY` 和 `MINIMAX_API_KEY`。
+仅删除新版本代码不能保护旧包中的凭据。曾经进入桌面包或源码的旧 Key 必须在 MiniMax 后台撤销；Vercel 应改用新生成的独立 Key，并只保存在 `MINIMAX_API_KEY`。遗留的 `TWILIGHT_AUTHOR_MINIMAX_API_KEY`、`AUTHOR_MINIMAX_API_KEY` 应删除。
 
 ### 端口被占用
 
