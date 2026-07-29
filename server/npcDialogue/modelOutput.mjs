@@ -28,6 +28,11 @@ function stringArray(value, { min = 0, max = Infinity } = {}) {
 function isMutationKey(key) {
   return MUTATION_KEYS.has(key.toLowerCase()) || DERIVED_MUTATION_KEY.test(key);
 }
+function invalidMoodCode(value) {
+  if (typeof value !== 'string') return 'invalid_mood_type';
+  const slug = value.trim().toLowerCase();
+  return /^[a-z][a-z0-9_]{0,23}$/.test(slug) ? `invalid_mood_${slug}` : 'invalid_mood_other';
+}
 
 export function findForbiddenMutationKey(value, seen = new Set()) {
   if (!value || typeof value !== 'object' || seen.has(value)) return null;
@@ -47,7 +52,9 @@ export function validateActorOutput(value, compilation) {
   if (!stringArray(value.replyLines, { min: 1, max: 5 })) {
     return { ok: false, code: 'invalid_reply_lines_field', error: 'actor replyLines field is invalid.' };
   }
-  if (!MOODS.has(value.mood)) return { ok: false, code: 'invalid_mood', error: 'actor mood field is invalid.' };
+  if (!MOODS.has(value.mood)) {
+    return { ok: false, code: invalidMoodCode(value.mood), error: 'actor mood field is invalid.' };
+  }
   if (!stringArray(value.addressedTopics)) {
     return { ok: false, code: 'invalid_addressed_topics', error: 'actor addressedTopics field is invalid.' };
   }

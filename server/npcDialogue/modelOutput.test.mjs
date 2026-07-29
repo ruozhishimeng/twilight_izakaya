@@ -43,7 +43,8 @@ test('actor output identifies the invalid field without exposing its value', () 
     responseMode: 'guarded_refusal', usedFactIds: [],
   };
   assert.equal(validateActorOutput({ ...base, replyLines: '「不说。」' }, compilation).code, 'invalid_reply_lines_field');
-  assert.equal(validateActorOutput({ ...base, mood: 'neutral' }, compilation).code, 'invalid_mood');
+  assert.equal(validateActorOutput({ ...base, mood: 'neutral' }, compilation).code, 'invalid_mood_neutral');
+  assert.equal(validateActorOutput({ ...base, mood: '不泄露这段内容' }, compilation).code, 'invalid_mood_other');
   assert.equal(validateActorOutput({ ...base, addressedTopics: 'own_death' }, compilation).code, 'invalid_addressed_topics');
   assert.equal(validateActorOutput({ ...base, usedFactIds: 'surface_fact' }, compilation).code, 'invalid_used_fact_ids');
 });
