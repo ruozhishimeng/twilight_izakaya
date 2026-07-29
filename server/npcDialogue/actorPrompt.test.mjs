@@ -24,6 +24,9 @@ const sealedCompilation = {
 test('actor prompt receives safe facts but no sealed truth or endChat authority', () => {
   const prompt = JSON.stringify(buildActorMessages(sealedCompilation));
   assert.match(prompt, /fox_surface_teacher_relation/);
+  for (const mood of ['steady', 'warm', 'guarded', 'awkward', 'cryptic', 'nostalgic']) {
+    assert.match(prompt, new RegExp(mood));
+  }
   assert.doesNotMatch(prompt, /千年前那个孩子|endChat|gameStatePatch/);
 });
 
