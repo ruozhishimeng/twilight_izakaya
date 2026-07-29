@@ -86,7 +86,7 @@ export async function runDialoguePipeline(input) {
     return fallbackResult(input, trace, usage, `actor_invalid_json_${envelope}`);
   }
   const actor = validateActorOutput(parsedActor.value, compilation);
-  if (!actor.ok) return fallbackResult(input, trace, usage, 'actor_invalid_structure');
+  if (!actor.ok) return fallbackResult(input, trace, usage, `actor_${actor.code || 'invalid_structure'}`);
   trace.actorDraftLinesRedacted = redactProtectedLines(actor.value.replyLines, compilation.guardRules.protectedLexemes);
   const guardedActor = guardDialogueReply(
     { replyLines: actor.value.replyLines, mood: actor.value.mood },

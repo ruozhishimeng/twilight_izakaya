@@ -114,7 +114,7 @@ test('compound actor reply lines trigger character fallback without a director c
 
   assert.equal(model.calls.length, 1);
   assert.equal(result.trace.finalSource, 'fallback');
-  assert.equal(result.trace.fallbackReason, 'actor_invalid_structure');
+  assert.equal(result.trace.fallbackReason, 'actor_invalid_reply_lines');
 });
 
 test('guard failure falls through director then actor to character fallback without a third call', async () => {

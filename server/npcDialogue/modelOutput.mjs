@@ -42,25 +42,33 @@ export function findForbiddenMutationKey(value, seen = new Set()) {
 
 export function validateActorOutput(value, compilation) {
   if (!isRecord(value) || !exactKeys(value, ACTOR_KEYS) || findForbiddenMutationKey(value)) {
-    return { ok: false, error: 'actor output structure is invalid.' };
+    return { ok: false, code: 'invalid_structure', error: 'actor output structure is invalid.' };
   }
   if (!stringArray(value.replyLines, { min: 1, max: 5 }) || !MOODS.has(value.mood) ||
       !stringArray(value.addressedTopics) || !stringArray(value.usedFactIds)) {
-    return { ok: false, error: 'actor output fields are invalid.' };
+    return { ok: false, code: 'invalid_fields', error: 'actor output fields are invalid.' };
   }
-  if (value.replyLines.some(isCompoundReplyLine)) return { ok: false, error: 'actor replyLines are invalid.' };
+  if (value.replyLines.some(isCompoundReplyLine)) {
+    return { ok: false, code: 'invalid_reply_lines', error: 'actor replyLines are invalid.' };
+  }
   const compiledTopics = new Set(compilation.decision.topicIds);
-  if (!value.addressedTopics.every(id => compiledTopics.has(id))) return { ok: false, error: 'actor used an unknown topic.' };
+  if (!value.addressedTopics.every(id => compiledTopics.has(id))) {
+    return { ok: false, code: 'unknown_topic', error: 'actor used an unknown topic.' };
+  }
   if (value.responseMode !== compilation.decision.responseMode || value.responseMode !== compilation.actorContext.responseMode) {
-    return { ok: false, error: 'actor responseMode conflicts with the decision.' };
+    return { ok: false, code: 'response_mode_conflict', error: 'actor responseMode conflicts with the decision.' };
   }
   const actorFactIds = new Set([
     ...compilation.actorContext.allowedFacts.map(fact => fact.id),
     ...compilation.actorContext.hintableFacts.map(fact => fact.id),
   ]);
-  if (!value.usedFactIds.every(id => actorFactIds.has(id))) return { ok: false, error: 'actor used a non-whitelisted fact.' };
+  if (!value.usedFactIds.every(id => actorFactIds.has(id))) {
+    return { ok: false, code: 'non_whitelisted_fact', error: 'actor used a non-whitelisted fact.' };
+  }
   const replyLines = normalizeReplyLines(value.replyLines);
-  if (replyLines.length < 1 || replyLines.length > 5) return { ok: false, error: 'actor replyLines are invalid.' };
+  if (replyLines.length < 1 || replyLines.length > 5) {
+    return { ok: false, code: 'invalid_reply_lines', error: 'actor replyLines are invalid.' };
+  }
   return { ok: true, value: { ...value, replyLines } };
 }
 
