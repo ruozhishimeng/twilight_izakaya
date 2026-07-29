@@ -105,7 +105,7 @@ test('requestMiniMaxNpcDialogue uses the request key and fixed MiniMax endpoint/
 
   assert.equal(requestUrl, 'https://api.minimaxi.com/v1/text/chatcompletion_v2');
   assert.equal(requestOptions.headers.Authorization, 'Bearer request-player-key');
-  assert.equal(requestBody.model, 'MiniMax-M2.5');
+  assert.equal(requestBody.model, 'MiniMax-M3');
   assert.equal(requestBody.temperature, 0.65);
   assert.equal(requestBody.top_p, 0.8);
   assert.equal(requestBody.stream, false);

@@ -14,7 +14,7 @@ Vercel 线上版默认使用部署方在服务端配置的 MiniMax Key，让访�
 
 ## Key 的安全边界
 
-- 当前只支持 MiniMax，模型固定为 `MiniMax-M2.5`，上游固定为 MiniMax 官方 API。
+- 当前只支持 MiniMax，模型固定为 `MiniMax-M3`，上游固定为 MiniMax 官方 API。
 - 作者 Key 只允许保存在服务端 `MINIMAX_API_KEY` 环境变量中；不得使用 `NEXT_PUBLIC_` 前缀，不会进入浏览器 bundle。
 - 玩家自带 Key 只保存在当前页面的 JavaScript 运行内存中；刷新、关闭或重启后需要重新填写。
 - 应用代码不会把 Key 写入源码、桌面包、`config.json`、localStorage、sessionStorage、游戏存档或业务日志。

@@ -14,7 +14,7 @@
 - 进入 `dayLoop.guest.llmChatSession`
 - 玩家输入一句短文本
 - 前端把当前营业事实整理成 `NpcDialogueRequest`
-- 本地后端调用 `MiniMax-M2.5`
+- 本地后端调用 `MiniMax-M3`
 - 后端先做本地安全前置拦截；明显违法、色情、完全无关或提示注入内容不调用 MiniMax
 - 后端返回结构化 `NpcDialogueResponse`
 - 前端按“我 -> NPC 多句逐条播放”的方式演出
@@ -64,7 +64,7 @@ npm run lint
 
 ## 4. 环境变量
 
-线上版从服务端环境变量读取作者 Key，让未填写玩家 Key 的访客也能调用 NPC 对话。当前模型固定为 `MiniMax-M2.5`，上游固定为 MiniMax 官方 API：
+线上版从服务端环境变量读取作者 Key，让未填写玩家 Key 的访客也能调用 NPC 对话。当前模型固定为 `MiniMax-M3`，上游固定为 MiniMax 官方 API：
 
 ```env
 MINIMAX_API_KEY="your-server-only-minimax-key"
@@ -181,7 +181,7 @@ MINIMAX_TIMEOUT_MS="20000"
   "mood": "steady",
   "endChat": false,
   "usage": {
-    "provider": "minimax:MiniMax-M2.5",
+    "provider": "minimax:MiniMax-M3",
     "promptTokens": 123,
     "completionTokens": 34,
     "totalTokens": 157,
@@ -252,7 +252,7 @@ MINIMAX_TIMEOUT_MS="20000"
 排查：
 
 - key 是否复制完整
-- 账号是否有权限调用 `MiniMax-M2.5`
+- 账号是否有权限调用 `MiniMax-M3`
 
 ### 10.4 模型返回格式错误
 

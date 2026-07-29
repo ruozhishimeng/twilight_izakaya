@@ -1,5 +1,5 @@
 const MINIMAX_BASE_URL = 'https://api.minimaxi.com';
-const MINIMAX_MODEL = 'MiniMax-M2.5';
+const MINIMAX_MODEL = 'MiniMax-M3';
 const DEFAULT_TIMEOUT_MS = 20000;
 
 function parseTimeout(rawTimeout) {

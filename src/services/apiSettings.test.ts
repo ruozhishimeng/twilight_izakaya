@@ -16,6 +16,7 @@ afterEach(async () => {
 test('game start does not require a player-supplied key when the server can provide one', async () => {
   const emptyStatus = await fetchApiKeyStatus();
   assert.equal(emptyStatus.provider, 'minimax');
+  assert.equal(emptyStatus.model, 'MiniMax-M3');
   assert.deepEqual(emptyStatus.supportedProviders, ['MiniMax']);
   assert.equal(isApiKeyConfiguredForGameStart(emptyStatus), true);
   assert.equal(getApiKeySourceLabel(emptyStatus), '未使用玩家 KEY');

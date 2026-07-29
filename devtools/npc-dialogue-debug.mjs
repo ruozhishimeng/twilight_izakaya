@@ -315,7 +315,7 @@ async function runDebug(scenario, useMock) {
   }
 
   // ---- STEP 3: Call API / Mock ----
-  printStep(3, useMock ? '本地 Mock 调用' : 'API 调用 (minimax:MiniMax-M2.5)');
+  printStep(3, useMock ? '本地 Mock 调用' : 'API 调用 (minimax:MiniMax-M3)');
 
   let providerResult;
   const apiStartMs = Date.now();

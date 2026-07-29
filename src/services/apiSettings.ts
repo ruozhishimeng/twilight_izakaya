@@ -6,7 +6,7 @@ export interface ApiKeyStatus {
   supportedProviders: ['MiniMax'];
   configured: boolean;
   source: ApiKeySource;
-  model: 'MiniMax-M2.5';
+  model: 'MiniMax-M3';
 }
 
 const MAX_API_KEY_LENGTH = 512;
@@ -42,7 +42,7 @@ export function getMiniMaxApiKeyStatus(): ApiKeyStatus {
     supportedProviders: ['MiniMax'],
     configured,
     source: configured ? 'custom' : 'none',
-    model: 'MiniMax-M2.5',
+    model: 'MiniMax-M3',
   };
 }
 
