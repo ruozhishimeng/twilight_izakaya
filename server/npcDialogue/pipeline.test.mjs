@@ -67,6 +67,19 @@ test('director revision wins after exactly two calls', async () => {
   assert.equal(result.usage.totalTokens, 10);
 });
 
+test('complete Markdown JSON fences are removed before actor and director validation', async () => {
+  const model = scriptedModel([
+    `\`\`\`json\n${actorJson}\n\`\`\``,
+    `\`\`\`json\n${directorPassJson}\n\`\`\``,
+  ]);
+
+  const result = await runDialoguePipeline(makePipelineInput({ requestModel: model }));
+
+  assert.equal(model.calls.length, 2);
+  assert.equal(result.trace.finalSource, 'director');
+  assert.deepEqual(result.replyLines, ['「我不想说。」']);
+});
+
 test('director timeout uses guarded actor draft without a third call', async () => {
   const model = scriptedModel([actorJson, new MiniMaxProviderError('timeout', { status: 504 })]);
   const result = await runDialoguePipeline(makePipelineInput({ requestModel: model }));

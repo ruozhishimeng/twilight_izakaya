@@ -87,9 +87,15 @@ export function classifyModelOutputEnvelope(content) {
   return 'plain_text';
 }
 
+function unwrapCompleteJsonFence(content) {
+  const trimmed = String(content || '').trim();
+  const fenced = trimmed.match(/^```(?:json[ \t]*\r?\n|[ \t]*\r?\n)([\s\S]*?)\r?\n```$/i);
+  return fenced ? fenced[1].trim() : trimmed;
+}
+
 export function parseModelOutput(content) {
   try {
-    const value = JSON.parse(String(content || '').trim());
+    const value = JSON.parse(unwrapCompleteJsonFence(content));
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('not object');
     return { ok: true, value };
   } catch {

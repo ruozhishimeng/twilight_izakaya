@@ -16,12 +16,11 @@ test('model output envelope classification reports wrappers without exposing con
   assert.equal(classifyModelOutputEnvelope('「别问。」'), 'plain_text');
 });
 
-test('strict parser rejects Markdown-fenced JSON', () => {
+test('strict parser unwraps one complete Markdown JSON fence', () => {
   const parsed = parseModelOutput('```json\n{"replyLines":["「别问。」"]}\n```');
   assert.deepEqual(parsed, {
-    ok: false,
-    code: 'invalid_json',
-    error: '模型返回格式无效。',
+    ok: true,
+    value: { replyLines: ['「别问。」'] },
   });
 });
 
@@ -32,6 +31,7 @@ test('strict parser returns local structured errors without plain-text or malfor
     error: '模型返回格式无效。',
   });
   assert.equal(parseModelOutput('{"replyLines":["「别问。」"]').ok, false);
+  assert.equal(parseModelOutput('说明：\n```json\n{"replyLines":["「别问。」"]}\n```').ok, false);
 });
 
 test('reply normalization preserves punctuation repair after strict structure passes', () => {
