@@ -90,6 +90,7 @@ test('director network and auth failures remain technical errors', async () => {
 test('actor content failure uses role fallback but actor transport failure stays technical', async () => {
   const malformed = await runDialoguePipeline(makePipelineInput({ requestModel: scriptedModel(['bad json']) }));
   assert.equal(malformed.trace.finalSource, 'fallback');
+  assert.equal(malformed.trace.fallbackReason, 'actor_invalid_json_plain_text');
   const blocked = await runDialoguePipeline(makePipelineInput({
     requestModel: scriptedModel([new MiniMaxProviderError('content blocked', {
       status: 422, code: 'minimax_content_blocked',

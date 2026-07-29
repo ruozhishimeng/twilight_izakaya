@@ -72,6 +72,21 @@ export function normalizeReplyLines(lines) {
   });
 }
 
+export function classifyModelOutputEnvelope(content) {
+  const trimmed = String(content || '').trim();
+  if (!trimmed) return 'empty';
+  if (/^```(?:json)?\s*[\s\S]*\s*```$/i.test(trimmed)) return 'markdown_fence';
+
+  const firstObjectStart = trimmed.indexOf('{');
+  const lastObjectEnd = trimmed.lastIndexOf('}');
+  if (firstObjectStart > 0 || (lastObjectEnd >= 0 && lastObjectEnd < trimmed.length - 1)) {
+    return 'wrapped_object';
+  }
+  if (firstObjectStart === 0 && lastObjectEnd !== trimmed.length - 1) return 'truncated_object';
+  if (firstObjectStart === 0 && lastObjectEnd === trimmed.length - 1) return 'object_syntax';
+  return 'plain_text';
+}
+
 export function parseModelOutput(content) {
   try {
     const value = JSON.parse(String(content || '').trim());

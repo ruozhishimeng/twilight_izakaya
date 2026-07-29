@@ -4,7 +4,7 @@ import { buildCharacterFallback } from './fallback.mjs';
 import { guardDialogueReply, redactProtectedLines } from './finalGuard.mjs';
 import { validateActorOutput, validateDirectorOutput } from './modelOutput.mjs';
 import { MiniMaxProviderError } from './provider.mjs';
-import { parseModelOutput } from './responseParser.mjs';
+import { classifyModelOutputEnvelope, parseModelOutput } from './responseParser.mjs';
 
 function promptCharacters(messages) {
   return messages.reduce((sum, message) => sum + String(message.content || '').length, 0);
@@ -81,7 +81,10 @@ export async function runDialoguePipeline(input) {
   trace.stages.push({ stage: 'actor', durationMs: Date.now() - actorStarted, usage: actorProvider.usage });
   addUsage(usage, actorProvider.usage);
   const parsedActor = parseModelOutput(actorProvider.content);
-  if (!parsedActor.ok) return fallbackResult(input, trace, usage, 'actor_invalid_json');
+  if (!parsedActor.ok) {
+    const envelope = classifyModelOutputEnvelope(actorProvider.content);
+    return fallbackResult(input, trace, usage, `actor_invalid_json_${envelope}`);
+  }
   const actor = validateActorOutput(parsedActor.value, compilation);
   if (!actor.ok) return fallbackResult(input, trace, usage, 'actor_invalid_structure');
   trace.actorDraftLinesRedacted = redactProtectedLines(actor.value.replyLines, compilation.guardRules.protectedLexemes);

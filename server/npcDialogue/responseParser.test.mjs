@@ -1,11 +1,20 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  classifyModelOutputEnvelope,
   isCompoundReplyLine,
   normalizeReplyLines,
   parseModelOutput,
   validateNpcDialogueResponse,
 } from './responseParser.mjs';
+
+test('model output envelope classification reports wrappers without exposing content', () => {
+  assert.equal(classifyModelOutputEnvelope('```json\n{"replyLines":["「别问。」"]}\n```'), 'markdown_fence');
+  assert.equal(classifyModelOutputEnvelope('说明：{"replyLines":["「别问。」"]}'), 'wrapped_object');
+  assert.equal(classifyModelOutputEnvelope('{"replyLines":["「别问。」"]'), 'truncated_object');
+  assert.equal(classifyModelOutputEnvelope('{"replyLines":["「别问。」"],}'), 'object_syntax');
+  assert.equal(classifyModelOutputEnvelope('「别问。」'), 'plain_text');
+});
 
 test('strict parser rejects Markdown-fenced JSON', () => {
   const parsed = parseModelOutput('```json\n{"replyLines":["「别问。」"]}\n```');
