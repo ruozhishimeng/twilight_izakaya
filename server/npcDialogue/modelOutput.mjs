@@ -44,9 +44,15 @@ export function validateActorOutput(value, compilation) {
   if (!isRecord(value) || !exactKeys(value, ACTOR_KEYS) || findForbiddenMutationKey(value)) {
     return { ok: false, code: 'invalid_structure', error: 'actor output structure is invalid.' };
   }
-  if (!stringArray(value.replyLines, { min: 1, max: 5 }) || !MOODS.has(value.mood) ||
-      !stringArray(value.addressedTopics) || !stringArray(value.usedFactIds)) {
-    return { ok: false, code: 'invalid_fields', error: 'actor output fields are invalid.' };
+  if (!stringArray(value.replyLines, { min: 1, max: 5 })) {
+    return { ok: false, code: 'invalid_reply_lines_field', error: 'actor replyLines field is invalid.' };
+  }
+  if (!MOODS.has(value.mood)) return { ok: false, code: 'invalid_mood', error: 'actor mood field is invalid.' };
+  if (!stringArray(value.addressedTopics)) {
+    return { ok: false, code: 'invalid_addressed_topics', error: 'actor addressedTopics field is invalid.' };
+  }
+  if (!stringArray(value.usedFactIds)) {
+    return { ok: false, code: 'invalid_used_fact_ids', error: 'actor usedFactIds field is invalid.' };
   }
   if (value.replyLines.some(isCompoundReplyLine)) {
     return { ok: false, code: 'invalid_reply_lines', error: 'actor replyLines are invalid.' };

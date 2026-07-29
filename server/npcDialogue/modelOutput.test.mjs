@@ -37,6 +37,17 @@ test('actor output requires exact decision topics, mode, and safe fact ids', () 
   }, compilation).code, 'non_whitelisted_fact');
 });
 
+test('actor output identifies the invalid field without exposing its value', () => {
+  const base = {
+    replyLines: ['「不说。」'], mood: 'guarded', addressedTopics: ['own_death'],
+    responseMode: 'guarded_refusal', usedFactIds: [],
+  };
+  assert.equal(validateActorOutput({ ...base, replyLines: '「不说。」' }, compilation).code, 'invalid_reply_lines_field');
+  assert.equal(validateActorOutput({ ...base, mood: 'neutral' }, compilation).code, 'invalid_mood');
+  assert.equal(validateActorOutput({ ...base, addressedTopics: 'own_death' }, compilation).code, 'invalid_addressed_topics');
+  assert.equal(validateActorOutput({ ...base, usedFactIds: 'surface_fact' }, compilation).code, 'invalid_used_fact_ids');
+});
+
 test('director output recursively rejects state mutation keys', () => {
   const result = validateDirectorOutput({
     verdict: 'revise', violations: ['state_mutation'],
