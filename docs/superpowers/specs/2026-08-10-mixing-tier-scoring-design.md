@@ -180,3 +180,14 @@ export function scoreMixing(
 4. 本次不涉及好感度驱动剧情推进的系统重构，好感度消费端保持现状。
 5. `serveDrink` 必须拆分为可独立理解的小函数，不在原地叠加新逻辑。
 6. 设计文档与问题清单、迭代说明文档交叉引用，保持可追溯。
+
+## 12. 补充说明：与纯解释器（`interpreter.ts`）的边界
+
+写实施计划阶段发现 `src/data/content/narrative.ts` 的 `getMixingOutcomeTarget(exit, success: boolean)` 同时被两处调用：
+
+- `src/app/narrativeRouting.ts`（本次改动的对象，供真实游戏流程 `serveDrink` 使用）
+- `src/data/content/interpreter.ts`（纯路径解释器，供 `narrative:check`/`narrative:simulate` CLI 与内容校验使用，独立于真实游戏流程）
+
+`retry_on_fail` 字段在 `interpreter.ts` 的 `enumerateNarrativePaths` 中驱动着一段独立的重试型路径枚举逻辑（用于 fox_uncle 六个只有 `retry_on_fail: true`、没有 `outcomes.fail` 的教学节点），这段逻辑校验的是"内容结构是否会死循环/死锁"，与运行时判定档位无关。
+
+明确边界：本次改动**不修改** `narrative.ts` 的 `getMixingOutcomeTarget` 签名或实现，也不修改 `interpreter.ts`/`simulator.ts`。§7 中 `resolveMixingOutcomeNode` 签名从 `(mixingNode, success: boolean)` 改为 `(mixingNode, tier: MixingTier)` 后，其内部直接读取 `mixingNode` 解析出的 `exit.outcomes.{success,good,fail}`，不再调用 `getMixingOutcomeTarget`——因此该共享函数对 `interpreter.ts` 的既有布尔语义完全不受影响，`interpreter.test.ts`、`scripts/simulate-narrative.test.mjs` 无需改动即应继续通过。
