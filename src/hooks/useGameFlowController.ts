@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CharacterNode, NodePlayerOption } from '../data/content/types';
 import {
   getMixingRequest,
-  isMixingExit,
   resolveNodeExit,
 } from '../data/content/narrative';
+import { scoreMixing } from '../data/content/mixingScore';
 import {
   compileNodeCompletionNarrativeTransaction,
   compileOptionNarrativeTransaction,
@@ -21,14 +21,13 @@ import {
   buildDailyGuestRecord,
   findScheduledVisit,
   findTeachingNodeForMixing,
-  formatMixedDrinkLabel,
   normalizeStoryUnlockEntries,
   resolveGuestNode,
   type ScheduledVisit,
 } from '../app/flowHelpers';
 import {
+  resolveActiveMixingNode,
   resolveMixingOutcomeNode,
-  shouldRetryMixingFailure,
 } from '../app/narrativeRouting';
 import { selectGameRuntimeView } from '../state/gameSelectors';
 import {
@@ -79,21 +78,6 @@ function mergeUniqueStrings(existing: string[], next: string[]) {
 
 function weekdayLabel(day: number) {
   return ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'][day - 1] || `第 ${day} 天`;
-}
-
-function getNextExitTarget(node: MixingCandidate) {
-  if (!node) {
-    return null;
-  }
-  const exit = resolveNodeExit(node);
-  return exit.kind === 'next' ? exit.target : null;
-}
-
-function asMixingNode(node: MixingCandidate) {
-  if (!node) {
-    return null;
-  }
-  return isMixingExit(resolveNodeExit(node)) ? node : null;
 }
 
 export function useGameFlowController(
@@ -335,18 +319,15 @@ export function useGameFlowController(
   }, [guest.id, patchCurrentGuest, patchNpcDialogue, transition]);
 
   const enterMixing = useCallback((teachingCandidate: MixingCandidate, mixingCandidate: MixingCandidate) => {
-    const teachingNextNodeId = getNextExitTarget(teachingCandidate);
-    const normalizedMixingNode =
-      asMixingNode(mixingCandidate) ||
-      (teachingNextNodeId
-        ? asMixingNode(findNodeForGuest(teachingNextNodeId, guest.id, guest.nodeMap))
-        : null) ||
-      asMixingNode(teachingCandidate) ||
-      null;
+    const normalizedMixingNode = resolveActiveMixingNode({
+      teachingCandidate: teachingCandidate || null,
+      mixingCandidate: mixingCandidate || null,
+      resolveFollowupNode: (nodeId) => findNodeForGuest(nodeId, guest.id, guest.nodeMap),
+    });
     const normalizedTeachingNode = findTeachingNodeForMixing(
       guest,
-      teachingCandidate,
-      normalizedMixingNode || mixingCandidate,
+      teachingCandidate || null,
+      normalizedMixingNode || teachingCandidate || null,
     );
     const taughtRecipeId = normalizedTeachingNode?.teaching?.recipe?.id;
     const mixingRequest = normalizedMixingNode
@@ -468,59 +449,30 @@ export function useGameFlowController(
   ]);
 
   const serveDrink = useCallback((ingredients: string[]) => {
-    const teachingNextNodeId = getNextExitTarget(teachingNode);
-    const activeMixingNode =
-      asMixingNode(mixingNode) ||
-      (teachingNextNodeId
-        ? asMixingNode(findNodeForGuest(teachingNextNodeId, guest.id, guest.nodeMap))
-        : null) ||
-      asMixingNode(teachingNode) ||
-      null;
+    const activeMixingNode = resolveActiveMixingNode({
+      teachingCandidate: teachingNode,
+      mixingCandidate: mixingNode,
+      resolveFollowupNode: (nodeId) => findNodeForGuest(nodeId, guest.id, guest.nodeMap),
+    });
     const mixingRequest = activeMixingNode
       ? getMixingRequest(resolveNodeExit(activeMixingNode))
       : null;
 
-    const idealFormula =
-      mixingRequest?.preferred_drink?.formula || teachingNode?.teaching?.recipe?.formula || null;
-    const expectedFormula = idealFormula ? [...idealFormula].filter(Boolean).sort() : null;
-    const actualFormula = [...ingredients].filter(Boolean).sort();
-    const success =
-      !expectedFormula ||
-      (expectedFormula.length === actualFormula.length &&
-        expectedFormula.every((id, index) => id === actualFormula[index]));
+    const scoreResult = scoreMixing(mixingRequest, ingredients, contentRegistry.recipes);
+    const { tier, matchedRecipeId, drinkLabel } = scoreResult;
+    const isSuccess = tier !== 'off';
 
     let nextUnlockedRecipes = game.unlockedRecipes;
-    let mixedDrinkName: string | undefined;
     let isNewRecipe = false;
-    let drinkLabel = formatMixedDrinkLabel(ingredients);
-
-    const matchedRecipe = contentRegistry.recipes.recipes.find(recipe => {
-      if (!Array.isArray(recipe.formula)) {
-        return false;
-      }
-      const recipeFormula = [...recipe.formula].sort();
-      return (
-        recipeFormula.length === actualFormula.length &&
-        recipeFormula.every((id, index) => id === actualFormula[index])
-      );
-    });
-
-    if (matchedRecipe) {
-      mixedDrinkName = matchedRecipe.name;
-      drinkLabel = matchedRecipe.name;
-      if (!game.unlockedRecipes.includes(matchedRecipe.id)) {
-        nextUnlockedRecipes = [...game.unlockedRecipes, matchedRecipe.id];
-        isNewRecipe = true;
-      }
+    if (matchedRecipeId && !game.unlockedRecipes.includes(matchedRecipeId)) {
+      nextUnlockedRecipes = [...game.unlockedRecipes, matchedRecipeId];
+      isNewRecipe = true;
     }
 
-    const nextNodeId = resolveMixingOutcomeNode(activeMixingNode, success);
-    const shouldRetryMixing = shouldRetryMixingFailure({
-      success,
-      outcomeNodeId: nextNodeId,
-      retryOnFail: mixingRequest?.retry_on_fail,
-      isTeaching: Boolean(teachingNode?.teaching),
-    });
+    const matchedRecipe = contentRegistry.recipes.recipes.find(recipe => recipe.id === matchedRecipeId);
+    const mixedDrinkName = matchedRecipe?.name;
+
+    const nextNodeId = resolveMixingOutcomeNode(activeMixingNode, tier);
 
     if (nextUnlockedRecipes !== game.unlockedRecipes) {
       patchContext({
@@ -529,25 +481,25 @@ export function useGameFlowController(
     }
 
     patchCurrentGuest({
-      isSuccess: success,
+      isSuccess,
+      mixingTier: tier,
       nodeId: nextNodeId || null,
-      pendingMixingRetry: shouldRetryMixing,
-      mixingPromptOverride: shouldRetryMixing
-        ? '这杯还不对。再想想客人想要的味道，重新调配一次吧。'
-        : undefined,
+      pendingMixingRetry: false,
+      mixingPromptOverride: undefined,
       mixedDrinkName,
       isNewRecipe,
       drinkLabel,
       lastDrinkResult: {
-        recipeId: matchedRecipe?.id ?? null,
+        recipeId: matchedRecipeId,
         label: drinkLabel,
         mixedDrinkName,
-        isSuccess: success,
+        isSuccess,
+        mixingTier: tier,
         sourceNodeId: activeMixingNode?.event_id || activeMixingNode?.id || null,
       },
     });
     transition('dayLoop.guest.result');
-  }, [game.unlockedRecipes, guest, mixingNode, patchContext, patchCurrentGuest, teachingNode, transition]);
+  }, [contentRegistry, game.unlockedRecipes, guest, mixingNode, patchContext, patchCurrentGuest, teachingNode, transition]);
 
   const nextGuest = useCallback(() => {
     requestCoordinatorRef.current.cancel();
@@ -674,7 +626,8 @@ export function useGameFlowController(
 
     if (!game.pendingGuestReflection) {
       const currentNode = resolveGuestNode(guest, game.currentGuest.nodeId);
-      const nextNodeId = getNextExitTarget(currentNode);
+      const currentExit = currentNode ? resolveNodeExit(currentNode) : null;
+      const nextNodeId = currentExit?.kind === 'next' ? currentExit.target : null;
       if (nextNodeId) {
         patchCurrentGuest({
           nodeId: nextNodeId,

@@ -1,25 +1,6 @@
-import { getMixingOutcomeTarget, isMixingExit, resolveNodeExit } from '../data/content/narrative';
+import { isMixingExit, resolveNodeExit } from '../data/content/narrative';
 import type { CharacterNode } from '../data/content/types';
-
-export function resolveMixingOutcomeNode(
-  mixingNode: CharacterNode | null,
-  success: boolean,
-) {
-  return mixingNode
-    ? getMixingOutcomeTarget(resolveNodeExit(mixingNode), success)
-    : null;
-}
-
-export function shouldRetryMixingFailure(params: {
-  success: boolean;
-  outcomeNodeId: string | null;
-  retryOnFail?: boolean;
-  isTeaching?: boolean;
-}) {
-  return !params.success &&
-    !params.outcomeNodeId &&
-    Boolean(params.retryOnFail || params.isTeaching);
-}
+import type { MixingTier } from '../data/content/mixingScore';
 
 function getNextTarget(node: CharacterNode | null): string | null {
   if (!node) {
@@ -50,4 +31,26 @@ export function resolveActiveMixingNode(params: {
     asMixingNode(teachingCandidate) ||
     null
   );
+}
+
+export function resolveMixingOutcomeNode(
+  mixingNode: CharacterNode | null,
+  tier: MixingTier,
+): string | null {
+  if (!mixingNode) {
+    return null;
+  }
+
+  const exit = resolveNodeExit(mixingNode);
+  if (!isMixingExit(exit)) {
+    return null;
+  }
+
+  if (tier === 'perfect') {
+    return exit.outcomes.success;
+  }
+  if (tier === 'good') {
+    return exit.outcomes.good ?? exit.outcomes.success;
+  }
+  return exit.outcomes.fail;
 }

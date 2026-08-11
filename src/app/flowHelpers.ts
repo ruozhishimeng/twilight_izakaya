@@ -1,7 +1,4 @@
 import {
-  BASE_LIQUORS,
-  FLAVORS,
-  MIXERS,
   findNodeForGuest,
   getGuestsForDay,
   type CharacterNode,
@@ -82,12 +79,6 @@ export function findTeachingNodeForMixing(
   return null;
 }
 
-export function formatMixedDrinkLabel(ingredients: string[]) {
-  const itemMap = new Map([...BASE_LIQUORS, ...MIXERS, ...FLAVORS].map(item => [item.id, item.name]));
-  const names = ingredients.filter(Boolean).map(id => itemMap.get(id) || id);
-  return names.length > 0 ? names.join(' + ') : '未命名的调配';
-}
-
 export function normalizeStoryUnlockEntries(node: CharacterNode | null): StoryUnlockEntry[] {
   const rawChapters = node?.story_unlocks?.chapters;
   if (!Array.isArray(rawChapters)) {
@@ -147,9 +138,7 @@ export function buildDailyGuestRecord(params: {
   return {
     guestId: params.guest.id,
     guestName: params.guest.name,
-    servedDrink:
-      params.drinkLabel ||
-      (params.isSuccess ? params.mixedDrinkName || '完成了一次调配' : '未能调出合适的酒'),
+    servedDrink: params.drinkLabel || '完成了一次调配',
     success: !!params.isSuccess,
     rewards: params.rewards,
     challenges: params.challenges,

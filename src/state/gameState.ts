@@ -1,4 +1,5 @@
 import type { DailyGuestRecord, DailySummary, JournalReward } from '../types/journal';
+import type { MixingTier } from '../data/content/mixingScore';
 import { assertTransitionState } from './gameTransitions';
 import {
   applyNarrativeTransaction as applyNarrativeEffectsTransaction,
@@ -104,6 +105,7 @@ export interface LastDrinkResult {
   label?: string;
   mixedDrinkName?: string;
   isSuccess: boolean;
+  mixingTier?: MixingTier;
   sourceNodeId?: string | null;
 }
 
@@ -127,6 +129,7 @@ export interface CurrentGuestRuntime {
   pendingMixingRetry: boolean;
   mixingPromptOverride?: string;
   isSuccess: boolean;
+  mixingTier: MixingTier;
   mixedDrinkName?: string;
   isNewRecipe: boolean;
   rewards: JournalReward[];
@@ -226,6 +229,7 @@ function deriveLastDrinkResultFromCurrentGuest(
     label: label || mixedDrinkName || undefined,
     mixedDrinkName: mixedDrinkName || undefined,
     isSuccess: Boolean(currentGuest.isSuccess),
+    mixingTier: currentGuest.mixingTier,
     sourceNodeId: currentGuest.mixingNodeId ?? null,
   };
 }
@@ -244,6 +248,7 @@ export function createEmptyCurrentGuestRuntime(): CurrentGuestRuntime {
     pendingMixingRetry: false,
     mixingPromptOverride: undefined,
     isSuccess: false,
+    mixingTier: 'perfect',
     mixedDrinkName: undefined,
     isNewRecipe: false,
     rewards: [],
@@ -294,6 +299,9 @@ export function hydrateCurrentGuestRuntime(
       : base.pendingMixingRetry,
     mixingPromptOverride: next.mixingPromptOverride,
     isSuccess: typeof next.isSuccess === 'boolean' ? next.isSuccess : base.isSuccess,
+    mixingTier: next.mixingTier === 'perfect' || next.mixingTier === 'good' || next.mixingTier === 'off'
+      ? next.mixingTier
+      : base.mixingTier,
     mixedDrinkName: next.mixedDrinkName,
     isNewRecipe: typeof next.isNewRecipe === 'boolean' ? next.isNewRecipe : base.isNewRecipe,
     rewards: Array.isArray(next.rewards) ? next.rewards : base.rewards,

@@ -1,10 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import {
-  resolveActiveMixingNode,
-  resolveMixingOutcomeNode,
-  shouldRetryMixingFailure,
-} from './narrativeRouting';
+import { resolveActiveMixingNode, resolveMixingOutcomeNode } from './narrativeRouting';
 import type { CharacterNode } from '../data/content/types';
 
 const mixingNode: CharacterNode = {
@@ -20,34 +16,32 @@ const mixingNode: CharacterNode = {
   },
 };
 
-test('mixing outcome routing uses declared targets only', () => {
-  assert.equal(resolveMixingOutcomeNode(mixingNode, true), 'success_result');
-  assert.equal(resolveMixingOutcomeNode(mixingNode, false), 'fail_result');
-  assert.equal(resolveMixingOutcomeNode(null, true), null);
+test('resolveMixingOutcomeNode maps perfect to the success target', () => {
+  assert.equal(resolveMixingOutcomeNode(mixingNode, 'perfect'), 'success_result');
 });
 
-test('an explicit failure target wins over retry flags and teaching fallback', () => {
-  assert.equal(shouldRetryMixingFailure({
-    success: false,
-    outcomeNodeId: 'fail_result',
-    retryOnFail: true,
-    isTeaching: true,
-  }), false);
-  assert.equal(shouldRetryMixingFailure({
-    success: false,
-    outcomeNodeId: null,
-    retryOnFail: true,
-  }), true);
-  assert.equal(shouldRetryMixingFailure({
-    success: false,
-    outcomeNodeId: null,
-    isTeaching: true,
-  }), true);
-  assert.equal(shouldRetryMixingFailure({
-    success: true,
-    outcomeNodeId: null,
-    retryOnFail: true,
-  }), false);
+test('resolveMixingOutcomeNode maps off to the fail target', () => {
+  assert.equal(resolveMixingOutcomeNode(mixingNode, 'off'), 'fail_result');
+});
+
+test('resolveMixingOutcomeNode maps good to an explicit good target when present', () => {
+  const nodeWithGood: CharacterNode = {
+    event_id: 'mixing_with_good',
+    exit: {
+      kind: 'mixing',
+      request: { request_text: '请调酒' },
+      outcomes: { success: 'success_result', good: 'good_result', fail: 'fail_result' },
+    },
+  };
+  assert.equal(resolveMixingOutcomeNode(nodeWithGood, 'good'), 'good_result');
+});
+
+test('resolveMixingOutcomeNode falls back good to the success target when no good target is declared', () => {
+  assert.equal(resolveMixingOutcomeNode(mixingNode, 'good'), 'success_result');
+});
+
+test('resolveMixingOutcomeNode returns null for a null node', () => {
+  assert.equal(resolveMixingOutcomeNode(null, 'perfect'), null);
 });
 
 const teachingNode: CharacterNode = {
