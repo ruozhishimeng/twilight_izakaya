@@ -565,6 +565,19 @@ function validateDrinkRequest(
     errors.push(`[${guest.id}] node ${nodeId} drink_request.request_text must be a non-empty string`);
   }
 
+  const kind = drinkRequest.kind || 'named';
+
+  if (kind === 'trait') {
+    if (!Array.isArray(drinkRequest.required_tags) || drinkRequest.required_tags.length === 0) {
+      errors.push(`[${guest.id}] node ${nodeId} drink_request.required_tags must be a non-empty array for kind "trait"`);
+    }
+    return;
+  }
+
+  if (kind === 'open') {
+    return;
+  }
+
   if (!drinkRequest.preferred_drink) {
     errors.push(`[${guest.id}] node ${nodeId} drink_request is missing preferred_drink`);
     return;

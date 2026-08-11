@@ -512,3 +512,69 @@ test('node on_complete uses the same validation rules', () => {
     ['[aqiang] node invalid_on_complete_shape on_complete must be an object'],
   );
 });
+
+test('trait requests do not require preferred_drink but do require required_tags', () => {
+  const message = getValidationError([
+    createNode('trait_request_missing_tags', {
+      exit: {
+        kind: 'mixing',
+        request: {
+          kind: 'trait',
+          request_text: '要一杯烈的',
+          highlight: '烈的',
+        },
+        outcomes: {
+          success: 'mixing_success',
+          fail: 'mixing_fail',
+        },
+      },
+    }),
+    createNode('mixing_success'),
+    createNode('mixing_fail'),
+  ]);
+
+  assert.match(message, /required_tags must be a non-empty array/);
+});
+
+test('a well-formed trait request passes without preferred_drink', () => {
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry([
+    createNode('trait_request_ok', {
+      exit: {
+        kind: 'mixing',
+        request: {
+          kind: 'trait',
+          request_text: '要一杯烈的',
+          highlight: '烈的',
+          required_tags: ['辛辣'],
+        },
+        outcomes: {
+          success: 'mixing_success',
+          fail: 'mixing_fail',
+        },
+      },
+    }),
+    createNode('mixing_success'),
+    createNode('mixing_fail'),
+  ])));
+});
+
+test('open requests do not require preferred_drink or required_tags', () => {
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry([
+    createNode('open_request_ok', {
+      exit: {
+        kind: 'mixing',
+        request: {
+          kind: 'open',
+          request_text: '什么都可以',
+          highlight: '什么都可以',
+        },
+        outcomes: {
+          success: 'mixing_success',
+          fail: 'mixing_fail',
+        },
+      },
+    }),
+    createNode('mixing_success'),
+    createNode('mixing_fail'),
+  ])));
+});

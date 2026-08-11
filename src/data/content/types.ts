@@ -101,6 +101,9 @@ export interface DrinkRequestSource {
   retry_on_fail?: boolean;
   preferred_drink?: PreferredDrinkSource;
   eval_branches?: DrinkRequestEvalBranches;
+  kind?: 'named' | 'trait' | 'open';
+  highlight?: string;
+  required_tags?: string[];
 }
 
 export interface NarrativeNextExit {
@@ -117,6 +120,7 @@ export interface NarrativeObservationExit {
 
 export interface NarrativeMixingOutcomes {
   success: string | null;
+  good?: string | null;
   fail: string | null;
 }
 
