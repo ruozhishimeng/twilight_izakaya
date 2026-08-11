@@ -83,11 +83,14 @@ export interface DrinkRequestSource {
 export interface NarrativeMixingOutcomes {
   success: string | null;   // perfect 档使用
   good?: string | null;     // 缺省回退到 success
-  fail: string | null;      // off 档使用
+  fail: string | null;      // off 档使用；缺省回退到 success（见 §5.4 注）
 }
 ```
 
 不新增独立的 `perfect`/`off` 键名，复用 `success`/`fail` 语义（perfect→success, off→fail），避免所有既有内容和测试同时改名；只新增中间档 `good`。
+
+> **§5.4 补充（2026-08-11 修订，修复分支审查 Finding 1）：**
+> `off` 档取值从「仅 `fail`」放宽为 `fail ?? success`。原因：legacy 形态的教学节点（fox_uncle 六个 `drink_request` + `retry_on_fail: true` + `on_mixing_complete`、无 `on_mixing_fail` 的节点）经 `resolveNodeExit` 编译后 `outcomes.fail` 为 `null`；旧运行时的 `retry_on_fail` 重试锁会在失败时把玩家留在调酒界面直到成功，而 tier 系统移除该锁后，`off` 若仍返回 `null`，`serveDrink` 会写入 `nodeId: null` 导致访问在 `continueResult` 处被截断（跳过 reaction 节点、`need_event` 链断裂）。因此 `off` 缺省回退到 `success`，保证「调酒永远产出一杯酒、永远推进」这一 §2.1 首期承诺在无 `fail` 目标的节点上同样成立；有显式 `fail` 目标的节点（aqiang 显式 exit、yuki/常客 legacy `on_mixing_fail`）行为不变。
 
 ## 6. 判分引擎
 
@@ -191,3 +194,6 @@ export function scoreMixing(
 `retry_on_fail` 字段在 `interpreter.ts` 的 `enumerateNarrativePaths` 中驱动着一段独立的重试型路径枚举逻辑（用于 fox_uncle 六个只有 `retry_on_fail: true`、没有 `outcomes.fail` 的教学节点），这段逻辑校验的是"内容结构是否会死循环/死锁"，与运行时判定档位无关。
 
 明确边界：本次改动**不修改** `narrative.ts` 的 `getMixingOutcomeTarget` 签名或实现，也不修改 `interpreter.ts`/`simulator.ts`。§7 中 `resolveMixingOutcomeNode` 签名从 `(mixingNode, success: boolean)` 改为 `(mixingNode, tier: MixingTier)` 后，其内部直接读取 `mixingNode` 解析出的 `exit.outcomes.{success,good,fail}`，不再调用 `getMixingOutcomeTarget`——因此该共享函数对 `interpreter.ts` 的既有布尔语义完全不受影响，`interpreter.test.ts`、`scripts/simulate-narrative.test.mjs` 无需改动即应继续通过。
+
+> **§12 补充（2026-08-11 修订，修复分支审查 Finding 2）：**
+> 分支审查发现运行时消费 `exit.outcomes.good`，但内容图工具（`narrative.ts` 的 `getExitTargets`、`validation.ts` 的 `validateNarrativeExit`）只登记/校验 `success`/`fail`，`good` 目标不在图边内：内容一旦用 `good` 指向不存在的节点，`content:check` 查不出、运行时黑屏；可达的 `good` 目标会被 `narrative:check` 误报 UNREACHABLE。修复：`getExitTargets` 的 mixing 分支加入 `outcomes.good`（去重登记为图边），`validateNarrativeExit` 增加 `outcomes.good` 指向存在节点的校验（沿用现有 target 校验风格）。这两处**不在**本节的「不修改」清单内——`getMixingOutcomeTarget` 签名/实现、`interpreter.ts`、`simulator.ts` 均保持零改动。
