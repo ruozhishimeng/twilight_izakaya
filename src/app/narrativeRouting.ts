@@ -52,5 +52,5 @@ export function resolveMixingOutcomeNode(
   if (tier === 'good') {
     return exit.outcomes.good ?? exit.outcomes.success;
   }
-  return exit.outcomes.fail;
+  return exit.outcomes.fail ?? exit.outcomes.success;
 }

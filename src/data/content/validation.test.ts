@@ -558,6 +558,43 @@ test('a well-formed trait request passes without preferred_drink', () => {
   ])));
 });
 
+test('exit.mixing outcomes.good must reference an existing node', () => {
+  const message = getValidationError([
+    createNode('dangling_good', {
+      exit: {
+        kind: 'mixing',
+        request: validMixingRequest,
+        outcomes: {
+          success: 'mixing_success',
+          good: 'missing_good_target',
+          fail: 'mixing_fail',
+        },
+      },
+    }),
+    createNode('mixing_success'),
+    createNode('mixing_fail'),
+  ]);
+
+  assert.match(message, /outcomes\.good points to missing target "missing_good_target"/);
+
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry([
+    createNode('valid_good', {
+      exit: {
+        kind: 'mixing',
+        request: validMixingRequest,
+        outcomes: {
+          success: 'mixing_success',
+          good: 'mixing_good',
+          fail: 'mixing_fail',
+        },
+      },
+    }),
+    createNode('mixing_success'),
+    createNode('mixing_good'),
+    createNode('mixing_fail'),
+  ])));
+});
+
 test('open requests do not require preferred_drink or required_tags', () => {
   assert.doesNotThrow(() => validateContentRegistry(createRegistry([
     createNode('open_request_ok', {

@@ -24,6 +24,18 @@ test('resolveMixingOutcomeNode maps off to the fail target', () => {
   assert.equal(resolveMixingOutcomeNode(mixingNode, 'off'), 'fail_result');
 });
 
+test('resolveMixingOutcomeNode falls back off to the success target when no fail target is declared', () => {
+  const nodeWithoutFail: CharacterNode = {
+    event_id: 'mixing_without_fail',
+    exit: {
+      kind: 'mixing',
+      request: { request_text: '请调酒' },
+      outcomes: { success: 'success_result', fail: null },
+    },
+  };
+  assert.equal(resolveMixingOutcomeNode(nodeWithoutFail, 'off'), 'success_result');
+});
+
 test('resolveMixingOutcomeNode maps good to an explicit good target when present', () => {
   const nodeWithGood: CharacterNode = {
     event_id: 'mixing_with_good',

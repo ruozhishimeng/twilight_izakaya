@@ -55,6 +55,23 @@ test('explicit mixing exit wins over every legacy routing field', () => {
   assert.deepEqual(getExitTargets(exit), ['aqiang_phase1_success', 'aqiang_phase1_fail']);
 });
 
+test('getExitTargets includes the good target alongside success and fail, deduped', () => {
+  const exitWithGood: NarrativeMixingExit = {
+    kind: 'mixing',
+    request,
+    outcomes: {
+      success: 'aqiang_phase1_success',
+      good: 'aqiang_phase1_good',
+      fail: 'aqiang_phase1_fail',
+    },
+  };
+
+  assert.deepEqual(
+    getExitTargets(exitWithGood),
+    ['aqiang_phase1_success', 'aqiang_phase1_good', 'aqiang_phase1_fail'],
+  );
+});
+
 test('formal legacy drink_request fields compile to a mixing exit', () => {
   const node: CharacterNode = {
     event_id: 'regular_001_mixing',

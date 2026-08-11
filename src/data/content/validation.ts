@@ -672,6 +672,10 @@ function validateNarrativeExit(
           errors.push(`[${guest.id}] mixing node ${nodeId} must define a fail target or retry_on_fail`);
         }
       }
+
+      if (hasNonEmptyString(outcomes.good) && !guest.nodeMap.has(outcomes.good)) {
+        errors.push(`[${guest.id}] node ${nodeId} exit.mixing outcomes.good points to missing target "${outcomes.good}"`);
+      }
       break;
     }
     case 'end_visit':

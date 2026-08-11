@@ -103,7 +103,7 @@ export function getExitTargets(exit: NarrativeExit): string[] {
     case 'observation':
       return [exit.continue_node];
     case 'mixing':
-      return [...new Set([exit.outcomes.success, exit.outcomes.fail].filter(
+      return [...new Set([exit.outcomes.success, exit.outcomes.good, exit.outcomes.fail].filter(
         (target): target is string => !!target,
       ))];
     case 'end_visit':
