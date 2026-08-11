@@ -13,10 +13,30 @@ interface Props {
   speakerAvatarColor?: string;
   speakerAvatarUrl?: string;
   text: string;
+  highlight?: string;
   options?: Option[];
   onNext?: () => void;
   onTypingStateChange?: (isTyping: boolean) => void;
   footer?: React.ReactNode;
+}
+
+function renderWithHighlight(displayedText: string, highlight?: string): React.ReactNode {
+  if (!highlight || !displayedText.includes(highlight)) {
+    return displayedText;
+  }
+
+  const index = displayedText.indexOf(highlight);
+  const before = displayedText.slice(0, index);
+  const matched = displayedText.slice(index, index + highlight.length);
+  const after = displayedText.slice(index + highlight.length);
+
+  return (
+    <>
+      {before}
+      <mark className="rounded bg-[#8b5a2b]/40 px-0.5 text-[#ffe9b3]">{matched}</mark>
+      {after}
+    </>
+  );
 }
 
 export default function PixelDialogueBox({
@@ -24,6 +44,7 @@ export default function PixelDialogueBox({
   speakerAvatarColor,
   speakerAvatarUrl,
   text,
+  highlight,
   options,
   onNext,
   onTypingStateChange,
@@ -96,7 +117,7 @@ export default function PixelDialogueBox({
 
         {/* Text Area */}
         <div className="flex-1 text-2xl leading-relaxed mt-2 whitespace-pre-wrap">
-          {displayedText}
+          {renderWithHighlight(displayedText, highlight)}
         </div>
 
         {/* Options / Next Button */}

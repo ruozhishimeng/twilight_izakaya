@@ -14,6 +14,9 @@ interface MixingRequest {
     formula?: string[];
   };
   retry_on_fail?: boolean;
+  kind?: 'named' | 'trait' | 'open';
+  highlight?: string;
+  required_tags?: string[];
 }
 
 interface TeachingData {
@@ -446,6 +449,11 @@ export default function MixingPhase({
             speakerAvatarUrl={isTeacherSpeaking ? (guest.expressions.dialogue || guest.expressions.normal || guest.image) : undefined}
             speakerAvatarColor={isTeacherSpeaking ? guest.avatarColor : undefined}
             text={guidanceText}
+            highlight={
+              !promptOverride && !teaching && mixingRequest?.highlight
+                ? mixingRequest.highlight
+                : undefined
+            }
             options={
               promptOverride && teaching && !isReviewingPrompt
                 ? [
