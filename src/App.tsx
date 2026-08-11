@@ -623,7 +623,7 @@ export default function App() {
 
             {snapshot.value === 'dayLoop.guest.result' && (
               <ResultPhase
-                isSuccess={game.currentGuest.isSuccess}
+                tier={game.currentGuest.mixingTier}
                 mixedDrinkName={game.currentGuest.mixedDrinkName}
                 isNewRecipe={game.currentGuest.isNewRecipe}
                 onContinue={continueResult}
