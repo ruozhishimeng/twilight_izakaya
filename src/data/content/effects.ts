@@ -5,6 +5,7 @@ import {
   type NarrativeEffectSource as RuntimeNarrativeEffectSource,
   type RelationshipChangeEffect,
 } from '../../state/narrativeEffects';
+import type { MixingTier } from './mixingScore';
 import type {
   CharacterNode,
   NarrativeEffectScopeSource,
@@ -101,5 +102,45 @@ export function compileNodeCompletionNarrativeTransaction({
     scope,
     source: buildSource(scope, guestId, eventId, visitId),
     effects: compileEffects(node.on_complete?.effects),
+  });
+}
+
+export interface CompileMixingTierNarrativeTransactionInput {
+  guestId: string;
+  visitId: string;
+  mixingNodeId: string;
+  tier: MixingTier;
+}
+
+// 调酒三档好感事务（半心制）：perfect +1 / good 0 / off -1。
+// 每次到访每个调酒节点至多应用一次（visit 作用域幂等，id 自然复用
+// buildNarrativeTransactionId 的 visit 分支：visit/{visitId}/{guestId}/{mixingNodeId}）。
+const MIXING_TIER_AFFECTION_AMOUNT: Record<MixingTier, number> = {
+  perfect: 1,
+  good: 0,
+  off: -1,
+};
+
+export function compileMixingTierNarrativeTransaction({
+  guestId,
+  visitId,
+  mixingNodeId,
+  tier,
+}: CompileMixingTierNarrativeTransactionInput): NarrativeTransaction {
+  const eventId = requireNonEmptyString(mixingNodeId, 'mixingNodeId');
+  const amount = MIXING_TIER_AFFECTION_AMOUNT[tier];
+
+  return createNarrativeTransaction({
+    scope: 'visit',
+    source: buildSource('visit', guestId, eventId, visitId),
+    effects: [
+      {
+        id: `mixing_tier_${tier}_affection`,
+        type: 'relationship.change',
+        target: 'self',
+        axis: 'affection',
+        amount,
+      },
+    ],
   });
 }

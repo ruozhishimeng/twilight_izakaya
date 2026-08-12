@@ -10,11 +10,13 @@ export type RelationshipAxisRegistry = Readonly<
   Record<string, Readonly<RelationshipAxisDefinition>>
 >;
 
+// 纯半心制（pure half-heart scale）：好感度存储/显示单位是半心，满级 5 心 = 10 点。
+// min/max 由 -100..100 迁移为 0..10；amount 必须是半心整数（见 validation.ts 的整数校验）。
 export const DEFAULT_RELATIONSHIP_AXES: RelationshipAxisRegistry = Object.freeze({
   [DEFAULT_RELATIONSHIP_AXIS_ID]: Object.freeze({
     initial: 0,
-    min: -100,
-    max: 100,
+    min: 0,
+    max: 10,
   }),
 });
 

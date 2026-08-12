@@ -478,8 +478,48 @@ test('effect blocks reject duplicate ids, invalid relationship fields and illega
   assert.match(message, /type must be "relationship\.change"/);
   assert.match(message, /target must be a non-empty string/);
   assert.match(message, /axis must be a non-empty string/);
-  assert.match(message, /amount must be a finite non-zero number/);
+  assert.match(message, /amount must be a finite integer/);
   assert.match(message, /feedback must be a non-empty string/);
+});
+
+test('relationship effect amount must be a finite integer (half-heart invariant)', () => {
+  const fractionalNode = {
+    event_id: 'fractional_amount',
+    player_options: [{
+      id: 'half_heart_option',
+      text: '加成半心分数',
+      effects: [{
+        id: 'fractional_up',
+        type: 'relationship.change',
+        target: 'self',
+        amount: 0.5,
+      }],
+    }],
+  } as CharacterNode;
+
+  assert.match(
+    validateNarrativeEffectDeclarations('aqiang', 'fractional_amount', fractionalNode).join('\n'),
+    /amount must be an integer \(half-heart invariant\)/,
+  );
+
+  const zeroAmountNode = {
+    event_id: 'zero_ok',
+    player_options: [{
+      id: 'zero_option',
+      text: '归并入 0 半心',
+      effects: [{
+        id: 'zero_up',
+        type: 'relationship.change',
+        target: 'self',
+        amount: 0,
+      }],
+    }],
+  } as CharacterNode;
+
+  assert.deepEqual(
+    validateNarrativeEffectDeclarations('aqiang', 'zero_ok', zeroAmountNode),
+    [],
+  );
 });
 
 test('node on_complete uses the same validation rules', () => {
@@ -501,7 +541,7 @@ test('node on_complete uses the same validation rules', () => {
   const errors = validateNarrativeEffectDeclarations('aqiang', 'bad_on_complete', malformedBlock);
   assert.ok(errors.some(error => error.includes('on_complete effect_scope')));
   assert.ok(errors.some(error => error.includes('id must be a non-empty string')));
-  assert.ok(errors.some(error => error.includes('amount must be a finite non-zero number')));
+  assert.ok(errors.some(error => error.includes('amount must be a finite integer')));
 
   assert.deepEqual(
     validateNarrativeEffectDeclarations(

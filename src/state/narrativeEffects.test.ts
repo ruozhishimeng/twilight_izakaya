@@ -56,15 +56,15 @@ test('relationship transactions apply positive and negative affection changes', 
         id: 'affection_for_care',
         type: 'relationship.change',
         target: 'self',
-        amount: 15,
+        amount: 6,
       },
     ],
   });
   const afterPositive = applyNarrativeTransaction(initial, positive);
 
   assert.equal(afterPositive.applied, true);
-  assert.equal(getRelationshipValue(afterPositive.nextState, 'aqiang'), 15);
-  assert.equal(afterPositive.receipt.changes[0]?.appliedAmount, 15);
+  assert.equal(getRelationshipValue(afterPositive.nextState, 'aqiang'), 6);
+  assert.equal(afterPositive.receipt.changes[0]?.appliedAmount, 6);
 
   const negative = createNarrativeTransaction({
     scope: 'game',
@@ -78,14 +78,14 @@ test('relationship transactions apply positive and negative affection changes', 
         id: 'affection_for_dismissal',
         type: 'relationship.change',
         target: 'self',
-        amount: -6,
+        amount: -4,
       },
     ],
   });
   const afterNegative = applyNarrativeTransaction(afterPositive.nextState, negative);
 
-  assert.equal(getRelationshipValue(afterNegative.nextState, 'aqiang'), 9);
-  assert.equal(afterNegative.receipt.changes[0]?.appliedAmount, -6);
+  assert.equal(getRelationshipValue(afterNegative.nextState, 'aqiang'), 2);
+  assert.equal(afterNegative.receipt.changes[0]?.appliedAmount, -4);
 });
 
 test('relationship axes are extensible and update independently', () => {
@@ -167,15 +167,15 @@ test('relationship changes clamp to the configured axis range', () => {
         id: 'large_positive_change',
         type: 'relationship.change',
         target: 'self',
-        amount: 500,
+        amount: 20,
       },
     ],
   });
   const afterIncrease = applyNarrativeTransaction(createInitialNarrativeEffectsState(), increase);
 
-  assert.equal(getRelationshipValue(afterIncrease.nextState, 'fox_uncle'), 100);
-  assert.equal(afterIncrease.receipt.changes[0]?.requestedAmount, 500);
-  assert.equal(afterIncrease.receipt.changes[0]?.appliedAmount, 100);
+  assert.equal(getRelationshipValue(afterIncrease.nextState, 'fox_uncle'), 10);
+  assert.equal(afterIncrease.receipt.changes[0]?.requestedAmount, 20);
+  assert.equal(afterIncrease.receipt.changes[0]?.appliedAmount, 10);
 
   const decrease = createNarrativeTransaction({
     scope: 'game',
@@ -185,15 +185,15 @@ test('relationship changes clamp to the configured axis range', () => {
         id: 'large_negative_change',
         type: 'relationship.change',
         target: 'self',
-        amount: -500,
+        amount: -20,
       },
     ],
   });
   const afterDecrease = applyNarrativeTransaction(afterIncrease.nextState, decrease);
 
-  assert.equal(getRelationshipValue(afterDecrease.nextState, 'fox_uncle'), -100);
-  assert.equal(afterDecrease.receipt.changes[0]?.before, 100);
-  assert.equal(afterDecrease.receipt.changes[0]?.appliedAmount, -200);
+  assert.equal(getRelationshipValue(afterDecrease.nextState, 'fox_uncle'), 0);
+  assert.equal(afterDecrease.receipt.changes[0]?.before, 10);
+  assert.equal(afterDecrease.receipt.changes[0]?.appliedAmount, -10);
 });
 
 test('transaction ids separate game scope from individual visit scope', () => {
@@ -272,4 +272,54 @@ test('effect-free transactions persist idempotent event and option facts', () =>
   assert.equal(afterOption.receipt.changes.length, 0);
   assert.equal(replayedOption.applied, false);
   assert.equal(replayedOption.nextState, afterOption.nextState);
+});
+
+test('mixing-tier affection transaction is visit-scoped and applies at most once per visit', () => {
+  const transaction = createNarrativeTransaction({
+    scope: 'visit',
+    source: {
+      guestId: 'aqiang',
+      eventId: 'aqiang_003_drink_request',
+      visitId: 'W1:D3:G2:aqiang',
+    },
+    effects: [
+      {
+        id: 'mixing_tier_perfect_affection',
+        type: 'relationship.change',
+        target: 'self',
+        axis: 'affection',
+        amount: 1,
+      },
+    ],
+  });
+
+  const first = applyNarrativeTransaction(createInitialNarrativeEffectsState(), transaction);
+  const replayedSameVisit = applyNarrativeTransaction(first.nextState, transaction);
+
+  assert.equal(first.applied, true);
+  assert.equal(replayedSameVisit.applied, false);
+  assert.equal(replayedSameVisit.nextState, first.nextState);
+  assert.equal(getRelationshipValue(replayedSameVisit.nextState, 'aqiang'), 1);
+
+  const nextVisitTransaction = createNarrativeTransaction({
+    scope: 'visit',
+    source: {
+      guestId: 'aqiang',
+      eventId: 'aqiang_003_drink_request',
+      visitId: 'W2:D3:G1:aqiang',
+    },
+    effects: [
+      {
+        id: 'mixing_tier_perfect_affection',
+        type: 'relationship.change',
+        target: 'self',
+        axis: 'affection',
+        amount: 1,
+      },
+    ],
+  });
+  const afterNextVisit = applyNarrativeTransaction(replayedSameVisit.nextState, nextVisitTransaction);
+
+  assert.equal(afterNextVisit.applied, true);
+  assert.equal(getRelationshipValue(afterNextVisit.nextState, 'aqiang'), 2);
 });

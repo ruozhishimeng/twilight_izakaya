@@ -41,7 +41,8 @@ nodes:
             type: relationship.change
             target: self
             axis: affection
-            amount: 3
+            # 半心制迁移: +3 → +1（半心；原 -100..100 轴的 +3 归并为 +1 半心）
+            amount: 1
             feedback: 阿相注意到了你不带目的的关心。
         script_flow:
           - type: npc
@@ -58,7 +59,8 @@ nodes:
             type: relationship.change
             target: self
             axis: affection
-            amount: 1
+            # 半心制迁移: +1 → +0（半心归并：原极小增量并入 0 半心，保留非负语义）
+            amount: 0
             feedback: 阿相愿意多回答你一句。
         script_flow:
           - type: npc
@@ -104,7 +106,8 @@ nodes:
             type: relationship.change
             target: self
             axis: affection
-            amount: 2
+            # 半心制迁移: +2 → +1（半心）
+            amount: 1
             feedback: 提到妹妹时，阿相对你的戒备松动了一点。
         script_flow:
           - type: npc
@@ -124,7 +127,8 @@ nodes:
             type: relationship.change
             target: self
             axis: affection
-            amount: 1
+            # 半心制迁移: +1 → +0（半心归并：原极小增量并入 0 半心，保留非负语义）
+            amount: 0
             feedback: 阿相接受了你对异常细节的追问。
         script_flow:
           - type: npc
@@ -209,7 +213,8 @@ nodes:
           type: relationship.change
           target: self
           axis: affection
-          amount: 4
+          # 半心制迁移: +4 → +1（半心）
+          amount: 1
           feedback: 这杯酒让阿相觉得你理解了他的执念。
     diary_note: '一个浑身湿透的速运员，胸口紧紧护着什么东西。他说"最后一单"，说"妹妹还在等"。雨那么大，愿他平安到达。'
 
@@ -236,7 +241,9 @@ nodes:
           type: relationship.change
           target: self
           axis: affection
-          amount: -1
+          # 半心制迁移: -1 → -0（半心；只进不退语义下既有内容负增量归并为 0，不再随该
+          # on_complete 掉分——调酒三档的通用 off 档 -1 事务并存承担负反馈，见 effects.ts）
+          amount: 0
           feedback: 这杯酒没能真正回应阿相的请求。
     diary_note: "阿相喝完就走了。他总是很急，赶着去送那最后一单......胸口的硬物，是送给妹妹的礼物吗？"
 

@@ -409,12 +409,12 @@ function validateNarrativeEffectsBlock(
         errors.push(`${effectContext} axis "${axis}" is not registered`);
       }
     }
-    if (
-      typeof effect.amount !== 'number' ||
-      !Number.isFinite(effect.amount) ||
-      effect.amount === 0
-    ) {
-      errors.push(`${effectContext} amount must be a finite non-zero number`);
+    if (typeof effect.amount !== 'number' || !Number.isFinite(effect.amount)) {
+      errors.push(`${effectContext} amount must be a finite integer`);
+    } else if (!Number.isInteger(effect.amount)) {
+      // 半心不变式（pure half-heart scale）：好感值最小单位是半心（1 点 = 1 半心），
+      // 所有增量必须是整数（允许 0，供归并入 0 半心的既有效果迁移），禁止分数增量。
+      errors.push(`${effectContext} amount must be an integer (half-heart invariant)`);
     }
     if (effect.feedback !== undefined && !hasNonEmptyString(effect.feedback)) {
       errors.push(`${effectContext} feedback must be a non-empty string`);

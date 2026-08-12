@@ -6,6 +6,7 @@ import {
 } from '../data/content/narrative';
 import { scoreMixing } from '../data/content/mixingScore';
 import {
+  compileMixingTierNarrativeTransaction,
   compileNodeCompletionNarrativeTransaction,
   compileOptionNarrativeTransaction,
 } from '../data/content/effects';
@@ -462,6 +463,16 @@ export function useGameFlowController(
     const { tier, matchedRecipeId, drinkLabel } = scoreResult;
     const isSuccess = tier !== 'off';
 
+    const mixingNodeId = activeMixingNode?.event_id || activeMixingNode?.id;
+    if (mixingNodeId) {
+      applyNarrativeTransaction(compileMixingTierNarrativeTransaction({
+        guestId: guest.id,
+        visitId,
+        mixingNodeId,
+        tier,
+      }));
+    }
+
     let nextUnlockedRecipes = game.unlockedRecipes;
     let isNewRecipe = false;
     if (matchedRecipeId && !game.unlockedRecipes.includes(matchedRecipeId)) {
@@ -499,7 +510,18 @@ export function useGameFlowController(
       },
     });
     transition('dayLoop.guest.result');
-  }, [contentRegistry, game.unlockedRecipes, guest, mixingNode, patchContext, patchCurrentGuest, teachingNode, transition]);
+  }, [
+    applyNarrativeTransaction,
+    contentRegistry,
+    game.unlockedRecipes,
+    guest,
+    mixingNode,
+    patchContext,
+    patchCurrentGuest,
+    teachingNode,
+    transition,
+    visitId,
+  ]);
 
   const nextGuest = useCallback(() => {
     requestCoordinatorRef.current.cancel();

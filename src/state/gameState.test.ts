@@ -30,7 +30,7 @@ const affectionTransaction = createNarrativeTransaction({
       id: 'affection_for_care',
       type: 'relationship.change',
       target: 'self',
-      amount: 12,
+      amount: 6,
     },
   ],
 });
@@ -91,7 +91,7 @@ test('DEBUG_JUMP atomically relocates to a scheduled visit from every debug entr
     assert.deepEqual(jumped.context.currentGuest, createEmptyCurrentGuestRuntime(), value);
     assert.deepEqual(jumped.context.npcDialogue, createInitialNpcDialogueRuntime(), value);
     assert.deepEqual(jumped.context.characterProgress, { aqiang: 7 }, value);
-    assert.equal(getRelationshipValue(jumped.context.narrativeEffects, 'aqiang'), 12, value);
+    assert.equal(getRelationshipValue(jumped.context.narrativeEffects, 'aqiang'), 6, value);
     assert.equal(
       jumped.context.narrativeEffects.selectedOptions[affectionTransaction.id],
       true,
@@ -111,9 +111,9 @@ test('APPLY_NARRATIVE_TRANSACTION is atomic and idempotent in the game reducer',
     transaction: affectionTransaction,
   });
 
-  assert.equal(getRelationshipValue(first.context.narrativeEffects, 'aqiang'), 12);
+  assert.equal(getRelationshipValue(first.context.narrativeEffects, 'aqiang'), 6);
   assert.equal(replayed, first);
-  assert.equal(getRelationshipValue(replayed.context.narrativeEffects, 'aqiang'), 12);
+  assert.equal(getRelationshipValue(replayed.context.narrativeEffects, 'aqiang'), 6);
   assert.equal(Object.keys(replayed.context.narrativeEffects.appliedTransactions).length, 1);
 });
 
@@ -178,7 +178,7 @@ test('V4 saves round-trip narrative effects and hydrate incomplete relationship 
 
   assert.equal(roundTripped.version, PERSISTED_GAME_SNAPSHOT_VERSION);
   assert.deepEqual(roundTripped.context.narrativeEffects, appliedSnapshot.context.narrativeEffects);
-  assert.equal(getRelationshipValue(roundTripped.context.narrativeEffects, 'aqiang'), 12);
+  assert.equal(getRelationshipValue(roundTripped.context.narrativeEffects, 'aqiang'), 6);
 
   const incomplete = normalizePersistedSnapshotData({
     ...persisted,

@@ -18,7 +18,7 @@ test('debug snapshot reports exact axes, resolved exit, counts, and latest trans
   let effects = context.narrativeEffects;
   const transactions = [];
 
-  for (let index = 0; index < 12; index += 1) {
+  for (let index = 0; index < 10; index += 1) {
     const transaction = createNarrativeTransaction({
       scope: 'game',
       source: {
@@ -87,23 +87,23 @@ test('debug snapshot reports exact axes, resolved exit, counts, and latest trans
     kind: 'mixing',
     targets: ['aqiang_phase1_success', 'aqiang_phase1_fail'],
   });
-  assert.deepEqual(snapshot.relationship.axes, { affection: 12, trust: 7 });
+  assert.deepEqual(snapshot.relationship.axes, { affection: 10, trust: 7 });
   assert.deepEqual(snapshot.counts, {
-    completedEvents: 6,
-    selectedOptions: 6,
-    appliedTransactions: 12,
+    completedEvents: 5,
+    selectedOptions: 5,
+    appliedTransactions: 10,
   });
   assert.equal(snapshot.recentTransactions.length, 10);
-  assert.equal(snapshot.recentTransactions[0]?.id, transactions[11]?.id);
-  assert.equal(snapshot.recentTransactions[9]?.id, transactions[2]?.id);
+  assert.equal(snapshot.recentTransactions[0]?.id, transactions[9]?.id);
+  assert.equal(snapshot.recentTransactions[9]?.id, transactions[0]?.id);
   assert.deepEqual(snapshot.recentTransactions[0]?.changes[0], {
     type: 'relationship.change',
-    effectId: 'affection_11',
+    effectId: 'affection_9',
     targetId: 'aqiang',
     axis: 'affection',
     requestedAmount: 1,
-    before: 11,
-    after: 12,
+    before: 9,
+    after: 10,
     appliedAmount: 1,
   });
 });
