@@ -223,6 +223,9 @@ nodes:
   - event_id: yuki_004_dialogue_main
     trigger_condition:
       need_event: []
+      need_affection:
+        axis: affection
+        min: 4
       need_time: any
       need_item: []
     script_flow:
@@ -416,6 +419,9 @@ nodes:
   - event_id: yuki_007_dialogue_main
     trigger_condition:
       need_event: []
+      need_affection:
+        axis: affection
+        min: 6
       need_time: any
       need_item: []
     script_flow:

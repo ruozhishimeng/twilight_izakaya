@@ -256,6 +256,9 @@ nodes:
     trigger_condition:
       need_event:
         - aqiang_phase1_success
+      need_affection:
+        axis: affection
+        min: 4
       need_time: any
       need_item: []
     script_flow:
@@ -487,6 +490,9 @@ nodes:
     trigger_condition:
       need_event:
         - aqiang_phase2_success
+      need_affection:
+        axis: affection
+        min: 6
       need_time: any
       need_item: []
     script_flow:
@@ -733,6 +739,9 @@ nodes:
     trigger_condition:
       need_event:
         - aqiang_phase3_success
+      need_affection:
+        axis: affection
+        min: 8
       need_time: any
       need_item: []
     script_flow:

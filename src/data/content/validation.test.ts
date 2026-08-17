@@ -655,3 +655,147 @@ test('open requests do not require preferred_drink or required_tags', () => {
     createNode('mixing_fail'),
   ])));
 });
+
+function createRegistryWithMeta(
+  nodes: CharacterNode[],
+  meta: Record<string, unknown>,
+): ContentRegistry {
+  const registry = createRegistry(nodes);
+  const guest = registry.guests[0];
+  guest.meta = { ...guest.meta, ...meta };
+  return registry;
+}
+
+function getValidationErrorWithMeta(
+  nodes: CharacterNode[],
+  meta: Record<string, unknown>,
+) {
+  let caught: unknown;
+  try {
+    validateContentRegistry(createRegistryWithMeta(nodes, meta));
+  } catch (error) {
+    caught = error;
+  }
+
+  assert.ok(caught instanceof Error, 'expected content validation to fail');
+  return caught.message;
+}
+
+test('need_affection gate rejects a non-integer or out-of-range min (half-heart invariant)', () => {
+  const message = getValidationError([
+    createNode('gated_node', {
+      trigger_condition: { need_affection: { axis: 'affection', min: 2.5 } },
+    }),
+  ]);
+  assert.match(message, /need_affection\.min must be an integer/);
+
+  const outOfRange = getValidationError([
+    createNode('gated_node', {
+      trigger_condition: { need_affection: { axis: 'affection', min: 11 } },
+    }),
+  ]);
+  assert.match(outOfRange, /need_affection\.min must be in 0\.\.10/);
+});
+
+test('need_affection gate rejects an unregistered axis', () => {
+  const message = getValidationError([
+    createNode('gated_node', {
+      trigger_condition: { need_affection: { axis: 'trust', min: 4 } },
+    }),
+  ]);
+  assert.match(message, /axis "trust" is not registered/);
+});
+
+test('valid need_affection gate passes', () => {
+  assert.doesNotThrow(() => validateContentRegistry(createRegistry([
+    createNode('gated_node', {
+      trigger_condition: { need_affection: { axis: 'affection', min: 6 } },
+    }),
+  ])));
+});
+
+test('chapters table rejects a non-array value', () => {
+  const message = getValidationErrorWithMeta(
+    [createNode('aqiang_004_dialogue_main')],
+    { chapters: 'not-an-array' },
+  );
+  assert.match(message, /meta\.chapters must be an array/);
+});
+
+test('chapters table validates start_node existence and main-group membership', () => {
+  const unknownStart = getValidationErrorWithMeta(
+    [createNode('aqiang_004_dialogue_main')],
+    { chapters: [{ id: 'phase_2', start_node: 'nonexistent_node', min_affection: 4 }] },
+  );
+  assert.match(unknownStart, /start_node "nonexistent_node" not found among nodes/);
+
+  // 构造一个非 main 组节点：把节点移出 main、放进 hidden，验证 start_node 必须为 main 组。
+  const registry = createRegistryWithMeta(
+    [createNode('aqiang_004_dialogue_main'), createNode('aqiang_hidden_moonlight')],
+    { chapters: [{ id: 'phase_2', start_node: 'aqiang_hidden_moonlight', min_affection: 4 }] },
+  );
+  registry.guests[0].nodes.main = registry.guests[0].nodes.main.filter(
+    node => String(node.event_id || node.id) !== 'aqiang_hidden_moonlight',
+  );
+  registry.guests[0].nodes.hidden = [createNode('aqiang_hidden_moonlight')];
+  let caught: unknown;
+  try {
+    validateContentRegistry(registry);
+  } catch (error) {
+    caught = error;
+  }
+  assert.ok(caught instanceof Error, 'expected content validation to fail');
+  assert.match(caught.message, /start_node "aqiang_hidden_moonlight" must be in the main node group/);
+});
+
+test('chapters table validates min_affection as a 0..10 half-heart integer', () => {
+  const fraction = getValidationErrorWithMeta(
+    [createNode('aqiang_004_dialogue_main')],
+    { chapters: [{ id: 'phase_2', start_node: 'aqiang_004_dialogue_main', min_affection: 3.5 }] },
+  );
+  assert.match(fraction, /min_affection must be an integer/);
+
+  const outOfRange = getValidationErrorWithMeta(
+    [createNode('aqiang_004_dialogue_main')],
+    { chapters: [{ id: 'phase_2', start_node: 'aqiang_004_dialogue_main', min_affection: 11 }] },
+  );
+  assert.match(outOfRange, /min_affection must be in 0\.\.10/);
+});
+
+test('chapters table validates paused_node existence', () => {
+  const missingPaused = getValidationErrorWithMeta(
+    [createNode('aqiang_004_dialogue_main')],
+    { chapters: [{ id: 'phase_2', start_node: 'aqiang_004_dialogue_main', min_affection: 4, paused_node: 'aqiang_004_gate_paused' }] },
+  );
+  assert.match(missingPaused, /paused_node "aqiang_004_gate_paused" not found among nodes/);
+});
+
+test('chapters table cross-checks a start_node that declares need_affection', () => {
+  const mismatch = getValidationErrorWithMeta(
+    [createNode('aqiang_004_dialogue_main', {
+      trigger_condition: { need_affection: { axis: 'affection', min: 5 } },
+    })],
+    { chapters: [{ id: 'phase_2', start_node: 'aqiang_004_dialogue_main', min_affection: 4 }] },
+  );
+  assert.match(mismatch, /mismatches chapters\.min_affection/);
+});
+
+test('a valid chapters table with need_affection declared passes', () => {
+  assert.doesNotThrow(() => validateContentRegistry(createRegistryWithMeta(
+    [
+      createNode('aqiang_004_dialogue_main', {
+        trigger_condition: { need_affection: { axis: 'affection', min: 4 } },
+      }),
+      createNode('aqiang_007_dialogue_main', {
+        trigger_condition: { need_affection: { axis: 'affection', min: 6 } },
+      }),
+      createNode('aqiang_004_gate_paused'),
+    ],
+    {
+      chapters: [
+        { id: 'phase_2', start_node: 'aqiang_004_dialogue_main', min_affection: 4, paused_node: 'aqiang_004_gate_paused' },
+        { id: 'phase_3', start_node: 'aqiang_007_dialogue_main', min_affection: 6 },
+      ],
+    },
+  )));
+});

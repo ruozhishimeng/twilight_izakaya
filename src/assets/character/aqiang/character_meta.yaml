@@ -1,4 +1,17 @@
 character_id: aqiang
+# 章节门表（好感度驱动剧情推进）：顺序即章节顺序，min_affection 是半心点（4 点 = 2 心）。
+# 注意与下方 story.chapters（画廊/档案章节）语义不同，两者互不相关。
+# paused_node（未达标时的停顿场景）由 Task 4 接线时补齐。
+chapters:
+  - id: phase_2
+    start_node: aqiang_004_dialogue_main
+    min_affection: 4
+  - id: phase_3
+    start_node: aqiang_007_dialogue_main
+    min_affection: 6
+  - id: phase_4
+    start_node: aqiang_010_dialogue_main
+    min_affection: 8
 base_info:
   name: "阿相"
   real_name: "晴山 冰相 (Haruyama Hyousuke)"

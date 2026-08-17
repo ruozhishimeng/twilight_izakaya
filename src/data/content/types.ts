@@ -67,6 +67,29 @@ export interface NodeTriggerCondition {
   need_event?: string[];
   need_time?: string;
   need_item?: string[];
+  /** 好感度门：进入该节点需 getRelationshipValue(state, guestId, axis) >= min。 */
+  need_affection?: {
+    axis?: string;
+    /** 半心不变式：必须为 0..10 的整数（半心点数）。最小单位是 1 半心。 */
+    min: number;
+  };
+}
+
+/**
+ * 章节门表（character_meta.yaml 顶层 `chapters`）。
+ *
+ * 注意：与既有的 `story.chapters`（画廊/日志章节数组，映射为 GalleryChapter）语义不同——
+ * 前者是"好感度推进剧情"的章节门（章节 → 起始节点 → 阈值 → 停顿节点），
+ * 后者是角色的档案/画廊章节。两者都叫 chapters 但互不相关，勿混用。
+ *
+ * 顺序即章节顺序；start_node 必须是 main 组节点；min_affection 为半心整数（0..10，建议递增不强校验）。
+ */
+export interface ChapterGateSource {
+  id: string;
+  start_node: string;
+  min_affection: number;
+  /** 未达标到访时播放的「话没说出口」停顿场景节点（若给出必须存在）。 */
+  paused_node?: string;
 }
 
 export interface StoryUnlockEntrySource {
@@ -282,6 +305,8 @@ export interface CharacterMetaDocument {
   description?: string;
   personality?: string;
   llm_chat?: CharacterLlmChatSource;
+  /** 章节门表（好感度驱动剧情推进）。区别于 `story.chapters`（画廊章节），见 ChapterGateSource。 */
+  chapters?: ChapterGateSource[];
   [key: string]: unknown;
 }
 

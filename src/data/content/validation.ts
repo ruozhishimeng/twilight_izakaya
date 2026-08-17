@@ -115,6 +115,46 @@ function validateTriggerCondition(
       }
     });
   }
+
+  validateNeedAffection(guest, nodeId, triggerCondition.need_affection, errors);
+}
+
+// 好感度门（半心制）：min 必须为 0..10 的整数（半心不变式）；axis 若给出必须已注册（本期仅 affection）。
+function validateNeedAffection(
+  guest: Guest,
+  nodeId: string,
+  needAffection: NodeTriggerCondition['need_affection'],
+  errors: string[],
+) {
+  if (needAffection === undefined) {
+    return;
+  }
+  if (!isRecord(needAffection)) {
+    errors.push(`[${guest.id}] node ${nodeId} trigger_condition.need_affection must be an object`);
+    return;
+  }
+  if (typeof needAffection.min !== 'number' || !Number.isInteger(needAffection.min)) {
+    errors.push(
+      `[${guest.id}] node ${nodeId} trigger_condition.need_affection.min must be an integer (half-heart invariant)`,
+    );
+  } else if (needAffection.min < 0 || needAffection.min > 10) {
+    errors.push(
+      `[${guest.id}] node ${nodeId} trigger_condition.need_affection.min must be in 0..10 (half-heart range)`,
+    );
+  }
+  if (
+    needAffection.axis !== undefined &&
+    !hasNonEmptyString(needAffection.axis)
+  ) {
+    errors.push(`[${guest.id}] node ${nodeId} trigger_condition.need_affection.axis must be a non-empty string`);
+  } else {
+    const axis = hasNonEmptyString(needAffection.axis) ? needAffection.axis : 'affection';
+    if (!DEFAULT_RELATIONSHIP_AXES[axis]) {
+      errors.push(
+        `[${guest.id}] node ${nodeId} trigger_condition.need_affection.axis "${axis}" is not registered`,
+      );
+    }
+  }
 }
 
 function validateScriptFlow(
@@ -844,6 +884,7 @@ export function validateContentRegistry(registry: ContentRegistry) {
 
   registry.guests.forEach(guest => {
     validateCharacterLlmChatConfig(guest, guest.meta.llm_chat, errors);
+    validateChapterTable(guest, errors);
     (['main', 'teaching', 'chat', 'hidden'] as const).forEach(group => {
       guest.nodes[group].forEach(node => validateNodeByGroup(guest, group, node, registry, errors));
     });
@@ -852,4 +893,77 @@ export function validateContentRegistry(registry: ContentRegistry) {
   if (errors.length > 0) {
     throw new Error(['Content validation failed:', ...errors].join('\n'));
   }
+}
+
+// 章节门表（半心制章节推进）：顺序即章节顺序；start_node 必须存在且为 main 组；
+// paused_node 若给出必须存在；min_affection 为 0..10 半心整数（建议递增，不强校验）；
+// 若 start_node 自身也声明 need_affection，则必须与表内 min/axis 一致（防漂移）。
+function validateChapterTable(guest: Guest, errors: string[]) {
+  const chapters = guest.meta.chapters;
+  if (chapters === undefined) {
+    return; // 未配置 chapters 的角色（常客等）完全不受影响。
+  }
+  if (!Array.isArray(chapters)) {
+    errors.push(`[${guest.id}] meta.chapters must be an array`);
+    return;
+  }
+
+  const seenIds = new Set<string>();
+  chapters.forEach((entry, index) => {
+    if (!isRecord(entry)) {
+      errors.push(`[${guest.id}] meta.chapters[${index}] must be an object`);
+      return;
+    }
+    const label = `meta.chapters[${index}]`;
+
+    if (!hasNonEmptyString(entry.id)) {
+      errors.push(`[${guest.id}] ${label} id must be a non-empty string`);
+    } else if (seenIds.has(entry.id)) {
+      errors.push(`[${guest.id}] ${label} duplicate chapter id "${entry.id}"`);
+    } else {
+      seenIds.add(entry.id);
+    }
+
+    if (!hasNonEmptyString(entry.start_node)) {
+      errors.push(`[${guest.id}] ${label} start_node must be a non-empty string`);
+    } else if (!guest.nodeMap.has(entry.start_node)) {
+      errors.push(`[${guest.id}] ${label} start_node "${entry.start_node}" not found among nodes`);
+    } else {
+      const isMain = guest.nodes.main.some(node => nodeRefId(node) === entry.start_node);
+      if (!isMain) {
+        errors.push(`[${guest.id}] ${label} start_node "${entry.start_node}" must be in the main node group`);
+      }
+    }
+
+    if (typeof entry.min_affection !== 'number' || !Number.isInteger(entry.min_affection)) {
+      errors.push(`[${guest.id}] ${label} min_affection must be an integer (half-heart invariant)`);
+    } else if (entry.min_affection < 0 || entry.min_affection > 10) {
+      errors.push(`[${guest.id}] ${label} min_affection must be in 0..10 (half-heart range)`);
+    }
+
+    if (entry.paused_node !== undefined) {
+      if (!hasNonEmptyString(entry.paused_node)) {
+        errors.push(`[${guest.id}] ${label} paused_node must be a non-empty string`);
+      } else if (!guest.nodeMap.has(entry.paused_node)) {
+        errors.push(`[${guest.id}] ${label} paused_node "${entry.paused_node}" not found among nodes`);
+      }
+    }
+
+    // 交叉一致性：章节起始节点若自身声明 need_affection，须与表内 min/axis 一致（防漂移）。
+    const startNode = hasNonEmptyString(entry.start_node)
+      ? guest.nodeMap.get(entry.start_node)
+      : undefined;
+    const nodeCond = startNode?.trigger_condition?.need_affection;
+    if (nodeCond !== undefined) {
+      const nodeMin = typeof nodeCond.min === 'number' ? nodeCond.min : undefined;
+      if (nodeMin !== entry.min_affection) {
+        errors.push(
+          `[${guest.id}] ${label} start_node "${entry.start_node}" need_affection.min (${nodeMin}) mismatches chapters.min_affection (${entry.min_affection})`,
+        );
+      }
+      if (nodeCond.axis !== undefined && nodeCond.axis !== 'affection') {
+        errors.push(`[${guest.id}] ${label} start_node "${entry.start_node}" need_affection.axis must be "affection"`);
+      }
+    }
+  });
 }
