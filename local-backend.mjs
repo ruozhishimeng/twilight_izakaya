@@ -6,6 +6,7 @@ import {
 } from './server/backendApp.mjs';
 
 dotenv.config();
+dotenv.config({ path: '.env.local', override: true });
 
 const port = Number(process.env.PORT || DEFAULT_BACKEND_PORT);
 const host = process.env.HOST || DEFAULT_BACKEND_HOST;
