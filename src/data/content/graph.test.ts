@@ -230,3 +230,39 @@ test('real W1_D3 Aqiang graph proves dialogue-to-mixing success and fail paths',
     diagnostic.nodeId === 'aqiang_001_dialogue_main'
   )), false);
 });
+
+test('aqiang and yuki chapters become conditional-reachable entries and their content is not UNREACHABLE', async () => {
+  const registry = normalizeContentRegistry(loadContentSourceFromFs());
+  const analysis = analyzeNarrativeGraph(registry);
+
+  const aqiangEntries = analysis.conditionalEntries.filter(entry => entry.guestId === 'aqiang');
+  const yukiEntries = analysis.conditionalEntries.filter(entry => entry.guestId === 'yuki');
+
+  assert.deepEqual(
+    aqiangEntries.map(entry => `${entry.chapterId}:${entry.startNodeId}:${entry.minAffection}`).sort(),
+    [
+      'phase_2:aqiang_004_dialogue_main:4',
+      'phase_3:aqiang_007_dialogue_main:6',
+      'phase_4:aqiang_010_dialogue_main:8',
+    ],
+  );
+  assert.deepEqual(
+    yukiEntries.map(entry => `${entry.chapterId}:${entry.startNodeId}:${entry.minAffection}`).sort(),
+    [
+      'phase_2:yuki_004_dialogue_main:4',
+      'phase_3:yuki_007_dialogue_main:6',
+    ],
+  );
+
+  // 章节内容（2-4 章 start_node 及下游）经条件入口可达，不再报 UNREACHABLE_MAIN_NODE。
+  const unreachable = new Set(
+    analysis.diagnostics
+      .filter(diagnostic => diagnostic.code === 'UNREACHABLE_MAIN_NODE')
+      .map(diagnostic => `${diagnostic.guestId}/${diagnostic.nodeId}`),
+  );
+  ['aqiang_004_dialogue_main', 'aqiang_007_dialogue_main', 'aqiang_010_dialogue_main',
+   'yuki_004_dialogue_main', 'yuki_007_dialogue_main'].forEach(nodeId => {
+    assert.ok(!unreachable.has(`aqiang/${nodeId}`), `${nodeId} should be reachable via chapters`);
+    assert.ok(!unreachable.has(`yuki/${nodeId}`), `${nodeId} should be reachable via chapters`);
+  });
+});

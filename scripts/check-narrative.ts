@@ -4,10 +4,16 @@ import { loadContentSourceFromFs } from './loadContentFromFs';
 
 const jsonOutput = process.argv.slice(2).includes('--json');
 
-function summarize(diagnostics: NarrativeDiagnostic[], guestCount: number, scheduledEntryCount: number) {
+function summarize(
+  diagnostics: NarrativeDiagnostic[],
+  guestCount: number,
+  scheduledEntryCount: number,
+  conditionalEntryCount: number,
+) {
   return {
     guestCount,
     scheduledEntryCount,
+    conditionalEntryCount,
     errorCount: diagnostics.filter(diagnostic => diagnostic.severity === 'error').length,
     warningCount: diagnostics.filter(diagnostic => diagnostic.severity === 'warning').length,
   };
@@ -25,6 +31,7 @@ try {
     analysis.diagnostics,
     registry.guests.length,
     analysis.scheduledEntries.length,
+    analysis.conditionalEntries.length,
   );
 
   if (jsonOutput) {
@@ -32,6 +39,7 @@ try {
   } else {
     console.log(
       `[narrative:check] ${summary.guestCount} guests, ${summary.scheduledEntryCount} scheduled entries, ` +
+      `${summary.conditionalEntryCount} conditional-reachable via chapters, ` +
       `${summary.errorCount} errors, ${summary.warningCount} warnings`,
     );
     analysis.diagnostics.forEach(diagnostic => {
@@ -53,7 +61,7 @@ try {
     nodeId: null,
     message: error instanceof Error ? error.message : String(error),
   };
-  const summary = summarize([diagnostic], 0, 0);
+  const summary = summarize([diagnostic], 0, 0, 0);
 
   if (jsonOutput) {
     console.log(JSON.stringify({ summary, diagnostics: [diagnostic], scheduledEntries: [] }, null, 2));

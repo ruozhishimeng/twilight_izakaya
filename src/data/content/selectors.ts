@@ -92,8 +92,23 @@ export function getGuestById(guestId: string) {
   return registry.guestById.get(guestId);
 }
 
+// 周循环（spec §7.3）：schedule.yaml 只排 W1_D1..D7；week 取模回绕使 W2+ 复用 W1 数据，
+// 访客在周后继续到访。周数由排期里实际出现的 week 序号推导，非硬编码。
+const AUTHORED_WEEK_COUNT = (() => {
+  const weeks = new Set<number>();
+  schedule.schedule.forEach(entry => {
+    const match = /^W(\d+)_D\d+$/.exec(entry.day);
+    if (match) {
+      weeks.add(Number(match[1]));
+    }
+  });
+  return Math.max(1, weeks.size);
+})();
+
 export function getScheduleDay(week: number, day: number): ScheduleDay | undefined {
-  const dayKey = `W${week}_D${day}`;
+  const normalizedWeek =
+    ((week - 1) % AUTHORED_WEEK_COUNT + AUTHORED_WEEK_COUNT) % AUTHORED_WEEK_COUNT + 1;
+  const dayKey = `W${normalizedWeek}_D${day}`;
   return schedule.schedule.find(entry => entry.day === dayKey);
 }
 

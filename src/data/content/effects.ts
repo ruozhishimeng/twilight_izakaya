@@ -144,3 +144,30 @@ export function compileMixingTierNarrativeTransaction({
     ],
   });
 }
+
+export interface CompileChapterUnlockNarrativeTransactionInput {
+  guestId: string;
+  chapterId: string;
+}
+
+// 章节 sticky 解锁 fact id：`{guestId}_chapter_{chapterId}_unlocked`（spec §5.4 约定）。
+// resolveStartNodeForVisit（flowHelpers.ts）复用此命名判断「已解锁」。
+export function buildChapterUnlockFactId(guestId: string, chapterId: string): string {
+  return `${requireNonEmptyString(guestId, 'guestId')}_chapter_${requireNonEmptyString(chapterId, 'chapterId')}_unlocked`;
+}
+
+// 章节 sticky 解锁 fact：game 作用域、无效果的事务，事件 id 即 spec 约定的
+// `{guestId}_chapter_{chapterId}_unlocked`，走既有 applyNarrativeTransaction 路径
+// 记录进 completedEvents，供 resolveStartNodeForVisit 的「只进不退」判断复用。
+export function compileChapterUnlockNarrativeTransaction({
+  guestId,
+  chapterId,
+}: CompileChapterUnlockNarrativeTransactionInput): NarrativeTransaction {
+  const eventId = buildChapterUnlockFactId(guestId, chapterId);
+
+  return createNarrativeTransaction({
+    scope: 'game',
+    source: buildSource('game', guestId, eventId),
+    effects: [],
+  });
+}

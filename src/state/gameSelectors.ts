@@ -8,6 +8,7 @@ import {
   type Guest,
   type ScheduleGuest,
 } from '../data/gameData';
+import { resolveStartNodeForVisit } from '../data/content/chapterProgression';
 import { resolveNodeExit } from '../data/content/narrative';
 import type { GameSnapshot, GameRootStateValue } from './gameState';
 
@@ -43,7 +44,13 @@ export function selectGameRuntimeView(snapshot: GameSnapshot): GameRuntimeView {
   const currentGuestData = todayGuests[game.guestInDay - 1] || null;
   const guestId = currentGuestData?.character_id || fallbackGuest.id || 'fox_uncle';
   const guest = getGuestById(guestId) || fallbackGuest;
-  const startNodeId = currentGuestData?.start_node || null;
+  const defaultStartNodeId = currentGuestData?.start_node || '';
+  const startNodeId = defaultStartNodeId
+    ? resolveStartNodeForVisit(guest, {
+      narrativeEffects: game.narrativeEffects,
+      defaultStartNodeId,
+    })
+    : null;
   const currentNode = game.currentGuest.nodeId
     ? findNodeForGuest(game.currentGuest.nodeId, guest.id, guest.nodeMap)
     : null;

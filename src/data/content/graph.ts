@@ -59,6 +59,16 @@ export interface ScheduledNarrativeAnalysis {
 export interface NarrativeGraphAnalysis {
   diagnostics: NarrativeDiagnostic[];
   scheduledEntries: ScheduledNarrativeAnalysis[];
+  /** 章节门伪起点（conditional-reachable via chapters）：好感达标后可进入的章节 start_node。 */
+  conditionalEntries: ConditionalNarrativeEntry[];
+}
+
+export interface ConditionalNarrativeEntry {
+  guestId: string;
+  chapterId: string;
+  startNodeId: string;
+  minAffection: number;
+  reachableNodeIds: string[];
 }
 
 function normalizedTarget(value: unknown) {
@@ -447,6 +457,36 @@ export function analyzeNarrativeGraph(registry: ContentRegistry): NarrativeGraph
     });
   });
 
+  // 章节门伪起点（spec §8）：character_meta.chapters 的 start_node 是「条件可达」入口——
+  // 好感达标（或 sticky 已解锁）后由 resolveStartNodeForVisit 直接进入，不经排期 start_node。
+  // 计入可达集合，使这些作者已写好的章节内容不再报 UNREACHABLE_MAIN_NODE。
+  const conditionalEntries: ConditionalNarrativeEntry[] = [];
+  [...registry.guests]
+    .sort((left, right) => left.id.localeCompare(right.id))
+    .forEach(guest => {
+      const chapters = guest.meta.chapters;
+      if (!Array.isArray(chapters)) {
+        return;
+      }
+
+      const graph = graphByGuestId.get(guest.id)!;
+      chapters.forEach(chapter => {
+        if (!graph.nodes.has(chapter.start_node)) {
+          return; // 存在性由 content:check 报错，这里不重复诊断。
+        }
+
+        const reachable = reachableNodeIds(graph, chapter.start_node);
+        reachable.forEach(nodeId => scheduledReachableByGuestId.get(guest.id)!.add(nodeId));
+        conditionalEntries.push({
+          guestId: guest.id,
+          chapterId: chapter.id,
+          startNodeId: chapter.start_node,
+          minAffection: chapter.min_affection,
+          reachableNodeIds: [...reachable].sort(),
+        });
+      });
+    });
+
   graphByGuestId.forEach((graph, guestId) => {
     const scheduledReachable = scheduledReachableByGuestId.get(guestId) || new Set<string>();
     graph.mainNodeIds.forEach(nodeId => {
@@ -474,5 +514,6 @@ export function analyzeNarrativeGraph(registry: ContentRegistry): NarrativeGraph
   return {
     diagnostics: sortDiagnostics(diagnostics),
     scheduledEntries,
+    conditionalEntries,
   };
 }

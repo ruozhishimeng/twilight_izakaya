@@ -6,6 +6,7 @@ import {
 } from '../data/content/narrative';
 import { scoreMixing } from '../data/content/mixingScore';
 import {
+  compileChapterUnlockNarrativeTransaction,
   compileMixingTierNarrativeTransaction,
   compileNodeCompletionNarrativeTransaction,
   compileOptionNarrativeTransaction,
@@ -896,11 +897,27 @@ export function useGameFlowController(
     transition,
   ]);
 
+  // 若某个 startNodeId 命中章节门的 start_node，记录 sticky 解锁 fact（只进不退）。
+  // applyNarrativeTransaction 按事务 id 幂等，重复调用安全，两个到访入口路径都可放心调用。
+  const recordChapterUnlockForStartNode = useCallback((nodeId: string) => {
+    const enteringChapter = guest.meta.chapters?.find(chapter => chapter.start_node === nodeId);
+    if (enteringChapter) {
+      applyNarrativeTransaction(compileChapterUnlockNarrativeTransaction({
+        guestId: guest.id,
+        chapterId: enteringChapter.id,
+      }));
+    }
+  }, [applyNarrativeTransaction, guest.id, guest.meta.chapters]);
+
   const beginGuestArrival = useCallback(() => {
     requestCoordinatorRef.current.cancel();
     if (!startNodeId) {
       return;
     }
+
+    // 若本次到访的起始节点是某个章节门（好感达成或 sticky 已解锁），记录 sticky 解锁 fact
+    // （只进不退；applyNarrativeTransaction 幂等，重复调用安全）。
+    recordChapterUnlockForStartNode(startNodeId);
 
     patchContext({
       guestInterludeText: undefined,
@@ -913,7 +930,7 @@ export function useGameFlowController(
     closeTranscript();
     playSfx('door_bell');
     transition('dayLoop.guest.story');
-  }, [closeTranscript, patchContext, patchCurrentGuest, playSfx, resetCurrentGuest, startNodeId, transition]);
+  }, [closeTranscript, patchContext, patchCurrentGuest, playSfx, recordChapterUnlockForStartNode, resetCurrentGuest, startNodeId, transition]);
 
   const openChat = useCallback(() => {
     const firstChatNode = availableChatNodes[0];
@@ -992,11 +1009,12 @@ export function useGameFlowController(
       !game.currentGuest.nodeId &&
       startNodeId
     ) {
+      recordChapterUnlockForStartNode(startNodeId);
       patchCurrentGuest({
         nodeId: startNodeId,
       });
     }
-  }, [game.currentGuest.nodeId, patchCurrentGuest, snapshot.value, startNodeId]);
+  }, [game.currentGuest.nodeId, patchCurrentGuest, recordChapterUnlockForStartNode, snapshot.value, startNodeId]);
 
   return {
     game,
